@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card } from '../../src/components/ui';
 import { useAuth } from '../../src/lib/auth';
-import { colors, radius, spacing, type } from '../../src/theme/tokens';
+import { colors, radius, spacing, text } from '../../src/theme/tokens';
 
 export default function ProfileScreen() {
   const { profile, user, signOut } = useAuth();
@@ -78,7 +78,7 @@ function Row({ label, value, last }: { label: string; value: string; last?: bool
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  h1: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
+  h1: { ...text.h1 },
   avatar: {
     width: 72,
     height: 72,
@@ -88,13 +88,12 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  avatarText: { fontSize: 24, fontWeight: '800', color: colors.primary },
-  name: { fontSize: type.h2.fontSize, fontWeight: '800', color: colors.ink },
-  handle: { fontSize: type.small.fontSize, color: colors.muted, marginTop: 2 },
+  avatarText: { fontFamily: text.h2.fontFamily, fontSize: 24, color: colors.primary },
+  name: { ...text.h2 },
+  handle: { ...text.small, marginTop: 2 },
   adminBadge: {
     marginTop: spacing.sm,
-    fontSize: type.tiny.fontSize,
-    fontWeight: '800',
+    ...text.kicker,
     color: colors.primary,
     backgroundColor: colors.primarySoft,
     paddingHorizontal: spacing.md,
@@ -110,7 +109,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSoft,
   },
-  rowLabel: { fontSize: type.small.fontSize, color: colors.muted },
-  rowValue: { fontSize: type.small.fontSize, color: colors.ink, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
+  rowLabel: { ...text.small },
+  rowValue: { ...text.bodyStrong, fontSize: 13.5, flexShrink: 1, textAlign: 'right' },
   note: { marginTop: spacing.lg, fontSize: 12, color: colors.mutedLight, lineHeight: 18 },
 });

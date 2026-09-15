@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text as RNText } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../src/components/ui';
+import { Button, Field, Text } from '../../src/components/ui';
 import { useAuth } from '../../src/lib/auth';
-import { colors, spacing, type } from '../../src/theme/tokens';
+import { colors, spacing, text } from '../../src/theme/tokens';
 
 export default function Forgot() {
   const router = useRouter();
@@ -29,36 +29,36 @@ export default function Forgot() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-        <Text style={s.title}>Reset your password</Text>
-        <Text style={s.sub}>We'll email you a link to set a new one.</Text>
-
-        <View style={{ height: spacing.xxl }} />
+        <Text variant="h1">Reset your password</Text>
+        <Text variant="body" style={{ marginTop: spacing.sm, marginBottom: spacing.xxl }}>
+          We'll email you a link to set a new one.
+        </Text>
 
         {sent ? (
-          <Text style={s.notice}>
+          <RNText style={s.notice}>
             If an account exists for {email.trim()}, a reset link is on its way. Check your spam folder too.
-          </Text>
+          </RNText>
         ) : (
           <>
             <Field
-              label="Email"
+              icon="mail-outline"
               value={email}
               onChangeText={setEmail}
-              placeholder="you@example.com"
+              placeholder="Email address"
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
               inputMode="email"
             />
-            {!!error && <Text style={s.error}>{error}</Text>}
-            <Button label="Send reset link" onPress={submit} loading={busy} />
+            {!!error && <RNText style={s.error}>{error}</RNText>}
+            <Button label="Send reset link" onPress={submit} loading={busy} style={{ marginTop: spacing.md }} />
           </>
         )}
 
-        <Pressable onPress={() => router.back()} style={{ marginTop: spacing.xl, alignSelf: 'center' }}>
-          <Text style={s.link}>Back to sign in</Text>
+        <Pressable onPress={() => router.back()} style={s.footer}>
+          <RNText style={s.link}>Back to sign in</RNText>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -67,10 +67,9 @@ export default function Forgot() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.xl, paddingTop: spacing.xxl, flexGrow: 1 },
-  title: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
-  sub: { fontSize: type.body.fontSize, color: colors.muted, marginTop: spacing.sm },
-  error: { color: colors.danger, fontSize: type.small.fontSize, marginBottom: spacing.lg },
-  notice: { color: colors.success, fontSize: type.body.fontSize, lineHeight: 22 },
-  link: { color: colors.primary, fontSize: type.small.fontSize, fontWeight: '600' },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, flexGrow: 1 },
+  error: { ...text.small, color: colors.danger, marginBottom: spacing.md },
+  notice: { ...text.bodyInk },
+  link: { ...text.smallStrong, color: colors.primary },
+  footer: { marginTop: spacing.xl, alignSelf: 'center' },
 });

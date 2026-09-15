@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text as RNText } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../src/components/ui';
+import { Button, Field, Text } from '../../src/components/ui';
 import { useAuth } from '../../src/lib/auth';
-import { colors, spacing, type } from '../../src/theme/tokens';
+import { colors, spacing, text } from '../../src/theme/tokens';
 
 export default function SignUp() {
   const router = useRouter();
@@ -19,7 +19,6 @@ export default function SignUp() {
   async function submit() {
     setError(null);
     setNotice(null);
-
     if (!fullName.trim()) return setError('Tell us your name.');
     if (!email.trim()) return setError('Enter your email address.');
     if (password.length < 8) return setError('Use at least 8 characters for your password.');
@@ -28,11 +27,8 @@ export default function SignUp() {
     try {
       const { needsConfirmation } = await signUp(email, password, fullName);
       if (needsConfirmation) {
-        setNotice(
-          'Check your inbox — we sent you a confirmation link. Once you confirm, come back and sign in.',
-        );
+        setNotice('Check your inbox — we sent you a confirmation link. Confirm it, then come back and sign in.');
       }
-      // If confirmation is off, a session arrives and AuthGate moves us on.
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create your account.');
     } finally {
@@ -41,55 +37,55 @@ export default function SignUp() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <Text style={s.title}>Set up your account</Text>
-          <Text style={s.sub}>It takes about a minute.</Text>
-
-          <View style={{ height: spacing.xxl }} />
+          <Text variant="h1">Set up your account</Text>
+          <Text variant="body" style={{ marginTop: spacing.sm, marginBottom: spacing.xxl }}>
+            It takes about a minute, and it's free.
+          </Text>
 
           <Field
-            label="Full name"
+            icon="person-outline"
             value={fullName}
             onChangeText={setFullName}
-            placeholder="Nadia Rahman"
+            placeholder="Full name"
             autoCapitalize="words"
             autoComplete="name"
           />
           <Field
-            label="Email"
+            icon="mail-outline"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder="Email address"
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
             inputMode="email"
           />
           <Field
-            label="Password"
+            icon="lock-closed-outline"
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 8 characters"
+            placeholder="Password (8+ characters)"
             secureTextEntry
             autoCapitalize="none"
             autoComplete="new-password"
           />
 
-          {!!error && <Text style={s.error}>{error}</Text>}
-          {!!notice && <Text style={s.notice}>{notice}</Text>}
+          {!!error && <RNText style={s.error}>{error}</RNText>}
+          {!!notice && <RNText style={s.notice}>{notice}</RNText>}
 
-          <Button label="Create account" onPress={submit} loading={busy} />
+          <Button label="Create account" onPress={submit} loading={busy} style={{ marginTop: spacing.md }} />
 
-          <Text style={s.legal}>
+          <RNText style={s.legal}>
             By creating an account you agree to keep the community safe and to follow the posting guidelines.
-          </Text>
+          </RNText>
 
-          <Pressable onPress={() => router.push('/(auth)/login')} style={{ marginTop: spacing.xl, alignSelf: 'center' }}>
-            <Text style={s.muted}>
-              Already a member? <Text style={s.linkStrong}>Sign in</Text>
-            </Text>
+          <Pressable onPress={() => router.push('/(auth)/login')} style={s.footer}>
+            <RNText style={text.small}>
+              Already a member? <RNText style={s.link}>Sign in</RNText>
+            </RNText>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -99,12 +95,10 @@ export default function SignUp() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.xl, paddingTop: spacing.xxl, flexGrow: 1 },
-  title: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
-  sub: { fontSize: type.body.fontSize, color: colors.muted, marginTop: spacing.sm },
-  error: { color: colors.danger, fontSize: type.small.fontSize, marginBottom: spacing.lg },
-  notice: { color: colors.success, fontSize: type.small.fontSize, marginBottom: spacing.lg, lineHeight: 20 },
-  legal: { color: colors.mutedLight, fontSize: 12, marginTop: spacing.lg, lineHeight: 18, textAlign: 'center' },
-  muted: { color: colors.muted, fontSize: type.small.fontSize },
-  linkStrong: { color: colors.primary, fontWeight: '700' },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, flexGrow: 1 },
+  error: { ...text.small, color: colors.danger, marginBottom: spacing.md },
+  notice: { ...text.small, color: colors.success, marginBottom: spacing.md },
+  legal: { ...text.small, fontSize: 12, textAlign: 'center', marginTop: spacing.lg },
+  link: { ...text.smallStrong, color: colors.primary },
+  footer: { marginTop: spacing.xl, alignSelf: 'center' },
 });

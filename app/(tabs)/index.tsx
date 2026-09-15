@@ -1,21 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text as RNText, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, ErrorState, Loading, Pill } from '../../src/components/ui';
+import { EmptyState, ErrorState, Kicker, Loading, Pill, Text } from '../../src/components/ui';
 import { useAuth } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import type { ItemKind, ItemWithCategory } from '../../src/lib/database.types';
-import { colors, radius, spacing, type } from '../../src/theme/tokens';
+import { colors, radius, shadow, spacing, text } from '../../src/theme/tokens';
 
 type Filter = 'all' | ItemKind;
 
@@ -24,6 +16,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'lost', label: 'Lost' },
   { key: 'found', label: 'Found' },
 ];
+
+const SELECT =
+  'id,short_code,reporter_id,kind,title,description,category_id,location_text,latitude,longitude,date_occurred,status,moderation_status,flagged_count,created_at,updated_at,categories(id,name,icon)';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 export default function Registry() {
   const router = useRouter();
@@ -38,12 +37,9 @@ export default function Registry() {
 
   const fetchItems = useCallback(async () => {
     setError(null);
-
     let query = supabase
       .from('items')
-      .select(
-        'id,short_code,reporter_id,kind,title,description,category_id,location_text,latitude,longitude,date_occurred,status,moderation_status,flagged_count,created_at,updated_at,categories(id,name,icon)',
-      )
+      .select(SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -52,13 +48,11 @@ export default function Registry() {
 
     const term = search.trim();
     if (term) {
-      // Escape PostgREST's or() delimiters before interpolating user input.
       const safe = term.replace(/[,()*]/g, ' ').trim();
       if (safe) query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%,short_code.ilike.%${safe}%`);
     }
 
     const { data, error: err } = await query;
-
     if (err) {
       setError(err.message);
       setItems([]);
@@ -70,13 +64,11 @@ export default function Registry() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // Debounce so typing in the search box doesn't fire a request per keystroke.
     const t = setTimeout(() => {
       fetchItems().finally(() => {
         if (!cancelled) setLoading(false);
       });
     }, search ? 300 : 0);
-
     return () => {
       cancelled = true;
       clearTimeout(t);
@@ -89,13 +81,19 @@ export default function Registry() {
     setRefreshing(false);
   }
 
-  const firstName = profile?.full_name?.split(' ')[0] ?? profile?.username ?? 'there';
+  const name = profile?.full_name ?? profile?.username ?? 'Member';
+  const initials = name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <View style={s.header}>
-        <Text style={s.greeting}>Hello, {firstName}</Text>
-        <Text style={s.h1}>Recently handed in</Text>
+        <View style={{ flex: 1 }}>
+          <Kicker tone="muted">Community member</Kicker>
+          <Text variant="h1">My dashboard</Text>
+        </View>
+        <View style={s.avatar}>
+          <RNText style={s.avatarText}>{initials}</RNText>
+        </View>
       </View>
 
       <View style={s.searchRow}>
@@ -103,7 +101,7 @@ export default function Registry() {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search titles, descriptions or a code"
+          placeholder="Search the registry"
           placeholderTextColor={colors.mutedFaint}
           style={s.searchInput}
           autoCapitalize="none"
@@ -121,9 +119,9 @@ export default function Registry() {
           <Pressable
             key={f.key}
             onPress={() => setFilter(f.key)}
-            style={[s.filterChip, filter === f.key && s.filterChipActive]}
+            style={[s.chip, filter === f.key && s.chipActive]}
           >
-            <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+            <RNText style={[s.chipText, filter === f.key && { color: colors.white }]}>{f.label}</RNText>
           </Pressable>
         ))}
       </View>
@@ -137,7 +135,16 @@ export default function Registry() {
           data={items}
           keyExtractor={(i) => i.id}
           contentContainerStyle={
-            items.length === 0 ? { flexGrow: 1 } : { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md }
+            items.length === 0
+              ? { flexGrow: 1 }
+              : { paddingHorizontal: spacing.xl, paddingBottom: 120, gap: spacing.md }
+          }
+          ListHeaderComponent={
+            items.length ? (
+              <View style={s.sectionRow}>
+                <Text variant="h3">Recently handed in</Text>
+              </View>
+            ) : null
           }
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           ListEmptyComponent={
@@ -153,32 +160,30 @@ export default function Registry() {
           }
           renderItem={({ item }) => (
             <Pressable style={s.card} onPress={() => router.push(`/item/${item.id}`)}>
-              <View style={s.cardTop}>
-                <Pill text={item.kind === 'lost' ? 'LOST' : 'FOUND'} tone={item.kind} />
-                <Text style={s.code}>{item.short_code}</Text>
+              <View style={s.thumb}>
+                <Ionicons name="pricetag-outline" size={26} color={colors.mutedFaint} />
+                <View style={s.chipOnThumb}>
+                  <Pill text={item.kind === 'lost' ? 'Lost' : 'Found'} tone={item.kind} />
+                </View>
               </View>
 
-              <Text style={s.cardTitle} numberOfLines={1}>
+              <Text variant="cardTitle" numberOfLines={1}>
                 {item.title}
               </Text>
 
-              {!!item.description && (
-                <Text style={s.cardBody} numberOfLines={2}>
-                  {item.description}
-                </Text>
+              {!!item.location_text && (
+                <View style={s.locRow}>
+                  <Ionicons name="location-outline" size={13} color={colors.mutedLight} />
+                  <RNText style={[text.small, { flexShrink: 1 }]} numberOfLines={1}>
+                    {item.location_text}
+                  </RNText>
+                </View>
               )}
 
-              <View style={s.cardMeta}>
-                {!!item.categories?.name && <Text style={s.metaText}>{item.categories.name}</Text>}
-                {!!item.location_text && (
-                  <>
-                    <Text style={s.metaDot}>·</Text>
-                    <Text style={s.metaText} numberOfLines={1}>
-                      {item.location_text}
-                    </Text>
-                  </>
-                )}
-              </View>
+              {/* Mono meta line, as in the prototype: FOUND-2018 · 11 Jun 2024 */}
+              <RNText style={[text.meta, { marginTop: spacing.sm }]}>
+                {item.short_code} · {formatDate(item.created_at)}
+              </RNText>
             </Pressable>
           )}
         />
@@ -189,50 +194,60 @@ export default function Registry() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  greeting: { fontSize: type.small.fontSize, color: colors.muted, fontWeight: '600' },
-  h1: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink, marginTop: 2 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadow.field,
+  },
+  avatarText: { fontFamily: text.brand.fontFamily, fontSize: 13, color: colors.primary },
 
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.md,
-    height: 44,
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    height: 52,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.field,
+    ...shadow.field,
   },
-  searchInput: { flex: 1, fontSize: type.small.fontSize, color: colors.ink },
+  searchInput: { flex: 1, ...text.input, paddingVertical: 0 },
 
-  filters: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  filterChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 7,
+  filters: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
+  chip: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 9,
     borderRadius: radius.pill,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    ...shadow.field,
   },
-  filterChipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
-  filterText: { fontSize: 13, fontWeight: '600', color: colors.muted },
-  filterTextActive: { color: colors.white },
+  chipActive: { backgroundColor: colors.ink },
+  chipText: { ...text.smallStrong, color: colors.muted },
 
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    padding: spacing.lg,
+  sectionRow: { paddingVertical: spacing.lg },
+
+  card: { backgroundColor: colors.card, borderRadius: radius.cardLarge, padding: spacing.md, ...shadow.card },
+  thumb: {
+    height: 128,
+    borderRadius: radius.field,
+    backgroundColor: colors.bgAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  code: { fontSize: type.tiny.fontSize, fontWeight: '700', color: colors.mutedLight, letterSpacing: 0.5 },
-  cardTitle: { fontSize: type.h3.fontSize, fontWeight: '700', color: colors.ink },
-  cardBody: { fontSize: type.small.fontSize, color: colors.muted, marginTop: spacing.xs, lineHeight: 19 },
-  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.md },
-  metaText: { fontSize: 12, color: colors.mutedLight, flexShrink: 1 },
-  metaDot: { fontSize: 12, color: colors.mutedFaint },
+  chipOnThumb: { position: 'absolute', top: spacing.sm, left: spacing.sm },
+  locRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
 });

@@ -1,29 +1,29 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text as RNText, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../src/components/ui';
+import { Button, Field, Text } from '../../src/components/ui';
 import { useAuth } from '../../src/lib/auth';
-import { colors, spacing, type } from '../../src/theme/tokens';
+import { colors, radius, spacing, text } from '../../src/theme/tokens';
 
 export default function Login() {
   const router = useRouter();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const canSubmit = email.trim().length > 0 && password.length > 0;
+
   async function submit() {
     setError(null);
-    if (!email.trim() || !password) {
-      setError('Enter your email and password.');
-      return;
-    }
+    if (!canSubmit) return;
     setBusy(true);
     try {
       await signIn(email, password);
-      // AuthGate redirects into the tabs once the session lands.
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not sign in.');
     } finally {
@@ -32,46 +32,54 @@ export default function Login() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <Text style={s.title}>Welcome back</Text>
-          <Text style={s.sub}>Sign in to pick up where you left off.</Text>
-
-          <View style={{ height: spacing.xxl }} />
+          <Text variant="h1">Welcome back</Text>
+          <Text variant="body" style={{ marginTop: spacing.sm, marginBottom: spacing.xxl }}>
+            Great to see you again. Let's find what you're looking for.
+          </Text>
 
           <Field
-            label="Email"
+            icon="person-outline"
             value={email}
             onChangeText={setEmail}
-            placeholder="you@example.com"
+            placeholder="Username or email"
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
             inputMode="email"
           />
           <Field
-            label="Password"
+            icon="lock-closed-outline"
             value={password}
             onChangeText={setPassword}
-            placeholder="Your password"
+            placeholder="Password"
             secureTextEntry
             autoCapitalize="none"
             autoComplete="current-password"
           />
 
-          {!!error && <Text style={s.error}>{error}</Text>}
+          <View style={s.row}>
+            <Pressable style={s.remember} onPress={() => setRemember(!remember)} hitSlop={8}>
+              <View style={[s.check, remember && { backgroundColor: colors.primary }]}>
+                {remember && <Ionicons name="checkmark" size={13} color={colors.white} />}
+              </View>
+              <RNText style={text.small}>Remember me</RNText>
+            </Pressable>
+            <Pressable onPress={() => router.push('/(auth)/forgot')} hitSlop={8}>
+              <RNText style={s.link}>Forgot password?</RNText>
+            </Pressable>
+          </View>
 
-          <Button label="Sign in" onPress={submit} loading={busy} />
+          {!!error && <RNText style={s.error}>{error}</RNText>}
 
-          <Pressable onPress={() => router.push('/(auth)/forgot')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
-            <Text style={s.link}>Forgot your password?</Text>
-          </Pressable>
+          <Button label="Sign in & continue" onPress={submit} loading={busy} disabled={!canSubmit} />
 
-          <Pressable onPress={() => router.push('/(auth)/signup')} style={{ marginTop: spacing.xxl, alignSelf: 'center' }}>
-            <Text style={s.muted}>
-              New here? <Text style={s.linkStrong}>Create an account</Text>
-            </Text>
+          <Pressable onPress={() => router.push('/(auth)/signup')} style={s.footer}>
+            <RNText style={text.small}>
+              New here? <RNText style={s.link}>Join free in 30 seconds</RNText>
+            </RNText>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -81,11 +89,18 @@ export default function Login() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.xl, paddingTop: spacing.xxl, flexGrow: 1 },
-  title: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
-  sub: { fontSize: type.body.fontSize, color: colors.muted, marginTop: spacing.sm },
-  error: { color: colors.danger, fontSize: type.small.fontSize, marginBottom: spacing.lg },
-  link: { color: colors.primary, fontSize: type.small.fontSize, fontWeight: '600' },
-  linkStrong: { color: colors.primary, fontWeight: '700' },
-  muted: { color: colors.muted, fontSize: type.small.fontSize },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, flexGrow: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: spacing.lg },
+  remember: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  check: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  link: { ...text.smallStrong, color: colors.primary },
+  error: { ...text.small, color: colors.danger, marginBottom: spacing.md },
+  footer: { marginTop: spacing.xxl, alignSelf: 'center' },
 });
