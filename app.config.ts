@@ -8,6 +8,10 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_jyjxzLjsC4GZfGrnfup4Sw_Nu1gscpS';
 
+// Set once the Expo project exists (expo.dev -> project -> Overview -> ID).
+// EAS_PROJECT_ID overrides it in CI.
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
+
 const config: ExpoConfig = {
   name: 'Lost Items Community',
   slug: 'lostitemscommunity-app',
@@ -15,6 +19,13 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   scheme: 'lostitems',
   userInterfaceStyle: 'light',
+  // Fingerprint means EAS derives the runtime version from the native
+  // dependency set, so an update can never land on a build it is
+  // incompatible with. Adding a native module simply requires a new build.
+  runtimeVersion: { policy: 'fingerprint' },
+  updates: EAS_PROJECT_ID
+    ? { url: `https://u.expo.dev/${EAS_PROJECT_ID}` }
+    : undefined,
   icon: './assets/icon.png',
   ios: {
     supportsTablet: true,
@@ -32,6 +43,7 @@ const config: ExpoConfig = {
   web: { favicon: './assets/favicon.png' },
   plugins: [
     'expo-router',
+    'expo-updates',
     [
       'expo-image-picker',
       {
@@ -45,6 +57,7 @@ const config: ExpoConfig = {
   extra: {
     supabaseUrl: SUPABASE_URL,
     supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
+    eas: EAS_PROJECT_ID ? { projectId: EAS_PROJECT_ID } : undefined,
   },
 };
 
