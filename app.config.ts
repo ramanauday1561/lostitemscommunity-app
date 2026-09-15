@@ -57,6 +57,11 @@ const config: ExpoConfig = {
       },
     ],
   ],
+  // Set only for the web preview, which is served from a subdirectory on
+  // GitHub Pages. Native builds leave it unset and use absolute paths.
+  experiments: process.env.EXPO_WEB_BASE_URL
+    ? { baseUrl: process.env.EXPO_WEB_BASE_URL }
+    : undefined,
   extra: {
     supabaseUrl: SUPABASE_URL,
     supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
