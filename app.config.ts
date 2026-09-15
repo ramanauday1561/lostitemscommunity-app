@@ -15,6 +15,9 @@ const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
 const config: ExpoConfig = {
   name: 'Lost Items Community',
   slug: 'lostitemscommunity-app',
+  // The EAS project lives under an organisation account, so owner must be
+  // set explicitly or the CLI resolves against a personal account instead.
+  owner: 'ramanauday1561s-team',
   version: '1.0.0',
   orientation: 'portrait',
   scheme: 'lostitems',
