@@ -6,17 +6,32 @@ backed by Supabase.
 Build order, per-screen checklists and build prompts live in the
 [management hub](https://ramanauday1561.github.io/lostitemscommunity-management/).
 
-## Run it on your phone
+## Run it on your phone (no laptop needed)
+
+Expo Go is **not** used here: it needs a dev server running on a computer.
+Instead this project uses an **Android development build** installed once from a
+link, after which every JS change arrives over the air via EAS Update.
+
+**One-time setup**
+
+1. Create/connect the project on [expo.dev](https://expo.dev) and link this GitHub repo.
+2. Set `EAS_PROJECT_ID` (or paste the id into `app.config.ts`).
+3. Run the `Create Android development build` workflow.
+4. Open the build's install link on the phone and install the APK.
+
+**Everyday loop**
+
+Push to `main` or any `claude/**` branch. `publish-update.yml` publishes an update
+to the `development` branch; reopen the app on the phone to pick it up.
+A rebuild is only needed when the **native** side changes — a new native module,
+a config plugin, or an SDK bump. The fingerprint runtime policy enforces this
+automatically: an incompatible update will not be offered to an old build.
+
+**With a computer (optional)**
 
 ```bash
-npm install
-npm start
+npm install && npm start
 ```
-
-Then scan the QR code with **Expo Go** ([iOS](https://apps.apple.com/app/expo-go/id982107779) ·
-[Android](https://play.google.com/store/apps/details?id=host.exp.exponent)).
-Expo Go is free, and your phone must be on the same Wi-Fi as the machine running `npm start`.
-If the two can't see each other, use `npx expo start --tunnel`.
 
 ## What works today
 
