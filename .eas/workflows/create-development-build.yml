@@ -1,0 +1,15 @@
+name: Create Android development build
+
+# Run this only when the NATIVE side changes (a new native module, an app
+# config plugin, an SDK bump). Plain JS/TS changes never need a rebuild —
+# publish-update.yml covers those.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  android_development_build:
+    name: Build Android dev client
+    type: build
+    params:
+      platform: android
+      profile: development
