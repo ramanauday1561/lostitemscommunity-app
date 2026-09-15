@@ -1,11 +1,19 @@
 import { createTheme } from '@shopify/restyle';
-import { colors as c, font, radius, shadow, spacing as sp } from './tokens';
+import { colors as c, font, radius, spacing as sp } from './tokens';
 
 /**
  * Restyle theme. Values come from tokens.ts, which was measured off the
  * prototype — this file only reshapes them into Restyle's contract so
  * screens can use typed variants instead of ad-hoc StyleSheet objects.
  */
+const CARD_SHADOW = {
+  shadowColor: 'ink',
+  shadowOpacity: 0.06,
+  shadowRadius: 18,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 2,
+} as const;
+
 const theme = createTheme({
   colors: {
     ink: c.ink,
@@ -61,11 +69,13 @@ const theme = createTheme({
   },
 
   cardVariants: {
-    defaults: { backgroundColor: 'surface', borderRadius: 'card', padding: 'xl', ...shadow.card },
+    // Restyle resolves shadowColor through the theme palette, so it must be
+    // a colour KEY here — passing the raw hex from tokens throws at render.
+    defaults: { backgroundColor: 'surface', borderRadius: 'card', padding: 'xl', ...CARD_SHADOW },
     /** Carousel item card — tighter padding, rounder corners. */
-    item: { backgroundColor: 'surface', borderRadius: 'cardLarge', padding: 'md', ...shadow.card },
+    item: { backgroundColor: 'surface', borderRadius: 'cardLarge', padding: 'md', ...CARD_SHADOW },
     /** Quick-action row. */
-    row: { backgroundColor: 'surface', borderRadius: 'card', padding: 'lg', ...shadow.card },
+    row: { backgroundColor: 'surface', borderRadius: 'card', padding: 'lg', ...CARD_SHADOW },
     flat: { backgroundColor: 'surface', borderRadius: 'field', padding: 'lg' },
   },
 });

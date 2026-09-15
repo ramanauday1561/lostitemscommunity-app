@@ -1,9 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text as RNText, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, ErrorState, Kicker, Loading, Pill, Text } from '../../src/components/ui';
+import { EmptyState, ErrorState, Loading } from '../../src/components/ui';
+import {
+  ActionRow,
+  AvatarButton,
+  CardRail,
+  IconButton,
+  ItemCard,
+  ScreenHeader,
+  SectionHeader,
+} from '../../src/components/layout';
+import { Box, Text } from '../../src/components/primitives';
 import { useAuth } from '../../src/lib/auth';
 import { supabase } from '../../src/lib/supabase';
 import type { ItemKind, ItemWithCategory } from '../../src/lib/database.types';
@@ -20,15 +30,18 @@ const FILTERS: { key: Filter; label: string }[] = [
 const SELECT =
   'id,short_code,reporter_id,kind,title,description,category_id,location_text,latitude,longitude,date_occurred,status,moderation_status,flagged_count,created_at,updated_at,categories(id,name,icon)';
 
+const CARD_WIDTH = 262;
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function Registry() {
+export default function Dashboard() {
   const router = useRouter();
   const { profile } = useAuth();
 
   const [items, setItems] = useState<ItemWithCategory[]>([]);
+  const [recent, setRecent] = useState<ItemWithCategory[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -37,6 +50,7 @@ export default function Registry() {
 
   const fetchItems = useCallback(async () => {
     setError(null);
+
     let query = supabase
       .from('items')
       .select(SELECT)
@@ -52,13 +66,26 @@ export default function Registry() {
       if (safe) query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%,short_code.ilike.%${safe}%`);
     }
 
-    const { data, error: err } = await query;
-    if (err) {
-      setError(err.message);
+    const [listRes, recentRes] = await Promise.all([
+      query,
+      // The rail always shows the newest handed-in items, independent of
+      // whatever filter or search the list below is using.
+      supabase
+        .from('items')
+        .select(SELECT)
+        .eq('status', 'active')
+        .eq('kind', 'found')
+        .order('created_at', { ascending: false })
+        .limit(8),
+    ]);
+
+    if (listRes.error) {
+      setError(listRes.error.message);
       setItems([]);
     } else {
-      setItems((data ?? []) as unknown as ItemWithCategory[]);
+      setItems((listRes.data ?? []) as unknown as ItemWithCategory[]);
     }
+    if (!recentRes.error) setRecent((recentRes.data ?? []) as unknown as ItemWithCategory[]);
   }, [filter, search]);
 
   useEffect(() => {
@@ -84,17 +111,60 @@ export default function Registry() {
   const name = profile?.full_name ?? profile?.username ?? 'Member';
   const initials = name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
-  return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <View style={{ flex: 1 }}>
-          <Kicker tone="muted">Community member</Kicker>
-          <Text variant="h1">My dashboard</Text>
-        </View>
-        <View style={s.avatar}>
-          <RNText style={s.avatarText}>{initials}</RNText>
-        </View>
-      </View>
+  const header = (
+    <>
+      <ScreenHeader
+        kicker="Community member"
+        title="My dashboard"
+        right={
+          <>
+            <IconButton icon="chatbubble-outline" onPress={() => router.push('/(tabs)/inbox')} />
+            <AvatarButton initials={initials} onPress={() => router.push('/(tabs)/profile')} />
+          </>
+        }
+      />
+
+      {recent.length > 0 && (
+        <>
+          <SectionHeader title="Recently handed in" actionLabel="See all" onAction={() => setFilter('found')} />
+          <CardRail>
+            {recent.map((it) => (
+              <ItemCard
+                key={it.id}
+                width={CARD_WIDTH}
+                title={it.title}
+                location={it.location_text}
+                meta={`${it.short_code} · ${formatDate(it.created_at)}`}
+                status={it.status === 'resolved' ? 'Resolved' : 'Active'}
+                onPress={() => router.push(`/item/${it.id}`)}
+              />
+            ))}
+          </CardRail>
+        </>
+      )}
+
+      <Box marginTop="xxl" />
+      <ActionRow
+        icon="search-outline"
+        title="Search lost items registry"
+        body="Browse recent lost reports from members in your city."
+        onPress={() => setFilter('lost')}
+      />
+      <ActionRow
+        icon="storefront-outline"
+        title="Search found items registry"
+        body="Check if someone handed in what you are missing."
+        tone="ok"
+        onPress={() => setFilter('found')}
+      />
+      <ActionRow
+        icon="chatbubbles-outline"
+        title="Messages"
+        body="Conversations with people returning your items."
+        onPress={() => router.push('/(tabs)/inbox')}
+      />
+
+      <SectionHeader title="The registry" />
 
       <View style={s.searchRow}>
         <Ionicons name="search" size={18} color={colors.mutedLight} />
@@ -114,38 +184,38 @@ export default function Registry() {
         )}
       </View>
 
-      <View style={s.filters}>
+      <Box flexDirection="row" gap="sm" paddingHorizontal="xl" paddingTop="md" paddingBottom="lg">
         {FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            onPress={() => setFilter(f.key)}
-            style={[s.chip, filter === f.key && s.chipActive]}
-          >
-            <RNText style={[s.chipText, filter === f.key && { color: colors.white }]}>{f.label}</RNText>
+          <Pressable key={f.key} onPress={() => setFilter(f.key)} style={[s.chip, filter === f.key && s.chipActive]}>
+            <Text variant="smallStrong" color={filter === f.key ? 'white' : 'muted'}>
+              {f.label}
+            </Text>
           </Pressable>
         ))}
-      </View>
+      </Box>
+    </>
+  );
 
-      {loading ? (
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe} edges={['top']}>
         <Loading label="Fetching the registry…" />
-      ) : error ? (
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {error ? (
         <ErrorState message={error} onRetry={() => void onRefresh()} />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(i) => i.id}
-          contentContainerStyle={
-            items.length === 0
-              ? { flexGrow: 1 }
-              : { paddingHorizontal: spacing.xl, paddingBottom: 120, gap: spacing.md }
-          }
-          ListHeaderComponent={
-            items.length ? (
-              <View style={s.sectionRow}>
-                <Text variant="h3">Recently handed in</Text>
-              </View>
-            ) : null
-          }
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingBottom: 130 }}
+          columnWrapperStyle={{ paddingHorizontal: spacing.xl, gap: spacing.md }}
+          numColumns={2}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           ListEmptyComponent={
             <EmptyState
@@ -158,33 +228,17 @@ export default function Registry() {
               action={{ label: 'Report an item', onPress: () => router.push('/(tabs)/report') }}
             />
           }
+          ItemSeparatorComponent={() => <Box height={spacing.md} />}
           renderItem={({ item }) => (
-            <Pressable style={s.card} onPress={() => router.push(`/item/${item.id}`)}>
-              <View style={s.thumb}>
-                <Ionicons name="pricetag-outline" size={26} color={colors.mutedFaint} />
-                <View style={s.chipOnThumb}>
-                  <Pill text={item.kind === 'lost' ? 'Lost' : 'Found'} tone={item.kind} />
-                </View>
-              </View>
-
-              <Text variant="cardTitle" numberOfLines={1}>
-                {item.title}
-              </Text>
-
-              {!!item.location_text && (
-                <View style={s.locRow}>
-                  <Ionicons name="location-outline" size={13} color={colors.mutedLight} />
-                  <RNText style={[text.small, { flexShrink: 1 }]} numberOfLines={1}>
-                    {item.location_text}
-                  </RNText>
-                </View>
-              )}
-
-              {/* Mono meta line, as in the prototype: FOUND-2018 · 11 Jun 2024 */}
-              <RNText style={[text.meta, { marginTop: spacing.sm }]}>
-                {item.short_code} · {formatDate(item.created_at)}
-              </RNText>
-            </Pressable>
+            <Box flex={1}>
+              <ItemCard
+                title={item.title}
+                location={item.location_text}
+                meta={`${item.short_code} · ${formatDate(item.created_at)}`}
+                status={item.kind === 'lost' ? 'Lost' : 'Found'}
+                onPress={() => router.push(`/item/${item.id}`)}
+              />
+            </Box>
           )}
         />
       )}
@@ -194,30 +248,11 @@ export default function Registry() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    gap: spacing.md,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadow.field,
-  },
-  avatarText: { fontFamily: text.brand.fontFamily, fontSize: 13, color: colors.primary },
-
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     marginHorizontal: spacing.xl,
-    marginTop: spacing.xl,
     paddingHorizontal: spacing.xl,
     height: 52,
     backgroundColor: colors.card,
@@ -225,8 +260,6 @@ const s = StyleSheet.create({
     ...shadow.field,
   },
   searchInput: { flex: 1, ...text.input, paddingVertical: 0 },
-
-  filters: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   chip: {
     paddingHorizontal: spacing.xl,
     paddingVertical: 9,
@@ -235,19 +268,4 @@ const s = StyleSheet.create({
     ...shadow.field,
   },
   chipActive: { backgroundColor: colors.ink },
-  chipText: { ...text.smallStrong, color: colors.muted },
-
-  sectionRow: { paddingVertical: spacing.lg },
-
-  card: { backgroundColor: colors.card, borderRadius: radius.cardLarge, padding: spacing.md, ...shadow.card },
-  thumb: {
-    height: 128,
-    borderRadius: radius.field,
-    backgroundColor: colors.bgAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  chipOnThumb: { position: 'absolute', top: spacing.sm, left: spacing.sm },
-  locRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
 });

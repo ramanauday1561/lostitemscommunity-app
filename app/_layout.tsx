@@ -15,7 +15,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
+import { ThemeProvider } from '@shopify/restyle';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import theme from '../src/theme/theme';
 import { AuthProvider, useAuth } from '../src/lib/auth';
 import { Loading } from '../src/components/ui';
 import { colors } from '../src/theme/tokens';
@@ -62,17 +64,19 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <AuthGate>
-          <StatusBar style="dark" />
+    <ThemeProvider theme={theme}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <AuthGate>
+            <StatusBar style="dark" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="item/[id]" options={{ headerShown: true, title: 'Item', headerBackTitle: 'Back' }} />
           </Stack>
-        </AuthGate>
-      </AuthProvider>
-    </SafeAreaProvider>
+          </AuthGate>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
