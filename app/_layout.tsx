@@ -23,16 +23,20 @@ import { Loading } from '@/components/ui';
 import { colors } from '@/theme/tokens';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, initialising } = useAuth();
+  const { session, profile, initialising } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (initialising) return;
     const inAuthGroup = segments[0] === '(auth)';
-    if (!session && !inAuthGroup) router.replace('/(auth)/welcome');
-    else if (session && inAuthGroup) router.replace('/(tabs)');
-  }, [session, initialising, segments, router]);
+    if (!session && !inAuthGroup) {
+      router.replace('/(auth)/welcome');
+    } else if (session && inAuthGroup) {
+      // Admins land in the control app, members in the community app.
+      router.replace(profile?.role === 'admin' ? '/(admin)' : '/(tabs)');
+    }
+  }, [session, profile, initialising, segments, router]);
 
   if (initialising) {
     return (
@@ -72,6 +76,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(admin)" />
             <Stack.Screen name="item/[id]" options={{ headerShown: true, title: 'Item', headerBackTitle: 'Back' }} />
           </Stack>
           </AuthGate>
