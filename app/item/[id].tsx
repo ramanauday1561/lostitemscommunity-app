@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ErrorState, Loading, Pill } from '../../src/components/ui';
-import { supabase } from '../../src/lib/supabase';
-import type { ItemWithCategory } from '../../src/lib/database.types';
-import { colors, radius, spacing, text } from '../../src/theme/tokens';
+import { ErrorState, Loading, Pill } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
+import type { ItemWithCategory } from '@/lib/database.types';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();

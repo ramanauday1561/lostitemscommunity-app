@@ -10,11 +10,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../src/components/ui';
-import { useAuth } from '../../src/lib/auth';
-import { supabase } from '../../src/lib/supabase';
-import type { Category, ItemKind } from '../../src/lib/database.types';
-import { colors, radius, spacing, text } from '../../src/theme/tokens';
+import { Button, Field } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { Category, ItemKind } from '@/lib/database.types';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function Report() {
   const router = useRouter();

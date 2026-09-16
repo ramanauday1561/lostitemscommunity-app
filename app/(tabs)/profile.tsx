@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card } from '../../src/components/ui';
-import { useAuth } from '../../src/lib/auth';
-import { colors, radius, spacing, text } from '../../src/theme/tokens';
+import { Button, Card } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function ProfileScreen() {
   const { profile, user, signOut } = useAuth();

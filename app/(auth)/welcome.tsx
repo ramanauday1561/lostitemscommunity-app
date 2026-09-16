@@ -12,8 +12,8 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Kicker, Text } from '../../src/components/ui';
-import { colors, radius, spacing, text } from '../../src/theme/tokens';
+import { Button, Kicker, Text } from '@/components/ui';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 const SLIDES = [
   {

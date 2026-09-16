@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, ErrorState, Loading } from '../../src/components/ui';
+import { EmptyState, ErrorState, Loading } from '@/components/ui';
 import {
   ActionRow,
   AvatarButton,
@@ -12,12 +12,12 @@ import {
   ItemCard,
   ScreenHeader,
   SectionHeader,
-} from '../../src/components/layout';
-import { Box, Text } from '../../src/components/primitives';
-import { useAuth } from '../../src/lib/auth';
-import { supabase } from '../../src/lib/supabase';
-import type { ItemKind, ItemWithCategory } from '../../src/lib/database.types';
-import { colors, radius, shadow, spacing, text } from '../../src/theme/tokens';
+} from '@/components/layout';
+import { Box, Text } from '@/components/primitives';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { ItemKind, ItemWithCategory } from '@/lib/database.types';
+import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
 type Filter = 'all' | ItemKind;
 

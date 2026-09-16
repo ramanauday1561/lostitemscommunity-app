@@ -17,10 +17,10 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { ThemeProvider } from '@shopify/restyle';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import theme from '../src/theme/theme';
-import { AuthProvider, useAuth } from '../src/lib/auth';
-import { Loading } from '../src/components/ui';
-import { colors } from '../src/theme/tokens';
+import theme from '@/theme/theme';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { Loading } from '@/components/ui';
+import { colors } from '@/theme/tokens';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, initialising } = useAuth();

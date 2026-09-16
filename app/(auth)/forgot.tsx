@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text as RNText } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field, Text } from '../../src/components/ui';
-import { useAuth } from '../../src/lib/auth';
-import { colors, spacing, text } from '../../src/theme/tokens';
+import { Button, Field, Text } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { colors, spacing, text } from '@/theme/tokens';
 
 export default function Forgot() {
   const router = useRouter();

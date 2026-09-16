@@ -1,6 +1,6 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScreenPlaceholder } from '../../src/components/ui';
-import { colors } from '../../src/theme/tokens';
+import { ScreenPlaceholder } from '@/components/ui';
+import { colors } from '@/theme/tokens';
 
 export default function Inbox() {
   return (
