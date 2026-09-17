@@ -1,21 +1,23 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EmptyState, ErrorState, Loading, Pill } from '../../src/components/ui';
-import { useAuth } from '../../src/lib/auth';
-import { supabase } from '../../src/lib/supabase';
-import type { ItemKind, ItemWithCategory } from '../../src/lib/database.types';
-import { colors, radius, spacing, type } from '../../src/theme/tokens';
+import { EmptyState, ErrorState, Loading } from '@/components/ui';
+import {
+  ActionRow,
+  AvatarButton,
+  CardRail,
+  IconButton,
+  ItemCard,
+  ScreenHeader,
+  SectionHeader,
+} from '@/components/layout';
+import { Box, Text } from '@/components/primitives';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { ItemKind, ItemWithCategory } from '@/lib/database.types';
+import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
 type Filter = 'all' | ItemKind;
 
@@ -25,11 +27,21 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'found', label: 'Found' },
 ];
 
-export default function Registry() {
+const SELECT =
+  'id,short_code,reporter_id,kind,title,description,category_id,location_text,latitude,longitude,date_occurred,status,moderation_status,flagged_count,created_at,updated_at,categories(id,name,icon)';
+
+const CARD_WIDTH = 262;
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+export default function Dashboard() {
   const router = useRouter();
   const { profile } = useAuth();
 
   const [items, setItems] = useState<ItemWithCategory[]>([]);
+  const [recent, setRecent] = useState<ItemWithCategory[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,9 +53,7 @@ export default function Registry() {
 
     let query = supabase
       .from('items')
-      .select(
-        'id,short_code,reporter_id,kind,title,description,category_id,location_text,latitude,longitude,date_occurred,status,moderation_status,flagged_count,created_at,updated_at,categories(id,name,icon)',
-      )
+      .select(SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(50);
@@ -52,31 +62,40 @@ export default function Registry() {
 
     const term = search.trim();
     if (term) {
-      // Escape PostgREST's or() delimiters before interpolating user input.
       const safe = term.replace(/[,()*]/g, ' ').trim();
       if (safe) query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%,short_code.ilike.%${safe}%`);
     }
 
-    const { data, error: err } = await query;
+    const [listRes, recentRes] = await Promise.all([
+      query,
+      // The rail always shows the newest handed-in items, independent of
+      // whatever filter or search the list below is using.
+      supabase
+        .from('items')
+        .select(SELECT)
+        .eq('status', 'active')
+        .eq('kind', 'found')
+        .order('created_at', { ascending: false })
+        .limit(8),
+    ]);
 
-    if (err) {
-      setError(err.message);
+    if (listRes.error) {
+      setError(listRes.error.message);
       setItems([]);
     } else {
-      setItems((data ?? []) as unknown as ItemWithCategory[]);
+      setItems((listRes.data ?? []) as unknown as ItemWithCategory[]);
     }
+    if (!recentRes.error) setRecent((recentRes.data ?? []) as unknown as ItemWithCategory[]);
   }, [filter, search]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    // Debounce so typing in the search box doesn't fire a request per keystroke.
     const t = setTimeout(() => {
       fetchItems().finally(() => {
         if (!cancelled) setLoading(false);
       });
     }, search ? 300 : 0);
-
     return () => {
       cancelled = true;
       clearTimeout(t);
@@ -89,21 +108,70 @@ export default function Registry() {
     setRefreshing(false);
   }
 
-  const firstName = profile?.full_name?.split(' ')[0] ?? profile?.username ?? 'there';
+  const name = profile?.full_name ?? profile?.username ?? 'Member';
+  const initials = name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 
-  return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <Text style={s.greeting}>Hello, {firstName}</Text>
-        <Text style={s.h1}>Recently handed in</Text>
-      </View>
+  const header = (
+    <>
+      <ScreenHeader
+        kicker="Community member"
+        title="My dashboard"
+        right={
+          <>
+            <IconButton icon="chatbubble-outline" onPress={() => router.push('/(tabs)/inbox')} />
+            <AvatarButton initials={initials} onPress={() => router.push('/(tabs)/profile')} />
+          </>
+        }
+      />
+
+      {recent.length > 0 && (
+        <>
+          <SectionHeader title="Recently handed in" actionLabel="See all" onAction={() => setFilter('found')} />
+          <CardRail>
+            {recent.map((it) => (
+              <ItemCard
+                key={it.id}
+                width={CARD_WIDTH}
+                title={it.title}
+                location={it.location_text}
+                meta={`${it.short_code} · ${formatDate(it.created_at)}`}
+                status={it.status === 'resolved' ? 'Resolved' : 'Active'}
+                onPress={() => router.push(`/item/${it.id}`)}
+              />
+            ))}
+          </CardRail>
+        </>
+      )}
+
+      <Box marginTop="xxl" />
+      <ActionRow
+        icon="search-outline"
+        title="Search lost items registry"
+        body="Browse recent lost reports from members in your city."
+        onPress={() => setFilter('lost')}
+      />
+      <ActionRow
+        icon="storefront-outline"
+        title="Search found items registry"
+        body="Check if someone handed in what you are missing."
+        tone="ok"
+        onPress={() => setFilter('found')}
+      />
+      <ActionRow
+        icon="chatbubbles-outline"
+        title="Messages"
+        body="Conversations with people returning your items."
+        onPress={() => router.push('/(tabs)/inbox')}
+      />
+
+      <SectionHeader title="The registry" />
 
       <View style={s.searchRow}>
         <Ionicons name="search" size={18} color={colors.mutedLight} />
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search titles, descriptions or a code"
+          placeholder="Search the registry"
           placeholderTextColor={colors.mutedFaint}
           style={s.searchInput}
           autoCapitalize="none"
@@ -116,29 +184,38 @@ export default function Registry() {
         )}
       </View>
 
-      <View style={s.filters}>
+      <Box flexDirection="row" gap="sm" paddingHorizontal="xl" paddingTop="md" paddingBottom="lg">
         {FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            onPress={() => setFilter(f.key)}
-            style={[s.filterChip, filter === f.key && s.filterChipActive]}
-          >
-            <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+          <Pressable key={f.key} onPress={() => setFilter(f.key)} style={[s.chip, filter === f.key && s.chipActive]}>
+            <Text variant="smallStrong" color={filter === f.key ? 'white' : 'muted'}>
+              {f.label}
+            </Text>
           </Pressable>
         ))}
-      </View>
+      </Box>
+    </>
+  );
 
-      {loading ? (
+  if (loading) {
+    return (
+      <SafeAreaView style={s.safe} edges={['top']}>
         <Loading label="Fetching the registry…" />
-      ) : error ? (
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {error ? (
         <ErrorState message={error} onRetry={() => void onRefresh()} />
       ) : (
         <FlatList
           data={items}
           keyExtractor={(i) => i.id}
-          contentContainerStyle={
-            items.length === 0 ? { flexGrow: 1 } : { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md }
-          }
+          ListHeaderComponent={header}
+          contentContainerStyle={{ paddingBottom: 130 }}
+          columnWrapperStyle={{ paddingHorizontal: spacing.xl, gap: spacing.md }}
+          numColumns={2}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           ListEmptyComponent={
             <EmptyState
@@ -151,35 +228,17 @@ export default function Registry() {
               action={{ label: 'Report an item', onPress: () => router.push('/(tabs)/report') }}
             />
           }
+          ItemSeparatorComponent={() => <Box height={spacing.md} />}
           renderItem={({ item }) => (
-            <Pressable style={s.card} onPress={() => router.push(`/item/${item.id}`)}>
-              <View style={s.cardTop}>
-                <Pill text={item.kind === 'lost' ? 'LOST' : 'FOUND'} tone={item.kind} />
-                <Text style={s.code}>{item.short_code}</Text>
-              </View>
-
-              <Text style={s.cardTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
-
-              {!!item.description && (
-                <Text style={s.cardBody} numberOfLines={2}>
-                  {item.description}
-                </Text>
-              )}
-
-              <View style={s.cardMeta}>
-                {!!item.categories?.name && <Text style={s.metaText}>{item.categories.name}</Text>}
-                {!!item.location_text && (
-                  <>
-                    <Text style={s.metaDot}>·</Text>
-                    <Text style={s.metaText} numberOfLines={1}>
-                      {item.location_text}
-                    </Text>
-                  </>
-                )}
-              </View>
-            </Pressable>
+            <Box flex={1}>
+              <ItemCard
+                title={item.title}
+                location={item.location_text}
+                meta={`${item.short_code} · ${formatDate(item.created_at)}`}
+                status={item.kind === 'lost' ? 'Lost' : 'Found'}
+                onPress={() => router.push(`/item/${item.id}`)}
+              />
+            </Box>
           )}
         />
       )}
@@ -189,50 +248,24 @@ export default function Registry() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  greeting: { fontSize: type.small.fontSize, color: colors.muted, fontWeight: '600' },
-  h1: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink, marginTop: 2 },
-
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.md,
-    height: 44,
+    gap: spacing.md,
+    marginHorizontal: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    height: 52,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.field,
+    ...shadow.field,
   },
-  searchInput: { flex: 1, fontSize: type.small.fontSize, color: colors.ink },
-
-  filters: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  filterChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 7,
+  searchInput: { flex: 1, ...text.input, paddingVertical: 0 },
+  chip: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 9,
     borderRadius: radius.pill,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    ...shadow.field,
   },
-  filterChipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
-  filterText: { fontSize: 13, fontWeight: '600', color: colors.muted },
-  filterTextActive: { color: colors.white },
-
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-    padding: spacing.lg,
-  },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-  code: { fontSize: type.tiny.fontSize, fontWeight: '700', color: colors.mutedLight, letterSpacing: 0.5 },
-  cardTitle: { fontSize: type.h3.fontSize, fontWeight: '700', color: colors.ink },
-  cardBody: { fontSize: type.small.fontSize, color: colors.muted, marginTop: spacing.xs, lineHeight: 19 },
-  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.md },
-  metaText: { fontSize: 12, color: colors.mutedLight, flexShrink: 1 },
-  metaDot: { fontSize: 12, color: colors.mutedFaint },
+  chipActive: { backgroundColor: colors.ink },
 });

@@ -1,16 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Loading } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
 import { colors, font, radius, shadow, spacing } from '@/theme/tokens';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-/**
- * The prototype highlights the active tab with a filled pill behind the
- * icon and label, rather than tinting the icon alone. Labels are drawn
- * inside the pill, so the built-in label is switched off.
- */
 function TabItem({ icon, label, focused }: { icon: IconName; label: string; focused: boolean }) {
   return (
     <View style={[s.item, focused && s.itemActive]}>
@@ -22,23 +19,24 @@ function TabItem({ icon, label, focused }: { icon: IconName; label: string; focu
   );
 }
 
-/** Centre action: a raised blue square that breaks the bar's top edge. */
-function ReportFab() {
-  return (
-    <View style={s.fab}>
-      <Ionicons name="add" size={30} color={colors.white} />
-    </View>
-  );
-}
+export default function AdminLayout() {
+  const { profile, initialising } = useAuth();
 
-export default function TabsLayout() {
+  if (initialising) return <Loading label="Checking permissions…" />;
+
+  // RLS is the real boundary; this only stops a non-admin from seeing
+  // screens that would render nothing but errors.
+  if (!profile || profile.role !== 'admin') {
+    return <Redirect href="/(tabs)" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: s.bar,
-        tabBarItemStyle: { height: 68 },
+        tabBarItemStyle: { height: 72 },
       }}
     >
       <Tabs.Screen
@@ -46,17 +44,20 @@ export default function TabsLayout() {
         options={{ tabBarIcon: ({ focused }) => <TabItem icon="grid-outline" label="Home" focused={focused} /> }}
       />
       <Tabs.Screen
-        name="forum"
-        options={{ tabBarIcon: ({ focused }) => <TabItem icon="people-outline" label="Forum" focused={focused} /> }}
-      />
-      <Tabs.Screen name="report" options={{ tabBarIcon: () => <ReportFab /> }} />
-      <Tabs.Screen
-        name="inbox"
-        options={{ tabBarIcon: ({ focused }) => <TabItem icon="mail-outline" label="Messages" focused={focused} /> }}
+        name="registry"
+        options={{ tabBarIcon: ({ focused }) => <TabItem icon="albums-outline" label="Registry" focused={focused} /> }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{ tabBarIcon: ({ focused }) => <TabItem icon="person-outline" label="Profile" focused={focused} /> }}
+        name="moderation"
+        options={{ tabBarIcon: ({ focused }) => <TabItem icon="flag-outline" label="Review" focused={focused} /> }}
+      />
+      <Tabs.Screen
+        name="members"
+        options={{ tabBarIcon: ({ focused }) => <TabItem icon="people-outline" label="Members" focused={focused} /> }}
+      />
+      <Tabs.Screen
+        name="ads"
+        options={{ tabBarIcon: ({ focused }) => <TabItem icon="megaphone-outline" label="Ads" focused={focused} /> }}
       />
     </Tabs>
   );
@@ -80,21 +81,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderRadius: radius.field,
-    minWidth: 62,
+    minWidth: 58,
   },
   itemActive: { backgroundColor: colors.bgAlt },
-  label: { fontFamily: font.semibold, fontSize: 10.5, color: colors.mutedLight },
-  fab: {
-    width: 58,
-    height: 58,
-    borderRadius: 20,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-    ...shadow.floating,
-  },
+  label: { fontFamily: font.semibold, fontSize: 10, color: colors.mutedLight },
 });

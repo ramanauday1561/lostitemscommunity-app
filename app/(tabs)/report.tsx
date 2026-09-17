@@ -10,11 +10,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field } from '../../src/components/ui';
-import { useAuth } from '../../src/lib/auth';
-import { supabase } from '../../src/lib/supabase';
-import type { Category, ItemKind } from '../../src/lib/database.types';
-import { colors, radius, spacing, type } from '../../src/theme/tokens';
+import { Button, Field } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { Category, ItemKind } from '@/lib/database.types';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function Report() {
   const router = useRouter();
@@ -197,24 +197,24 @@ export default function Report() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingTop: spacing.md },
-  h1: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
-  sub: { fontSize: type.small.fontSize, color: colors.muted, marginTop: spacing.xs, marginBottom: spacing.xl },
+  h1: { ...text.h1 },
+  sub: { ...text.small, marginTop: spacing.xs, marginBottom: spacing.xl },
 
   kindRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
   kindChip: {
     flex: 1,
     paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.field,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
   },
   kindChipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
-  kindText: { fontSize: 13, fontWeight: '700', color: colors.muted },
+  kindText: { ...text.smallStrong, color: colors.muted },
   kindTextActive: { color: colors.white },
 
-  fieldLabel: { fontSize: type.small.fontSize, fontWeight: '700', color: colors.ink, marginBottom: spacing.sm },
+  fieldLabel: { ...text.smallStrong, marginBottom: spacing.sm },
   catWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
   catChip: {
     paddingHorizontal: spacing.lg,
@@ -225,10 +225,10 @@ const s = StyleSheet.create({
     borderColor: colors.border,
   },
   catChipActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  catText: { fontSize: 13, color: colors.muted, fontWeight: '600' },
+  catText: { ...text.smallStrong, color: colors.muted },
   catTextActive: { color: colors.primary },
 
-  error: { color: colors.danger, fontSize: type.small.fontSize, marginBottom: spacing.lg },
+  error: { ...text.small, color: colors.danger, marginBottom: spacing.lg },
 
   successWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   successBadge: {
@@ -240,10 +240,10 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xl,
   },
-  successTick: { fontSize: 32, color: colors.success, fontWeight: '800' },
-  successTitle: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink, textAlign: 'center' },
+  successTick: { fontFamily: text.h1.fontFamily, fontSize: 32, color: colors.success },
+  successTitle: { ...text.h1, textAlign: 'center' },
   successBody: {
-    fontSize: type.body.fontSize,
+    ...text.body,
     color: colors.muted,
     textAlign: 'center',
     marginTop: spacing.sm,
@@ -253,11 +253,11 @@ const s = StyleSheet.create({
     marginVertical: spacing.xl,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.field,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderStrong,
     borderStyle: 'dashed',
   },
-  codeText: { fontSize: 20, fontWeight: '800', color: colors.ink, letterSpacing: 1.5 },
+  codeText: { fontFamily: text.meta.fontFamily, fontSize: 18, color: colors.ink, letterSpacing: 1.5 },
 });

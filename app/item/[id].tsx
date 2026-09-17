@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { ErrorState, Loading, Pill } from '../../src/components/ui';
-import { supabase } from '../../src/lib/supabase';
-import type { ItemWithCategory } from '../../src/lib/database.types';
-import { colors, radius, spacing, type } from '../../src/theme/tokens';
+import { ErrorState, Loading, Pill } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
+import type { ItemWithCategory } from '@/lib/database.types';
+import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function ItemDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -92,13 +92,13 @@ function Row({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  code: { marginLeft: 'auto', fontSize: type.tiny.fontSize, fontWeight: '700', color: colors.mutedLight, letterSpacing: 0.5 },
-  title: { fontSize: type.h1.fontSize, fontWeight: '800', color: colors.ink },
-  body: { fontSize: type.body.fontSize, color: colors.muted, lineHeight: 22, marginTop: spacing.md },
+  code: { ...text.meta, marginLeft: 'auto' },
+  title: { ...text.h1 },
+  body: { ...text.body, marginTop: spacing.md },
   metaCard: {
     marginTop: spacing.xl,
     backgroundColor: colors.card,
-    borderRadius: radius.lg,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.borderSoft,
     paddingHorizontal: spacing.lg,
@@ -111,7 +111,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSoft,
   },
-  rowLabel: { fontSize: type.small.fontSize, color: colors.muted },
-  rowValue: { fontSize: type.small.fontSize, color: colors.ink, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
+  rowLabel: { ...text.small },
+  rowValue: { ...text.bodyStrong, fontSize: 13.5, flexShrink: 1, textAlign: 'right' },
   note: { marginTop: spacing.xl, fontSize: 12, color: colors.mutedLight, lineHeight: 18, textAlign: 'center' },
 });
