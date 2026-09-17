@@ -125,7 +125,7 @@ export default function AdminDashboard() {
           right={
             <>
               <IconButton icon="flag-outline" badge={stats.flags_pending} onPress={() => router.push('/(admin)/moderation')} />
-              <AvatarButton initials={initials} />
+              <AvatarButton initials={initials} onPress={() => router.push('/(tabs)/profile')} />
             </>
           }
         />
