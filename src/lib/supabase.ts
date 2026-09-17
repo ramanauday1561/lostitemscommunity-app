@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 const extra = Constants.expoConfig?.extra ?? {};
 const supabaseUrl = String(extra.supabaseUrl ?? '');
@@ -20,8 +20,14 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    // No URL to parse in a native app; leaving this on causes a startup warning.
-    detectSessionInUrl: false,
+    // Native has no URL to parse, and leaving this on causes a startup
+    // warning. On web it is required: after an OAuth redirect the session
+    // arrives in the URL, and with this off the sign-in silently does
+    // nothing.
+    detectSessionInUrl: Platform.OS === 'web',
+    // PKCE is what makes exchangeCodeForSession work for the native OAuth
+    // flow, where the redirect comes back to the app's own scheme.
+    flowType: 'pkce',
   },
 });
 
