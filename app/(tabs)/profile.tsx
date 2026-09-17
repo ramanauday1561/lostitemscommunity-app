@@ -1,13 +1,40 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, ErrorBanner, Field } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function ProfileScreen() {
   const { profile, user, signOut } = useAuth();
   const [busy, setBusy] = useState(false);
+
+  const confirmRef = useRef<TextInput>(null);
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwBusy, setPwBusy] = useState(false);
+
+  async function changePassword() {
+    setPwError(null);
+    if (pwBusy) return;
+    if (password.length < 8) return setPwError('Use at least 8 characters.');
+    if (password !== confirm) return setPwError('The two passwords do not match.');
+
+    setPwBusy(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setPassword('');
+      setConfirm('');
+      Alert.alert('Password changed', 'Your new password is active from now on.');
+    } catch (e) {
+      setPwError(e instanceof Error ? e.message : 'Could not change your password.');
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   async function onSignOut() {
     setBusy(true);
@@ -51,6 +78,51 @@ export default function ProfileScreen() {
           Your phone number and email live in a separate, locked-down table. Other members only ever see them when
           your sharing preference allows it.
         </Text>
+
+        <Card style={{ marginTop: spacing.lg }}>
+          <Text style={s.sectionTitle}>Change password</Text>
+          <Text style={[text.small, { marginTop: spacing.xs, marginBottom: spacing.lg }]}>
+            Use this if your password was set for you, or if you think someone else knows it.
+          </Text>
+
+          <Field
+            label="New password"
+            icon="lock-closed-outline"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="At least 8 characters"
+            secure
+            autoCapitalize="none"
+            autoComplete="new-password"
+            textContentType="newPassword"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => confirmRef.current?.focus()}
+          />
+          <Field
+            ref={confirmRef}
+            label="Confirm new password"
+            icon="checkmark-circle-outline"
+            value={confirm}
+            onChangeText={setConfirm}
+            placeholder="Type it again"
+            secure
+            autoCapitalize="none"
+            autoComplete="new-password"
+            textContentType="newPassword"
+            returnKeyType="go"
+            onSubmitEditing={changePassword}
+          />
+
+          {!!pwError && <ErrorBanner message={pwError} />}
+
+          <Button
+            label="Update password"
+            onPress={changePassword}
+            loading={pwBusy}
+            disabled={!password || !confirm}
+          />
+        </Card>
 
         <Button label="Sign out" variant="secondary" onPress={onSignOut} loading={busy} style={{ marginTop: spacing.xl }} />
       </ScrollView>
@@ -109,6 +181,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSoft,
   },
+  sectionTitle: { ...text.h3 },
   rowLabel: { ...text.small },
   rowValue: { ...text.bodyStrong, fontSize: 13.5, flexShrink: 1, textAlign: 'right' },
   note: { marginTop: spacing.lg, fontSize: 12, color: colors.mutedLight, lineHeight: 18 },

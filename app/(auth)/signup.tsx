@@ -1,14 +1,29 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text as RNText } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text as RNText,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field, Text } from '@/components/ui';
+import { Button, ErrorBanner, Field, Text } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing, text } from '@/theme/tokens';
+
+const MAX_WIDTH = 460;
 
 export default function SignUp() {
   const router = useRouter();
   const { signUp } = useAuth();
+
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,6 +34,7 @@ export default function SignUp() {
   async function submit() {
     setError(null);
     setNotice(null);
+    if (busy) return;
     if (!fullName.trim()) return setError('Tell us your name.');
     if (!email.trim()) return setError('Enter your email address.');
     if (password.length < 8) return setError('Use at least 8 characters for your password.');
@@ -39,54 +55,84 @@ export default function SignUp() {
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <Text variant="h1">Set up your account</Text>
-          <Text variant="body" style={{ marginTop: spacing.sm, marginBottom: spacing.xxl }}>
-            It takes about a minute, and it's free.
-          </Text>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={s.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={s.column}>
+            <View style={s.middle}>
+              <Text variant="h1">Set up your account</Text>
+              <Text variant="body" style={{ marginTop: spacing.sm, marginBottom: spacing.xxl }}>
+                It takes about a minute, and it's free.
+              </Text>
 
-          <Field
-            icon="person-outline"
-            value={fullName}
-            onChangeText={setFullName}
-            placeholder="Full name"
-            autoCapitalize="words"
-            autoComplete="name"
-          />
-          <Field
-            icon="mail-outline"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email address"
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            inputMode="email"
-          />
-          <Field
-            icon="lock-closed-outline"
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password (8+ characters)"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-          />
+              <Field
+                label="Full name"
+                icon="person-outline"
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Nadia Rahman"
+                autoCapitalize="words"
+                autoComplete="name"
+                textContentType="name"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => emailRef.current?.focus()}
+              />
 
-          {!!error && <RNText style={s.error}>{error}</RNText>}
-          {!!notice && <RNText style={s.notice}>{notice}</RNText>}
+              <Field
+                ref={emailRef}
+                label="Email"
+                icon="mail-outline"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                keyboardType="email-address"
+                inputMode="email"
+                textContentType="emailAddress"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => passwordRef.current?.focus()}
+              />
 
-          <Button label="Create account" onPress={submit} loading={busy} style={{ marginTop: spacing.md }} />
+              <Field
+                ref={passwordRef}
+                label="Password"
+                icon="lock-closed-outline"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="At least 8 characters"
+                secure
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="new-password"
+                textContentType="newPassword"
+                returnKeyType="go"
+                onSubmitEditing={submit}
+              />
 
-          <RNText style={s.legal}>
-            By creating an account you agree to keep the community safe and to follow the posting guidelines.
-          </RNText>
+              {!!error && <ErrorBanner message={error} />}
+              {!!notice && <RNText style={s.notice}>{notice}</RNText>}
 
-          <Pressable onPress={() => router.push('/(auth)/login')} style={s.footer}>
-            <RNText style={text.small}>
-              Already a member? <RNText style={s.link}>Sign in</RNText>
-            </RNText>
-          </Pressable>
+              <Button label="Create account" onPress={submit} loading={busy} style={{ marginTop: spacing.sm }} />
+
+              <RNText style={s.legal}>
+                By creating an account you agree to keep the community safe and to follow the posting guidelines.
+              </RNText>
+            </View>
+
+            <Pressable onPress={() => router.push('/(auth)/login')} style={s.footer}>
+              <RNText style={text.small}>
+                Already a member? <RNText style={s.link}>Sign in</RNText>
+              </RNText>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -95,10 +141,18 @@ export default function SignUp() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, flexGrow: 1 },
-  error: { ...text.small, color: colors.danger, marginBottom: spacing.md },
+  scroll: { flexGrow: 1 },
+  column: {
+    flex: 1,
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xl,
+  },
+  middle: { flex: 1, justifyContent: 'center' },
   notice: { ...text.small, color: colors.success, marginBottom: spacing.md },
   legal: { ...text.small, fontSize: 12, textAlign: 'center', marginTop: spacing.lg },
   link: { ...text.smallStrong, color: colors.primary },
-  footer: { marginTop: spacing.xl, alignSelf: 'center' },
+  footer: { alignSelf: 'center', paddingTop: spacing.lg },
 });

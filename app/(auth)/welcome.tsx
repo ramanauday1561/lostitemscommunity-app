@@ -1,19 +1,22 @@
 import { useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-  Dimensions,
   Image,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   Text as RNText,
   View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Kicker, Text } from '@/components/ui';
 import { colors, radius, spacing, text } from '@/theme/tokens';
+
+/** Keeps the phone layout readable when the web build is opened wide. */
+const MAX_WIDTH = 460;
 
 const SLIDES = [
   {
@@ -39,10 +42,17 @@ const SLIDES = [
 export default function Welcome() {
   const router = useRouter();
   const [index, setIndex] = useState(0);
-  const width = Dimensions.get('window').width;
+  // Measured rather than taken from Dimensions: the carousel must page by
+  // its own width, which is capped on wide screens.
+  const [width, setWidth] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
+  function onLayout(e: LayoutChangeEvent) {
+    setWidth(e.nativeEvent.layout.width);
+  }
+
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    if (!width) return;
     const next = Math.round(e.nativeEvent.contentOffset.x / width);
     if (next !== index) setIndex(next);
   }
@@ -58,61 +68,69 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <View style={s.header}>
-        <Image source={require('../../assets/illustrations/logo.png')} style={s.logo} />
-        <RNText style={text.brand}>Lost Items Community</RNText>
-        <Pressable onPress={() => router.push('/(auth)/login')} hitSlop={12} style={{ marginLeft: 'auto' }}>
-          <RNText style={s.skip}>Skip</RNText>
-        </Pressable>
-      </View>
+      <View style={s.column}>
+        <View style={s.header}>
+          <Image source={require('../../assets/illustrations/logo.png')} style={s.logo} />
+          <RNText style={text.brand}>Lost Items Community</RNText>
+          <Pressable onPress={() => router.push('/(auth)/login')} hitSlop={12} style={{ marginLeft: 'auto' }}>
+            <RNText style={s.skip}>Skip</RNText>
+          </Pressable>
+        </View>
 
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
-        style={{ flexGrow: 0 }}
-      >
-        {SLIDES.map((slide) => (
-          <View key={slide.title} style={{ width, paddingHorizontal: spacing.xl }}>
-            <View style={s.hero}>
-              <Image source={slide.art} style={s.heroArt} resizeMode="contain" />
-            </View>
+        {/* The whole block centres in the space left over, instead of the
+            copy hugging the top and the button hugging the bottom. */}
+        <View style={s.middle} onLayout={onLayout}>
+          {width > 0 && (
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={onScroll}
+              scrollEventThrottle={16}
+              style={{ flexGrow: 0 }}
+            >
+              {SLIDES.map((slide) => (
+                <View key={slide.title} style={{ width, paddingHorizontal: spacing.xl }}>
+                  <View style={s.hero}>
+                    <Image source={slide.art} style={s.heroArt} resizeMode="contain" />
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          <View style={s.dots}>
+            {SLIDES.map((slide, i) => (
+              <View key={slide.title} style={[s.dot, i === index && s.dotActive]} />
+            ))}
           </View>
-        ))}
-      </ScrollView>
 
-      {/* Active indicator is a wide bar, not a larger dot, and sits left-aligned. */}
-      <View style={s.dots}>
-        {SLIDES.map((slide, i) => (
-          <View key={slide.title} style={[s.dot, i === index && s.dotActive]} />
-        ))}
-      </View>
+          <View style={s.copy}>
+            <Kicker>{SLIDES[index].kicker}</Kicker>
+            <Text variant="h1">{SLIDES[index].title}</Text>
+            <Text variant="body" style={{ marginTop: spacing.md }}>
+              {SLIDES[index].body}
+            </Text>
+          </View>
+        </View>
 
-      <View style={s.copy}>
-        <Kicker>{SLIDES[index].kicker}</Kicker>
-        <Text variant="h1">{SLIDES[index].title}</Text>
-        <Text variant="body" style={{ marginTop: spacing.md }}>
-          {SLIDES[index].body}
-        </Text>
-      </View>
-
-      <View style={s.footer}>
-        <Button label={index === SLIDES.length - 1 ? 'Get started' : 'Next'} onPress={advance} />
-        <Pressable onPress={() => router.push('/(auth)/login')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
-          <RNText style={text.small}>
-            Already a member? <RNText style={s.link}>Sign in</RNText>
-          </RNText>
-        </Pressable>
+        <View style={s.footer}>
+          <Button label={index === SLIDES.length - 1 ? 'Get started' : 'Next'} onPress={advance} />
+          <Pressable onPress={() => router.push('/(auth)/login')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
+            <RNText style={text.small}>
+              Already a member? <RNText style={s.link}>Sign in</RNText>
+            </RNText>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1, backgroundColor: colors.bg, alignItems: 'center' },
+  column: { flex: 1, width: '100%', maxWidth: MAX_WIDTH },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,6 +140,8 @@ const s = StyleSheet.create({
   },
   logo: { width: 30, height: 30, borderRadius: 8 },
   skip: { ...text.smallStrong, color: colors.mutedLight },
+
+  middle: { flex: 1, justifyContent: 'center' },
 
   hero: {
     width: '100%',
@@ -140,6 +160,6 @@ const s = StyleSheet.create({
   dotActive: { width: 26, backgroundColor: colors.primary, borderRadius: 4 },
 
   copy: { paddingHorizontal: spacing.xl, marginTop: spacing.xl },
-  footer: { marginTop: 'auto', paddingHorizontal: spacing.xl, paddingBottom: spacing.lg },
+  footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, paddingTop: spacing.lg },
   link: { fontFamily: text.smallStrong.fontFamily, color: colors.primary },
 });

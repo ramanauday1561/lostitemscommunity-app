@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useState } from 'react';
+import React, { forwardRef, useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -24,7 +24,10 @@ export type FieldProps = TextInputProps & {
   containerStyle?: ViewStyle;
 };
 
-export function Field({ label, icon, error, secure, style, containerStyle, multiline, ...rest }: FieldProps) {
+export const Field = forwardRef<TextInput, FieldProps>(function Field(
+  { label, icon, error, secure, style, containerStyle, multiline, ...rest },
+  ref,
+) {
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
@@ -46,6 +49,7 @@ export function Field({ label, icon, error, secure, style, containerStyle, multi
         {!!icon && <Ionicons name={icon} size={19} color={accent} style={{ marginRight: spacing.md }} />}
 
         <TextInput
+          ref={ref}
           placeholderTextColor={colors.mutedFaint}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -70,7 +74,7 @@ export function Field({ label, icon, error, secure, style, containerStyle, multi
       {!!error && <Text style={s.error}>{error}</Text>}
     </View>
   );
-}
+});
 
 const s = StyleSheet.create({
   label: { ...text.smallStrong, marginBottom: spacing.sm, marginLeft: spacing.xs },
