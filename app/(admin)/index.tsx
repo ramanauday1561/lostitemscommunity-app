@@ -40,7 +40,7 @@ function StatTile({
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { profile, user } = useAuth();
+  const { profile, user, signOut } = useAuth();
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [flags, setFlags] = useState<ModerationFlag[]>([]);
@@ -48,6 +48,8 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -105,6 +107,20 @@ export default function AdminDashboard() {
         },
       ],
     );
+  }
+
+  async function onSignOut() {
+    if (signingOut) return;
+    setSignOutError(null);
+    setSigningOut(true);
+    try {
+      await signOut();
+      // The root layout watches the session and redirects to the welcome
+      // screen once it clears, so there is no navigation to do here.
+    } catch (e) {
+      setSignOutError(e instanceof Error ? e.message : 'Could not sign out. Please try again.');
+      setSigningOut(false);
+    }
   }
 
   if (loading) return <Loading label="Loading control centre…" />;
@@ -217,6 +233,31 @@ export default function AdminDashboard() {
               Send a welcome note to everyone who has joined the recovery network.
             </Text>
             <Button label="Send welcome message" variant="secondary" style={{ marginTop: spacing.lg }} onPress={sendWelcome} />
+          </Card>
+        </Box>
+
+        <SectionHeader title="Account" />
+        <Box paddingHorizontal="xl">
+          <Card variant="row">
+            <Text variant="cardTitle">
+              {profile?.full_name ?? profile?.username ?? 'Super admin'}
+            </Text>
+            <Text variant="small" marginTop="xs">
+              Signed in as @{profile?.username ?? '—'}. Signing out returns you to the welcome
+              screen.
+            </Text>
+            {signOutError && (
+              <Text variant="small" color="danger" marginTop="md">
+                {signOutError}
+              </Text>
+            )}
+            <Button
+              label="Sign out"
+              variant="danger"
+              style={{ marginTop: spacing.lg }}
+              loading={signingOut}
+              onPress={onSignOut}
+            />
           </Card>
         </Box>
       </ScrollView>
