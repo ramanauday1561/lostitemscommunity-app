@@ -7,6 +7,9 @@ import { Button, ErrorBanner, Field, Text } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
+/** Keeps the phone layout readable when the web build is opened wide. */
+const MAX_WIDTH = 460;
+
 export default function Login() {
   const router = useRouter();
   const { signIn } = useAuth();
@@ -108,8 +111,18 @@ export default function Login() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xl, flexGrow: 1 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xxxl },
+  // flexGrow lets the block centre when it is shorter than the screen and
+  // still scroll when the keyboard shrinks the viewport.
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+  },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.xxl },
   logo: { width: 34, height: 34, borderRadius: 10 },
   row: {
     flexDirection: 'row',
@@ -129,5 +142,5 @@ const s = StyleSheet.create({
     ...shadow.field,
   },
   link: { ...text.smallStrong, color: colors.primary },
-  footer: { marginTop: 'auto', paddingTop: spacing.xxl, alignSelf: 'center' },
+  footer: { marginTop: spacing.xxl, alignSelf: 'center' },
 });

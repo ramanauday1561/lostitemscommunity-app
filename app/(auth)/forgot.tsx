@@ -6,6 +6,9 @@ import { Button, Field, Text } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { colors, spacing, text } from '@/theme/tokens';
 
+/** Keeps the phone layout readable when the web build is opened wide. */
+const MAX_WIDTH = 460;
+
 export default function Forgot() {
   const router = useRouter();
   const { resetPassword } = useAuth();
@@ -67,9 +70,17 @@ export default function Forgot() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.xxxl, flexGrow: 1 },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxl,
+    width: '100%',
+    maxWidth: MAX_WIDTH,
+    alignSelf: 'center',
+  },
   error: { ...text.small, color: colors.danger, marginBottom: spacing.md },
   notice: { ...text.bodyInk },
   link: { ...text.smallStrong, color: colors.primary },
-  footer: { marginTop: spacing.xl, alignSelf: 'center' },
+  footer: { marginTop: spacing.xxl, alignSelf: 'center' },
 });
