@@ -3,6 +3,8 @@
 React Native (Expo SDK 57) client for [lostitemscommunity.com](https://lostitemscommunity.com),
 backed by Supabase.
 
+**Live web build: [app.lostitemscommunity.com](https://app.lostitemscommunity.com)**
+
 Build order, per-screen checklists and build prompts live in the
 [management hub](https://ramanauday1561.github.io/lostitemscommunity-management/).
 
@@ -57,8 +59,12 @@ app/                    expo-router routes (file = screen)
 src/lib/supabase.ts     client, AsyncStorage session persistence
 src/lib/auth.tsx        AuthProvider + useAuth
 src/lib/database.types.ts
+src/lib/oauth.ts        Google / Facebook / X sign-in, username lookup
+src/lib/admin.ts        admin RPC wrappers
 src/theme/tokens.ts     colours/spacing/type from the prototype
-src/components/ui.tsx   Button, Field, Card, Pill, states
+src/components/primitives.tsx   Box, Text, Card (Restyle)
+src/components/ui/      Button, Field, Surfaces, SocialButtons, states
+src/components/layout/  ScreenHeader, SectionHeader, ItemCard, ActionRow
 ```
 
 ## Configuration
@@ -69,6 +75,24 @@ table has RLS enabled. Override per environment with `EXPO_PUBLIC_SUPABASE_URL` 
 `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 
 Never put the `service_role` key in this repo.
+
+## Web hosting
+
+The web export is a GitHub Pages site for this repository, served at the
+apex of the `app` subdomain:
+
+| Piece | Value |
+| --- | --- |
+| URL | `https://app.lostitemscommunity.com` |
+| DNS (GoDaddy) | `CNAME` record, host `app`, points to `ramanauday1561.github.io` |
+| Pages source | Settings → Pages → Source: **GitHub Actions** |
+| Deploy | `.github/workflows/deploy-web.yml`, on every push to `main` |
+
+Serving from the domain root rather than a sub-path is what keeps the OAuth
+redirect correct: `window.location.origin` is now the app's own base, so no
+base-path juggling is needed. `app.lostitemscommunity.com` must also be listed
+under Supabase → Authentication → URL Configuration, or sign-in redirects
+back to the wrong place.
 
 ## Checks
 
