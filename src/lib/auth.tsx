@@ -1,6 +1,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
+import { resolveIdentifierToEmail } from './oauth';
 import type { Profile } from './database.types';
 
 type AuthState = {
@@ -9,7 +10,8 @@ type AuthState = {
   profile: Profile | null;
   /** True until the persisted session has been read from storage. */
   initialising: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** Accepts an email or a username. */
+  signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ needsConfirmation: boolean }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -73,11 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profile,
       initialising,
 
-      async signIn(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+      async signIn(identifier, password) {
+        // GoTrue authenticates by email only, so a username is translated
+        // first. An unknown username gives the same message as a wrong
+        // password, so this cannot be used to probe which names exist.
+        const email = await resolveIdentifierToEmail(identifier);
+        if (!email) throw new Error('Invalid login credentials');
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       },
 

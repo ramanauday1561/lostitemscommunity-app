@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, ErrorBanner, Field, Text } from '@/components/ui';
+import { Button, DividerLabel, ErrorBanner, Field, SocialButtons, Text } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
@@ -74,16 +74,14 @@ export default function Login() {
               </Text>
 
               <Field
-                label="Email address"
+                label="Email or username"
                 icon="person-outline"
                 value={email}
                 onChangeText={setEmail}
-                placeholder="you@example.com"
+                placeholder="you@example.com or superadmin"
                 autoCapitalize="none"
                 autoCorrect={false}
-                autoComplete="email"
-                keyboardType="email-address"
-                inputMode="email"
+                autoComplete="username"
                 textContentType="username"
                 returnKeyType="next"
                 // Keep the keyboard up and jump straight to the password.
@@ -130,6 +128,9 @@ export default function Login() {
               {!!error && <ErrorBanner message={error} />}
 
               <Button label="Sign in & continue" onPress={submit} loading={busy} disabled={!canSubmit} />
+
+              <DividerLabel>Or continue with a social account</DividerLabel>
+              <SocialButtons onError={(m) => setError(m || null)} />
             </View>
 
             {/* bottom */}
