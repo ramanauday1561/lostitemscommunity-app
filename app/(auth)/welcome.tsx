@@ -113,18 +113,15 @@ export default function Welcome() {
               {SLIDES[index].body}
             </Text>
           </View>
+        </View>
 
-          <View style={s.footer}>
-            <Button label={index === SLIDES.length - 1 ? 'Get started' : 'Next'} onPress={advance} />
-            <Pressable
-              onPress={() => router.push('/(auth)/login')}
-              style={{ marginTop: spacing.lg, alignSelf: 'center' }}
-            >
-              <RNText style={text.small}>
-                Already a member? <RNText style={s.link}>Sign in</RNText>
-              </RNText>
-            </Pressable>
-          </View>
+        <View style={s.footer}>
+          <Button label={index === SLIDES.length - 1 ? 'Get started' : 'Next'} onPress={advance} />
+          <Pressable onPress={() => router.push('/(auth)/login')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
+            <RNText style={text.small}>
+              Already a member? <RNText style={s.link}>Sign in</RNText>
+            </RNText>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -163,6 +160,6 @@ const s = StyleSheet.create({
   dotActive: { width: 26, backgroundColor: colors.primary, borderRadius: 4 },
 
   copy: { paddingHorizontal: spacing.xl, marginTop: spacing.xl },
-  footer: { paddingHorizontal: spacing.xl, marginTop: spacing.xxl },
+  footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, paddingTop: spacing.lg },
   link: { fontFamily: text.smallStrong.fontFamily, color: colors.primary },
 });
