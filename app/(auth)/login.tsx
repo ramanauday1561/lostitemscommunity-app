@@ -74,7 +74,7 @@ export default function Login() {
               </Text>
 
               <Field
-                label="Email or username"
+                label="Email address"
                 icon="person-outline"
                 value={email}
                 onChangeText={setEmail}
