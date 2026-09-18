@@ -139,13 +139,13 @@ export default function AdminDashboard() {
           title="System control"
           right={
             <>
-              <IconButton icon="flag-outline" badge={stats.flags_pending} onPress={() => router.push('/(admin)/moderation')} />
+              <IconButton icon="flag-outline" badge={stats.flags_pending} onPress={() => router.push('/admin/moderation')} />
               <AvatarButton initials={initials} onPress={() => router.push('/(tabs)/profile')} />
             </>
           }
         />
 
-        <Pressable onPress={() => router.push('/(admin)/ads')} style={s.revenue}>
+        <Pressable onPress={() => router.push('/admin/ads')} style={s.revenue}>
           <Card variant="row" flexDirection="row" alignItems="center" gap="lg">
             <View style={[s.tileIcon, { backgroundColor: colors.successSoft }]}>
               <Ionicons name="card-outline" size={18} color={colors.success} />
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
         <SectionHeader
           title="Flagged content"
           actionLabel={stats.flags_pending > 3 ? 'See all' : undefined}
-          onAction={() => router.push('/(admin)/moderation')}
+          onAction={() => router.push('/admin/moderation')}
         />
 
         {flags.length === 0 ? (

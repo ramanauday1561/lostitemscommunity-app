@@ -30,8 +30,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (initialising) return;
     const inAuthGroup = segments[0] === '(auth)';
+    // The member dashboard, exactly: a deeper member route such as
+    // (tabs)/profile has a second segment. An admin reaches that one
+    // deliberately, from the dashboard avatar, so only the index bounces.
+    const onMemberHome = segments[0] === '(tabs)' && segments.length === 1;
+
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/welcome');
+    } else if (session && profileResolved && profile?.role === 'admin' && onMemberHome) {
+      // Group names are absent from web URLs, so '/' is the member
+      // dashboard. An admin loading or refreshing '/' would otherwise sit
+      // in the member app - which is how the member tab bar, centre action
+      // and all, kept appearing for the superadmin.
+      router.replace('/admin');
     } else if (session && inAuthGroup) {
       // The role decides the destination, so wait for it. Signing in sets
       // the session synchronously while the profile fetch is still in
@@ -40,7 +51,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       // because by then the group is no longer (auth).
       if (!profileResolved) return;
       // Admins land in the control app, members in the community app.
-      router.replace(profile?.role === 'admin' ? '/(admin)' : '/(tabs)');
+      router.replace(profile?.role === 'admin' ? '/admin' : '/(tabs)');
     }
   }, [session, profile, profileResolved, initialising, segments, router]);
 
@@ -82,7 +93,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="(admin)" />
+            <Stack.Screen name="admin" />
             <Stack.Screen name="item/[id]" options={{ headerShown: true, title: 'Item', headerBackTitle: 'Back' }} />
           </Stack>
           </AuthGate>
