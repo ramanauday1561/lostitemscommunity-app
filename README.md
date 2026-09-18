@@ -17,7 +17,7 @@ link, after which every JS change arrives over the air via EAS Update.
 **One-time setup**
 
 1. Create/connect the project on [expo.dev](https://expo.dev) and link this GitHub repo.
-2. Set `EAS_PROJECT_ID` (or paste the id into `app.config.ts`).
+2. The EAS project id is already set in `app.config.ts`; override it with `EAS_PROJECT_ID` only for a different account.
 3. Run the `Create Android development build` workflow.
 4. Open the build's install link on the phone and install the APK.
 
