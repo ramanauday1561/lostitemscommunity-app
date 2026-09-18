@@ -32,6 +32,15 @@ export const colors = {
   borderStrong: '#DEDDD8',
 
   white: '#FFFFFF',
+  /** Bottom-nav idle icon/label. Its own value in the prototype, between
+   *  mutedLight and mutedFaint. */
+  tabIdle: '#9A9EA4',
+  /** The admin dashboard's dark moderation hero. Deeper than `ink`. */
+  inkDeep: '#101319',
+  /** The flag glyph on that hero, which has to carry against the dark. */
+  flagBright: '#FF8A80',
+  /** Disclosure chevrons on list rows. */
+  chevron: '#C6C9CE',
 } as const;
 
 /** Font families, one per weight. */

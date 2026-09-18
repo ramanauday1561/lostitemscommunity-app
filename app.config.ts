@@ -8,9 +8,15 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_jyjxzLjsC4GZfGrnfup4Sw_Nu1gscpS';
 
-// Set once the Expo project exists (expo.dev -> project -> Overview -> ID).
-// EAS_PROJECT_ID overrides it in CI.
-const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '';
+// The EAS project id for lostitemscommunity-app under the
+// ramanauday1561s-team account. Not a secret - every Expo project carries
+// it in app config, and builds and updates cannot resolve the project
+// without it. EAS_PROJECT_ID overrides it for a different environment.
+//
+// While this was empty, `extra.eas.projectId` was undefined, so every
+// `Publish update` workflow run failed with "EAS project not configured.
+// This command cannot configure it in non-interactive mode."
+const EAS_PROJECT_ID = process.env.EAS_PROJECT_ID ?? '7c11895c-f57d-4cd7-a02d-ec229cb9be02';
 
 const config: ExpoConfig = {
   name: 'Lost Items Community',
