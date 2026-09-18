@@ -32,6 +32,9 @@ export const colors = {
   borderStrong: '#DEDDD8',
 
   white: '#FFFFFF',
+  /** Bottom-nav idle icon/label. Its own value in the prototype, between
+   *  mutedLight and mutedFaint. */
+  tabIdle: '#9A9EA4',
 } as const;
 
 /** Font families, one per weight. */
