@@ -6,6 +6,7 @@ import { Box, Card, Text } from '@/components/primitives';
 import { EmptyState, ErrorState, Loading, Pill } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 import type { ItemKind, ItemWithCategory } from '@/lib/database.types';
+import { shortDate } from '@/lib/format';
 import { colors, radius, shadow, spacing } from '@/theme/tokens';
 
 type StatusFilter = 'all' | 'active' | 'resolved' | 'flagged' | 'removed';
@@ -120,7 +121,7 @@ export default function AdminRegistry() {
               )}
               <Text variant="meta" marginTop="sm">
                 {item.categories?.name ?? 'Uncategorised'} ·{' '}
-                {new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {shortDate(item.created_at)}
               </Text>
             </Card>
           )}

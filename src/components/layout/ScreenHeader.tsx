@@ -24,7 +24,7 @@ export function IconButton({ icon, onPress, badge }: { icon: IconName; onPress?:
 export function AvatarButton({ initials, onPress }: { initials: string; onPress?: () => void }) {
   return (
     <Pressable onPress={onPress} style={s.circle} accessibilityRole="button">
-      <Text variant="smallStrong" color="brand">
+      <Text variant="smallStrong" color="primary">
         {initials}
       </Text>
     </Pressable>

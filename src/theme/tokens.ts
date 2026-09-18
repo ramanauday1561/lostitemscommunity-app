@@ -9,7 +9,6 @@
 
 export const colors = {
   ink: '#16181F',
-  inkSoft: '#101319',
   muted: '#6B7280',
   mutedLight: '#8B8F95',
   mutedFaint: '#A8ACB2',
@@ -73,6 +72,8 @@ export const text = {
   /** Short codes and dates, e.g. "FOUND-2018 · 11 Jun 2024". */
   meta: { fontFamily: font.monoMedium, fontSize: 11, letterSpacing: 0.3, color: colors.mutedLight },
   brand: { fontFamily: font.bold, fontSize: 14, letterSpacing: -0.14, color: colors.ink },
+  /** Inline text link, e.g. "Forgot password?". */
+  link: { fontFamily: font.bold, fontSize: 13.5, color: colors.primary },
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 40 } as const;
@@ -118,3 +119,16 @@ export const shadow = {
     elevation: 8,
   },
 } as const;
+
+/**
+ * A tone is the accent a tile, chip or stat uses. Keeping the foreground
+ * and its soft background paired here stops the same three-branch ternary
+ * being rewritten in every component that needs one.
+ */
+export type Tone = 'primary' | 'success' | 'danger';
+
+export const tone: Record<Tone, { fg: string; bg: string }> = {
+  primary: { fg: colors.primary, bg: colors.primarySoft },
+  success: { fg: colors.success, bg: colors.successSoft },
+  danger: { fg: colors.danger, bg: colors.dangerSoft },
+};

@@ -9,7 +9,7 @@
 export type ItemKind = 'lost' | 'found';
 export type ItemStatus = 'active' | 'resolved' | 'removed';
 export type ModerationStatus = 'pending' | 'approved' | 'removed';
-export type MatchStatus = 'proposed' | 'confirmed' | 'rejected';
+
 export type ContactSharingPref = 'after_match' | 'always' | 'never';
 export type UserRole = 'member' | 'admin';
 
@@ -51,25 +51,8 @@ export type Item = {
   updated_at: string;
 };
 
-/** short_code is omitted deliberately — a BEFORE INSERT trigger assigns it. */
-export type NewItem = {
-  reporter_id: string;
-  kind: ItemKind;
-  title: string;
-  description?: string | null;
-  category_id?: string | null;
-  location_text?: string | null;
-  date_occurred?: string | null;
-};
-
 /** An item row joined with its category, as the registry list renders it. */
 export type ItemWithCategory = Item & {
   categories: Pick<Category, 'id' | 'name' | 'icon'> | null;
 };
 
-export type Faq = {
-  id: string;
-  question: string;
-  answer: string;
-  sort_order: number;
-};

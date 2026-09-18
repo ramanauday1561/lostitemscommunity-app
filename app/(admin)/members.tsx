@@ -7,6 +7,7 @@ import { Box, Card, Text } from '@/components/primitives';
 import { Button, EmptyState, ErrorState, Loading, Pill } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { fetchMembers, setSuspended, type AdminMember } from '@/lib/admin';
+import { initials as toInitials, monthYear } from '@/lib/format';
 import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
 export default function Members() {
@@ -116,18 +117,13 @@ export default function Members() {
             />
           }
           renderItem={({ item }) => {
-            const initials = (item.full_name ?? item.username)
-              .split(' ')
-              .map((p) => p[0])
-              .slice(0, 2)
-              .join('')
-              .toUpperCase();
+            const initials = toInitials(item.full_name, item.username);
             const isSelf = item.id === user?.id;
 
             return (
               <Card variant="row" flexDirection="row" alignItems="center" gap="lg">
                 <View style={s.avatar}>
-                  <Text variant="smallStrong" color="brand">
+                  <Text variant="smallStrong" color="primary">
                     {initials}
                   </Text>
                 </View>
@@ -141,7 +137,7 @@ export default function Members() {
                   </Box>
                   <Text variant="meta" marginTop="xs">
                     @{item.username} · joined{' '}
-                    {new Date(item.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                    {monthYear(item.created_at)}
                   </Text>
                   <Box marginTop="sm" alignSelf="flex-start">
                     <Pill text={item.is_suspended ? 'Suspended' : 'Active'} tone={item.is_suspended ? 'lost' : 'found'} />

@@ -20,7 +20,7 @@ export function SectionHeader({
       marginTop="xxl"
       marginBottom="md"
     >
-      <Text variant="section">{title}</Text>
+      <Text variant="h3">{title}</Text>
       {!!actionLabel && (
         <Pressable onPress={onAction} hitSlop={10}>
           <Text variant="link">{actionLabel}</Text>

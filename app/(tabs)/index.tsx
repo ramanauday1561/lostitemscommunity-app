@@ -17,6 +17,7 @@ import { Box, Text } from '@/components/primitives';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import type { ItemKind, ItemWithCategory } from '@/lib/database.types';
+import { initials as toInitials, shortDate } from '@/lib/format';
 import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
 
 type Filter = 'all' | ItemKind;
@@ -32,9 +33,6 @@ const SELECT =
 
 const CARD_WIDTH = 262;
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -109,7 +107,7 @@ export default function Dashboard() {
   }
 
   const name = profile?.full_name ?? profile?.username ?? 'Member';
-  const initials = name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+  const initials = toInitials(name);
 
   const header = (
     <>
@@ -134,7 +132,7 @@ export default function Dashboard() {
                 width={CARD_WIDTH}
                 title={it.title}
                 location={it.location_text}
-                meta={`${it.short_code} · ${formatDate(it.created_at)}`}
+                meta={`${it.short_code} · ${shortDate(it.created_at)}`}
                 status={it.status === 'resolved' ? 'Resolved' : 'Active'}
                 onPress={() => router.push(`/item/${it.id}`)}
               />
@@ -154,7 +152,7 @@ export default function Dashboard() {
         icon="storefront-outline"
         title="Search found items registry"
         body="Check if someone handed in what you are missing."
-        tone="ok"
+        tone="success"
         onPress={() => setFilter('found')}
       />
       <ActionRow
@@ -234,7 +232,7 @@ export default function Dashboard() {
               <ItemCard
                 title={item.title}
                 location={item.location_text}
-                meta={`${item.short_code} · ${formatDate(item.created_at)}`}
+                meta={`${item.short_code} · ${shortDate(item.created_at)}`}
                 status={item.kind === 'lost' ? 'Lost' : 'Found'}
                 onPress={() => router.push(`/item/${item.id}`)}
               />

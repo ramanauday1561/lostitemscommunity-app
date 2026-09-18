@@ -37,7 +37,7 @@ export function ItemCard({
         <Box
           height={132}
           borderRadius="field"
-          backgroundColor="tile"
+          backgroundColor="bgAlt"
           alignItems="center"
           justifyContent="center"
           marginBottom="md"
