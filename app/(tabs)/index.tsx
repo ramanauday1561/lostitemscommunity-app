@@ -16,6 +16,7 @@ import {
 import { Box, Text } from '@/components/primitives';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { DEMO_MODE, DEMO_REGISTRY } from '@/lib/demo';
 import type { ItemKind, ItemWithCategory } from '@/lib/database.types';
 import { initials as toInitials, shortDate } from '@/lib/format';
 import { colors, radius, shadow, spacing, text } from '@/theme/tokens';
@@ -48,6 +49,19 @@ export default function Dashboard() {
 
   const fetchItems = useCallback(async () => {
     setError(null);
+
+    if (DEMO_MODE) {
+      const term = search.trim().toLowerCase();
+      const all = DEMO_REGISTRY as unknown as ItemWithCategory[];
+      const visible = all.filter((i) => i.status === 'active');
+      setItems(
+        visible
+          .filter((i) => filter === 'all' || i.kind === filter)
+          .filter((i) => !term || `${i.title} ${i.description ?? ''} ${i.short_code}`.toLowerCase().includes(term)),
+      );
+      setRecent(visible.filter((i) => i.kind === 'found').slice(0, 8));
+      return;
+    }
 
     let query = supabase
       .from('items')

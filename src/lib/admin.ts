@@ -1,3 +1,4 @@
+import { DEMO_FLAGS, DEMO_MEMBERS, DEMO_MODE, DEMO_STATS } from '@/lib/demo';
 import { supabase } from '@/lib/supabase';
 
 /** Shape returned by the admin_dashboard_stats() RPC. */
@@ -47,12 +48,14 @@ export type AdminMember = {
 };
 
 export async function fetchStats(): Promise<AdminStats> {
+  if (DEMO_MODE) return DEMO_STATS;
   const { data, error } = await supabase.rpc('admin_dashboard_stats');
   if (error) throw error;
   return data as unknown as AdminStats;
 }
 
 export async function fetchFlags(status: FlagStatus): Promise<ModerationFlag[]> {
+  if (DEMO_MODE) return DEMO_FLAGS.filter((f) => f.status === status);
   const { data, error } = await supabase
     .from('moderation_flags')
     .select(
@@ -109,6 +112,12 @@ export async function resolveFlag(flag: ModerationFlag, decision: 'approved' | '
 }
 
 export async function fetchMembers(search: string): Promise<AdminMember[]> {
+  if (DEMO_MODE) {
+    const t = search.trim().toLowerCase();
+    return t
+      ? DEMO_MEMBERS.filter((m) => `${m.username} ${m.full_name ?? ''}`.toLowerCase().includes(t))
+      : DEMO_MEMBERS;
+  }
   let q = supabase
     .from('profiles')
     .select('id,username,full_name,role,is_suspended,city,created_at')
