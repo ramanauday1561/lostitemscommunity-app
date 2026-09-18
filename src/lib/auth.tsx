@@ -10,6 +10,14 @@ type AuthState = {
   profile: Profile | null;
   /** True until the persisted session has been read from storage. */
   initialising: boolean;
+  /**
+   * True once the profile fetch for the current session has finished,
+   * whether it produced a row or not. Distinct from `profile !== null`,
+   * which cannot tell "still loading" apart from "failed to load", and
+   * distinct from `initialising`, which only covers the first session
+   * read and not a later sign-in.
+   */
+  profileResolved: boolean;
   /** Accepts an email or a username. */
   signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ needsConfirmation: boolean }>;
@@ -24,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [initialising, setInitialising] = useState(true);
+  const [profileResolved, setProfileResolved] = useState(false);
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase
@@ -35,9 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.warn('[auth] could not load profile:', error.message);
       setProfile(null);
-      return;
+    } else {
+      setProfile(data as Profile | null);
     }
-    setProfile(data as Profile | null);
+    // Resolved either way: a caller waiting on the role must not wait
+    // forever because the lookup failed.
+    setProfileResolved(true);
   }
 
   useEffect(() => {
@@ -49,6 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.session?.user) {
         void loadProfile(data.session.user.id).finally(() => active && setInitialising(false));
       } else {
+        setProfileResolved(true);
         setInitialising(false);
       }
     });
@@ -56,9 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
       setSession(next);
       if (next?.user) {
+        // The new session's role is not known until the fetch lands.
+        setProfileResolved(false);
         void loadProfile(next.user.id);
       } else {
         setProfile(null);
+        setProfileResolved(true);
       }
     });
 
@@ -74,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       profile,
       initialising,
+      profileResolved,
 
       async signIn(identifier, password) {
         // GoTrue authenticates by email only, so a username is translated
@@ -111,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) await loadProfile(session.user.id);
       },
     }),
-    [session, profile, initialising],
+    [session, profile, initialising, profileResolved],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

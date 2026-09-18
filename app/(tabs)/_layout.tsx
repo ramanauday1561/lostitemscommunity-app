@@ -38,7 +38,9 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: s.bar,
-        tabBarItemStyle: { height: 68 },
+        // No explicit item height: an item shorter than the bar is drawn
+        // against its top edge rather than centred in it.
+        tabBarItemStyle: { height: '100%', paddingHorizontal: 0 },
       }}
     >
       <Tabs.Screen
@@ -76,25 +78,34 @@ const s = StyleSheet.create({
     borderTopWidth: 0,
     ...shadow.floating,
   },
+  // Five tabs share (screenWidth - 2 * spacing.lg), so each gets about
+  // 62px on a 340pt phone. A minWidth of 62 plus 12pt of padding either
+  // side demanded 86 and overflowed the slot, which is what pushed the
+  // row out of alignment - worse the narrower the screen. The item now
+  // fills whatever width it is given instead of asking for its own.
   item: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    marginHorizontal: 3,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
     borderRadius: radius.field,
-    minWidth: 62,
   },
   itemActive: { backgroundColor: colors.bgAlt },
-  label: { fontFamily: font.semibold, fontSize: 10.5, color: colors.mutedLight },
+  label: { fontFamily: font.semibold, fontSize: 10.5, color: colors.mutedLight, flexShrink: 0 },
+  // 58 tall plus 18 of bottom margin came to 76 inside a 72 bar, so the
+  // raised centre action overflowed and dragged the other items down with
+  // it. translateY lifts it above the bar's edge without taking part in
+  // layout, so the row's height is unaffected.
   fab: {
-    width: 58,
-    height: 58,
+    width: 56,
+    height: 56,
     borderRadius: 20,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    transform: [{ translateY: -12 }],
     ...shadow.floating,
   },
 });

@@ -36,7 +36,7 @@ export default function AdminLayout() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: s.bar,
-        tabBarItemStyle: { height: 72 },
+        tabBarItemStyle: { height: '100%', paddingHorizontal: 0 },
       }}
     >
       <Tabs.Screen
@@ -77,15 +77,17 @@ const s = StyleSheet.create({
     borderTopWidth: 0,
     ...shadow.floating,
   },
+  // Same fix as the member bar: minWidth 58 plus 8pt either side asked for
+  // 74 where only about 62 exists on a narrow phone.
   item: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    marginHorizontal: 2,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
     borderRadius: radius.field,
-    minWidth: 58,
   },
   itemActive: { backgroundColor: colors.bgAlt },
-  label: { fontFamily: font.semibold, fontSize: 10, color: colors.mutedLight },
+  label: { fontFamily: font.semibold, fontSize: 10, color: colors.mutedLight, flexShrink: 0 },
 });

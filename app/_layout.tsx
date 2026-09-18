@@ -23,7 +23,7 @@ import { Loading } from '@/components/ui';
 import { colors } from '@/theme/tokens';
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { session, profile, initialising } = useAuth();
+  const { session, profile, initialising, profileResolved } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -33,10 +33,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/welcome');
     } else if (session && inAuthGroup) {
+      // The role decides the destination, so wait for it. Signing in sets
+      // the session synchronously while the profile fetch is still in
+      // flight, so routing on `profile` alone sent every admin to the
+      // member app - and this effect would not correct it afterwards,
+      // because by then the group is no longer (auth).
+      if (!profileResolved) return;
       // Admins land in the control app, members in the community app.
       router.replace(profile?.role === 'admin' ? '/(admin)' : '/(tabs)');
     }
-  }, [session, profile, initialising, segments, router]);
+  }, [session, profile, profileResolved, initialising, segments, router]);
 
   if (initialising) {
     return (
