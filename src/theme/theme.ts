@@ -1,12 +1,25 @@
 import { createTheme } from '@shopify/restyle';
-import { colors as c, font, radius, spacing as sp } from './tokens';
+import { colors, radius, spacing, text } from './tokens';
 
 /**
- * Restyle theme. Values come from tokens.ts, which was measured off the
- * prototype — this file only reshapes them into Restyle's contract so
- * screens can use typed variants instead of ad-hoc StyleSheet objects.
+ * Restyle theme for the Box / Text / Card primitives.
+ *
+ * Two rules keep this file from becoming a second, competing design system:
+ *
+ * 1. Colour keys are named exactly as in tokens.ts. Restyle needs a key
+ *    where StyleSheet needs a value, but there is one vocabulary either
+ *    way, so `colors.primary` and <Box backgroundColor="primary"> mean the
+ *    same thing and nobody has to learn a translation table.
+ * 2. Text variants spread a scale from tokens.ts and restate only the
+ *    colour, which Restyle requires as a key. Sizes and line heights exist
+ *    in exactly one place, so the two systems cannot drift apart.
+ *
+ * Entries are added when a screen needs them rather than up front - an
+ * unused variant is a thing to read and wonder about.
  */
 const CARD_SHADOW = {
+  // Restyle resolves shadowColor through the palette, so this must be a
+  // colour KEY. Passing the raw hex from tokens throws at render.
   shadowColor: 'ink',
   shadowOpacity: 0.06,
   shadowRadius: 18,
@@ -16,67 +29,43 @@ const CARD_SHADOW = {
 
 const theme = createTheme({
   colors: {
-    ink: c.ink,
-    inkSoft: c.inkSoft,
-    muted: c.muted,
-    mutedLight: c.mutedLight,
-    mutedFaint: c.mutedFaint,
-    brand: c.primary,
-    brandSoft: c.primarySoft,
-    danger: c.danger,
-    dangerSoft: c.dangerSoft,
-    ok: c.success,
-    okSoft: c.successSoft,
-    canvas: c.bg,
-    surface: c.card,
-    tile: c.bgAlt,
-    line: c.border,
-    white: c.white,
+    ink: colors.ink,
+    muted: colors.muted,
+    mutedLight: colors.mutedLight,
+    primary: colors.primary,
+    success: colors.success,
+    danger: colors.danger,
+    card: colors.card,
+    bgAlt: colors.bgAlt,
+    white: colors.white,
     transparent: 'transparent',
   },
-  spacing: { none: 0, xs: sp.xs, sm: sp.sm, md: sp.md, lg: sp.lg, xl: sp.xl, xxl: sp.xxl, xxxl: sp.xxxl },
-  borderRadii: {
-    none: 0,
-    sm: radius.sm,
-    field: radius.field,
-    btn: radius.button,
-    card: radius.card,
-    cardLarge: radius.cardLarge,
-    hero: radius.hero,
-    pill: radius.pill,
-  },
+  spacing: { none: 0, ...spacing },
+  borderRadii: { none: 0, sm: radius.sm, field: radius.field, card: radius.card, cardLarge: radius.cardLarge },
   breakpoints: { phone: 0 },
 
   textVariants: {
-    defaults: { fontFamily: font.regular, fontSize: 15, lineHeight: 24, color: 'muted' },
+    defaults: { ...text.body, color: 'muted' },
+    h1: { ...text.h1, color: 'ink' },
+    h2: { ...text.h2, color: 'ink' },
+    h3: { ...text.h3, color: 'ink' },
+    cardTitle: { ...text.cardTitle, color: 'ink' },
+    body: { ...text.body, color: 'muted' },
+    small: { ...text.small, color: 'muted' },
+    smallStrong: { ...text.smallStrong, color: 'ink' },
+    link: { ...text.link, color: 'primary' },
     /** Uppercase mono eyebrow above a screen title. */
-    kicker: { fontFamily: font.monoSemibold, fontSize: 10, letterSpacing: 1.6, color: 'brand' },
-    kickerMuted: { fontFamily: font.monoSemibold, fontSize: 10, letterSpacing: 1.6, color: 'mutedLight' },
-    h1: { fontFamily: font.extrabold, fontSize: 30, lineHeight: 34, letterSpacing: -1.05, color: 'ink' },
-    h2: { fontFamily: font.extrabold, fontSize: 22, lineHeight: 26, letterSpacing: -0.6, color: 'ink' },
-    /** Section heading, e.g. "Recently handed in". */
-    section: { fontFamily: font.bold, fontSize: 19, lineHeight: 24, letterSpacing: -0.4, color: 'ink' },
-    cardTitle: { fontFamily: font.bold, fontSize: 16, lineHeight: 21, letterSpacing: -0.2, color: 'ink' },
-    body: { fontFamily: font.regular, fontSize: 15, lineHeight: 24, color: 'muted' },
-    bodyInk: { fontFamily: font.regular, fontSize: 15, lineHeight: 24, color: 'ink' },
-    small: { fontFamily: font.regular, fontSize: 13.5, lineHeight: 19, color: 'muted' },
-    smallStrong: { fontFamily: font.bold, fontSize: 13, lineHeight: 18, color: 'ink' },
-    button: { fontFamily: font.bold, fontSize: 15.5, color: 'white' },
-    link: { fontFamily: font.bold, fontSize: 13.5, color: 'brand' },
+    kickerMuted: { ...text.kickerMuted, color: 'mutedLight' },
     /** Short codes and dates: FOUND-2018 · 11 Jun 2024 */
-    meta: { fontFamily: font.monoMedium, fontSize: 11, letterSpacing: 0.3, color: 'mutedLight' },
-    brand: { fontFamily: font.bold, fontSize: 14, letterSpacing: -0.14, color: 'ink' },
+    meta: { ...text.meta, color: 'mutedLight' },
   },
 
   cardVariants: {
-    // Restyle resolves shadowColor through the theme palette, so it must be
-    // a colour KEY here — passing the raw hex from tokens throws at render.
-    defaults: { backgroundColor: 'surface', borderRadius: 'card', padding: 'xl', ...CARD_SHADOW },
-    /** Carousel item card — tighter padding, rounder corners. */
-    item: { backgroundColor: 'surface', borderRadius: 'cardLarge', padding: 'md', ...CARD_SHADOW },
+    defaults: { backgroundColor: 'card', borderRadius: 'card', padding: 'xl', ...CARD_SHADOW },
+    /** Carousel item card - tighter padding, rounder corners. */
+    item: { backgroundColor: 'card', borderRadius: 'cardLarge', padding: 'md', ...CARD_SHADOW },
     /** Quick-action row. */
-    row: { backgroundColor: 'surface', borderRadius: 'card', padding: 'lg', ...CARD_SHADOW },
-    flat: { backgroundColor: 'surface', borderRadius: 'field', padding: 'lg' },
+    row: { backgroundColor: 'card', borderRadius: 'card', padding: 'lg', ...CARD_SHADOW },
   },
 });
 

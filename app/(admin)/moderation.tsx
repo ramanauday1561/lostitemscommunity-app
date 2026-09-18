@@ -7,6 +7,7 @@ import { Box, Card, Text } from '@/components/primitives';
 import { Button, EmptyState, ErrorState, Loading } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { fetchFlags, fetchStats, resolveFlag, type FlagStatus, type ModerationFlag } from '@/lib/admin';
+import { shortDate } from '@/lib/format';
 import { colors, radius, shadow, spacing } from '@/theme/tokens';
 
 const TABS: { key: FlagStatus; label: string }[] = [
@@ -123,7 +124,7 @@ export default function Moderation() {
               </Text>
               <Text variant="meta" marginTop="sm">
                 {item.flagged_by ? 'Reported by a member' : 'Flagged automatically'} ·{' '}
-                {new Date(item.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {shortDate(item.created_at)}
               </Text>
 
               {item.status === 'pending' && (

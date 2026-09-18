@@ -6,7 +6,8 @@ import { Box, Card, Text } from '@/components/primitives';
 import { EmptyState, ErrorState, Loading, Pill } from '@/components/ui';
 import { fetchStats, type AdminStats } from '@/lib/admin';
 import { supabase } from '@/lib/supabase';
-import { colors, spacing } from '@/theme/tokens';
+import { money } from '@/lib/format';
+import { colors } from '@/theme/tokens';
 
 type Campaign = {
   id: string;
@@ -74,7 +75,6 @@ export default function Ads() {
   if (loading) return <Loading label="Loading placements…" />;
   if (error || !stats) return <ErrorState message={error ?? 'No data'} onRetry={() => void onRefresh()} />;
 
-  const money = (n: number) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   const compact = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n));
   const ctr = stats.impressions_month > 0 ? ((stats.clicks_month / stats.impressions_month) * 100).toFixed(1) : '0.0';
 

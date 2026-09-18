@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, ErrorBanner, Field } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { initials as toInitials } from '@/lib/format';
 import { colors, radius, spacing, text } from '@/theme/tokens';
 
 export default function ProfileScreen() {
@@ -47,12 +48,7 @@ export default function ProfileScreen() {
     }
   }
 
-  const initials = (profile?.full_name ?? profile?.username ?? '?')
-    .split(' ')
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+  const initials = toInitials(profile?.full_name, profile?.username);
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>

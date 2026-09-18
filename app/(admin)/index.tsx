@@ -8,21 +8,21 @@ import { Box, Card, Text } from '@/components/primitives';
 import { Button, ErrorState, Loading } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { broadcast, fetchFlags, fetchStats, resolveFlag, type AdminStats, type ModerationFlag } from '@/lib/admin';
-import { colors, radius, shadow, spacing } from '@/theme/tokens';
+import { colors, spacing, tone as toneColors, type Tone } from '@/theme/tokens';
+import { initials as toInitials, money } from '@/lib/format';
 
 function StatTile({
   icon,
   label,
   value,
-  tone = 'brand',
+  tone = 'primary',
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   value: string;
-  tone?: 'brand' | 'ok' | 'danger';
+  tone?: Tone;
 }) {
-  const fg = tone === 'ok' ? colors.success : tone === 'danger' ? colors.danger : colors.primary;
-  const bg = tone === 'ok' ? colors.successSoft : tone === 'danger' ? colors.dangerSoft : colors.primarySoft;
+  const { fg, bg } = toneColors[tone];
   return (
     <Card variant="item" flex={1} minWidth={150}>
       <View style={[s.tileIcon, { backgroundColor: bg }]}>
@@ -126,8 +126,7 @@ export default function AdminDashboard() {
   if (loading) return <Loading label="Loading control centre…" />;
   if (error || !stats) return <ErrorState message={error ?? 'No data'} onRetry={() => void onRefresh()} />;
 
-  const initials = (profile?.full_name ?? 'SA').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
-  const money = (n: number) => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+  const initials = toInitials(profile?.full_name, 'SA');
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -163,13 +162,13 @@ export default function AdminDashboard() {
 
         <Box flexDirection="row" flexWrap="wrap" gap="md" paddingHorizontal="xl" marginTop="lg">
           <StatTile icon="search-outline" label="Active lost" value={String(stats.active_lost)} />
-          <StatTile icon="cube-outline" label="Recovered" value={String(stats.recovered)} tone="ok" />
+          <StatTile icon="cube-outline" label="Recovered" value={String(stats.recovered)} tone="success" />
           <StatTile icon="people-outline" label="Members" value={String(stats.members)} />
           <StatTile
             icon="flag-outline"
             label="Needs review"
             value={String(stats.flags_pending)}
-            tone={stats.flags_pending > 0 ? 'danger' : 'ok'}
+            tone={stats.flags_pending > 0 ? 'danger' : 'success'}
           />
         </Box>
 

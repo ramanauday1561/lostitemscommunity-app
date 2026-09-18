@@ -41,4 +41,3 @@ AppState.addEventListener('change', (state) => {
   }
 });
 
-export const SUPABASE_URL = supabaseUrl;
