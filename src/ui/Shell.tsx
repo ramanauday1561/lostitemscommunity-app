@@ -22,21 +22,3 @@ export function Shell({ children }: { children: React.ReactNode }) {
     </View>
   );
 }
-
-/** The mock status bar at the top of the frame. */
-export function StatusChrome() {
-  return (
-    <View style={{
-      height: 52, flexShrink: 0, flexDirection: 'row', alignItems: 'flex-end',
-      justifyContent: 'space-between', paddingHorizontal: 30, paddingBottom: 8,
-      backgroundColor: C.bg, zIndex: 8,
-    }}>
-      <Text style={{ fontFamily: FONTS[600], fontSize: 13, color: C.ink }}>9:41</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-        <View style={{ width: 16, height: 9, borderRadius: 2, backgroundColor: C.ink }} />
-        <View style={{ width: 12, height: 9, borderRadius: 2, backgroundColor: C.ink }} />
-        <View style={{ width: 22, height: 10, borderRadius: 3, borderWidth: 1.5, borderColor: C.ink }} />
-      </View>
-    </View>
-  );
-}

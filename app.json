@@ -20,7 +20,11 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Lost Items Community",
+      "shortName": "Lost Items",
+      "themeColor": "#F2F2F0",
+      "backgroundColor": "#F2F2F0"
     },
     "scheme": "lostitems",
     "newArchEnabled": true,
