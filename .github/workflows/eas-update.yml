@@ -1,0 +1,30 @@
+name: Publish EAS Update
+
+# Ships a new JS bundle to the installed Android development build. Needs the
+# EXPO_TOKEN secret; skipped automatically when it is not set.
+on:
+  push:
+    branches: [main, claude/gracious-darwin-m4s68c]
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: guard
+        run: echo "has_token=${{ secrets.EXPO_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - if: steps.guard.outputs.has_token == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.guard.outputs.has_token == 'true'
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - if: steps.guard.outputs.has_token == 'true'
+        run: npm ci
+      - if: steps.guard.outputs.has_token == 'true'
+        run: eas update --branch development --message "${{ github.event.head_commit.message }}" --non-interactive

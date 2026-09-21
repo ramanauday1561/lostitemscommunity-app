@@ -33,7 +33,10 @@ function HandedInStrip() {
             scale={0.97} onPress={it.open}>
             <View style={{ height: 92, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name={it.icon} size={34} color={C.ink} />
-              <View style={{ position: 'absolute', top: 10, left: 10 }}><Chip status={it.status} /></View>
+              {/* Floating chip over the thumbnail, as in the prototype's chipFloat. */}
+              <View style={{ position: 'absolute', top: 10, left: 10 }}>
+                <Chip status={it.status} style={{ backgroundColor: 'rgba(255,255,255,.94)', boxShadow: '0 2px 8px rgba(22,24,31,.14)' }} />
+              </View>
             </View>
             <View style={{ padding: 11 }}>
               <Text numberOfLines={1} style={{ fontFamily: FONTS[700], fontSize: 12.5, color: C.ink }}>{it.title}</Text>
