@@ -388,9 +388,14 @@ export function buildVals(store: Store) {
     replyDraft: st.replyDraft,
     onReplyDraft: (v: string) => store.setState({ replyDraft: v }),
     sendReply: () => store.postReply(),
+    // The prototype leaves the sheet open here; closing it matches how delete
+    // behaves and avoids the sheet showing a now-stale action label.
     suspendThread: () => {
       const id = st.activeThread;
-      store.setState((s) => ({ threads: s.threads.map((v) => v.id === id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v) }));
+      store.setState((s) => ({
+        threads: s.threads.map((v) => v.id === id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v),
+        sheet: null,
+      }));
       store.flash(thread && thread.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
     },
     deleteThread: () => {
