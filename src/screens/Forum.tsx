@@ -12,7 +12,7 @@ export function Forum() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 14 }}>
           {v.topics.map((t) => <Pill key={t.name} label={t.name} on={t.on} onPress={t.pick} />)}
         </ScrollView>
       </View>

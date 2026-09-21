@@ -2,7 +2,7 @@ name: Checks
 
 on:
   push:
-    branches: [main, claude/gracious-darwin-m4s68c]
+    branches: [main]
   pull_request:
 
 jobs:

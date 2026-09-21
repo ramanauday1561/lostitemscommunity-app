@@ -1,8 +1,12 @@
 name: Deploy web to GitHub Pages
 
+# The build runs everywhere so a broken web export is caught early, but the
+# github-pages environment only accepts deployments from the default branch --
+# attempting to publish from a feature branch is rejected outright.
 on:
   push:
-    branches: [main, claude/gracious-darwin-m4s68c]
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -10,8 +14,10 @@ permissions:
   pages: write
   id-token: write
 
+# Scope concurrency per ref so a pull-request build cannot cancel an
+# in-flight deployment from main.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -45,6 +51,8 @@ jobs:
 
   deploy:
     needs: build
+    # Only main may deploy to the github-pages environment.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

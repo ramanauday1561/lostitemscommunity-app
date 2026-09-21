@@ -16,7 +16,7 @@ export function Registry() {
           <Seg label="Found" on={v.regIsFound} onPress={v.goFound} />
         </View>
         <Field icon="search" value={v.q} onChange={v.onQuery} placeholder="Search title, place or reference" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 2 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 14 }}>
           {v.filters.map((f) => <Pill key={f.name} label={f.name} on={f.on} onPress={f.pick} />)}
         </ScrollView>
       </View>

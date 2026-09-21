@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useVals } from './StoreProvider';
-import { Shell, StatusChrome } from './ui/Shell';
+import { Shell } from './ui/Shell';
 import { BottomNav, Header, Toast } from './ui/Chrome';
 import { Welcome } from './screens/Welcome';
 import { Login } from './screens/Login';
@@ -53,7 +53,6 @@ export function App() {
   return (
     <Shell>
       <View style={{ flex: 1, overflow: 'hidden' }}>
-        <StatusChrome />
         <Header />
         <View style={{ flex: 1, minHeight: 0 }}>
           <Screen />
