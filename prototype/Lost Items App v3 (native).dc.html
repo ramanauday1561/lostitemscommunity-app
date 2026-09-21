@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"><style>body{margin:0;background:#e7e6e2;font-family:'Public Sans',system-ui,sans-serif}a{color:#0B6BCB}a:hover{color:#08529c}*{box-sizing:border-box}button{font-family:inherit;cursor:pointer;border:0;background:none;padding:0;color:inherit;transition:transform .12s ease,background .16s ease,box-shadow .16s ease}input,textarea{font-family:inherit}input:focus,textarea:focus{outline:none}::-webkit-scrollbar{width:0;height:0}</style></helmet>
+
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;gap:56px;padding:48px 40px">
+
+<div style="display:flex;flex-direction:column;gap:16px;width:238px">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#8b8f95">Lost Items Community · v3 native</div>
+<div style="font:400 12.5px/1.7 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Same features, rebuilt for a phone: elevation instead of borders, bottom sheets instead of pages, an 8px grid, and every target at 44px or more.</div>
+<div style="height:1px;background:#d8d6d1"></div>
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#8b8f95">Viewing</div>
+<div style="font:600 13px 'Public Sans',sans-serif;color:#16181F">{{ crumb }}</div>
+<button onClick="{{ reset }}" style="align-self:flex-start;min-height:44px;font:600 11px 'IBM Plex Mono',monospace;color:#6B7280">reset prototype ↺</button>
+</div>
+
+<div style="width:390px;height:844px;border-radius:46px;background:#F2F2F0;position:relative;overflow:hidden;box-shadow:0 40px 80px -20px rgba(22,24,31,.35),0 0 0 1px rgba(22,24,31,.1);display:flex;flex-direction:column">
+
+<div style="height:52px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 8px;font:600 13px 'Public Sans',sans-serif;z-index:8;color:{{ chromeFg }};background:{{ chromeBg }}">
+<span>9:41</span>
+<div style="display:flex;align-items:center;gap:5px"><span style="width:16px;height:9px;border-radius:2px;background:currentColor;display:block"></span><span style="width:12px;height:9px;border-radius:2px;background:currentColor;display:block"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid currentColor;display:block"></span></div>
+</div>
+
+<sc-if value="{{ showHeader }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 20px 16px">
+<sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ back }}" style="flex:none;width:44px;height:44px;margin-left:-10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16181F" style-active="transform:scale(.92);background:rgba(22,24,31,.06)"><span style="font-family:'Material Symbols Rounded';font-size:24px">arrow_back</span></button>
+</sc-if>
+<div style="flex:1;min-width:0">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#9a9ea4">{{ headerKicker }}</div>
+<div style="margin-top:4px;font:800 26px/1.12 'Public Sans',sans-serif;letter-spacing:-.03em;color:#16181F">{{ headerTitle }}</div>
+</div>
+<sc-if value="{{ showInbox }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ openMessages }}" style="position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(22,24,31,.06),0 6px 16px -8px rgba(22,24,31,.24);display:flex;align-items:center;justify-content:center;color:#16181F" style-active="transform:scale(.94)">
+<span style="font-family:'Material Symbols Rounded';font-size:22px">chat</span>
+<sc-if value="{{ hasUnread }}" hint-placeholder-val="{{ false }}">
+<span style="{{ unreadBadgeStyle }}">{{ unreadTotal }}</span>
+</sc-if>
+</button>
+</sc-if>
+<button onClick="{{ openProfile }}" style="flex:none;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(22,24,31,.06),0 6px 16px -8px rgba(22,24,31,.24);display:flex;align-items:center;justify-content:center;font:700 12px 'IBM Plex Mono',monospace;color:#0B6BCB" style-active="transform:scale(.94)">{{ initials }}</button>
+</div>
+</sc-if>
+
+<div style="flex:1;min-height:0;overflow-y:auto;position:relative">
+
+<sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100%;display:flex;flex-direction:column;padding:0 24px 28px;background:#F2F2F0">
+<div style="display:flex;align-items:center;justify-content:space-between;min-height:44px">
+<div style="display:flex;align-items:center;gap:9px">
+<img src="public/images/logo.png" alt="" style="width:36px;height:36px;object-fit:contain;display:block;margin-left:-3px"/>
+<span style="font:700 14px 'Public Sans',sans-serif;letter-spacing:-.01em;color:#16181F">Lost Items Community</span>
+</div>
+<button onClick="{{ skipWelcome }}" style="min-height:44px;padding:0 8px;font:700 13px 'Public Sans',sans-serif;color:#8b8f95">Skip</button>
+</div>
+
+<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px 0">
+<div style="position:relative;width:100%;aspect-ratio:1;border-radius:36px;background:{{ slide.tint }};overflow:hidden;box-shadow:0 24px 50px -28px rgba(22,24,31,.5)">
+<img src="public/images/HomePage1.webp" alt="" style="{{ img0 }}"/>
+<img src="public/images/illustration-exchange-item.webp" alt="" style="{{ img1 }}"/>
+<img src="public/images/illustration-treasure-chest.webp" alt="" style="{{ img2 }}"/>
+</div>
+</div>
+
+<div style="flex:none">
+<div style="display:flex;gap:6px;margin-bottom:20px">
+<sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+<span style="{{ d.style }}"></span>
+</sc-for>
+</div>
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#0B6BCB">{{ slide.kicker }}</div>
+<h1 style="margin:12px 0 0;min-height:69px;font:800 30px/1.14 'Public Sans',sans-serif;letter-spacing:-.035em;color:#16181F;text-wrap:pretty">{{ slide.title }}</h1>
+<p style="margin:12px 0 0;min-height:96px;font:400 15px/1.6 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ slide.body }}</p>
+<div style="display:flex;align-items:center;gap:10px;margin-top:20px">
+<sc-if value="{{ showWelcomeBack }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ prevSlide }}" style="flex:none;width:56px;height:56px;border-radius:20px;background:#fff;color:#16181F;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(22,24,31,.06),0 10px 24px -16px rgba(22,24,31,.4)" style-active="transform:scale(.94)"><span style="font-family:'Material Symbols Rounded';font-size:23px">arrow_back</span></button>
+</sc-if>
+<button onClick="{{ nextSlide }}" style="flex:1;min-height:56px;border-radius:20px;background:#0B6BCB;color:#fff;font:700 15.5px 'Public Sans',sans-serif;box-shadow:0 14px 30px -12px rgba(11,107,203,.85)" style-active="transform:scale(.98)">{{ nextLabel }}</button>
+</div>
+<div style="margin-top:16px;text-align:center;font:400 13px 'Public Sans',sans-serif;color:#8b8f95">Already a member? <button onClick="{{ skipWelcome }}" style="font:700 13px 'Public Sans',sans-serif;color:#0B6BCB">Sign in</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;background:#F2F2F0;padding:32px 24px 32px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:10px">
+<img src="public/images/logo.png" alt="" style="width:46px;height:46px;object-fit:contain;display:block;margin-left:-4px"/>
+<span style="font:700 15px 'Public Sans',sans-serif;letter-spacing:-.01em;color:#16181F">Lost Items Community</span>
+</div>
+<h1 style="margin:56px 0 12px;font:800 34px/1.08 'Public Sans',sans-serif;letter-spacing:-.035em;color:#16181F">Welcome<br>back</h1>
+<p style="margin:0;font:400 15px/1.6 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Great to see you again. Let's find what you're looking for.</p>
+
+<div style="margin-top:auto;padding-top:40px">
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4);margin-bottom:8px">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">person</span>
+<input value="{{ username }}" onChange="{{ onUser }}" placeholder="Username or email" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">lock</span>
+<input value="{{ password }}" onChange="{{ onPass }}" type="password" placeholder="Password" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+<button onClick="{{ toggleRemember }}" style="display:flex;align-items:center;gap:10px;min-height:44px;padding-right:8px;font:500 13.5px 'Public Sans',sans-serif;color:#6B7280"><span style="{{ checkboxStyle }}"><span style="font-family:'Material Symbols Rounded';font-size:15px">{{ checkGlyph }}</span></span>Remember me</button>
+<button onClick="{{ goForgot }}" style="min-height:44px;padding-left:8px;font:600 13.5px 'Public Sans',sans-serif;color:#0B6BCB" style-active="opacity:.6">Forgot password?</button>
+</div>
+
+<sc-if value="{{ error }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:8px;display:flex;gap:9px;padding:14px 16px;border-radius:16px;background:rgba(180,35,24,.08)">
+<span style="font-family:'Material Symbols Rounded';font-size:19px;color:#B42318">error</span>
+<span style="font:500 12.5px/1.5 'Public Sans',sans-serif;color:#B42318">{{ error }}</span>
+</div>
+</sc-if>
+
+<button onClick="{{ submit }}" style="{{ signInStyle }}" style-active="transform:scale(.98)">{{ signInLabel }}</button>
+
+<div style="margin-top:20px;display:flex;align-items:center;gap:12px"><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Or continue with a social account</span><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span></div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<sc-for list="{{ socials }}" as="s" hint-placeholder-count="3">
+<button onClick="{{ s.go }}" style="flex:1;min-height:64px;border-radius:20px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 26px -20px rgba(22,24,31,.45)" style-active="transform:scale(.95);background:#F7F7F5">
+<span style="{{ s.markStyle }}">{{ s.mark }}</span>
+<span style="font:600 11px 'Public Sans',sans-serif;color:#6B7280">{{ s.name }}</span>
+</button>
+</sc-for>
+</div>
+
+<div style="margin-top:24px;display:flex;align-items:center;gap:12px"><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Quick test logins</span><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span></div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+<sc-for list="{{ quickLogins }}" as="q" hint-placeholder-count="3">
+<button onClick="{{ q.go }}" style="min-height:56px;padding:0 16px;border-radius:18px;background:#fff;display:flex;align-items:center;gap:12px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)" style-active="transform:scale(.98);background:#EDEDEA">
+<span style="flex:none;width:34px;height:34px;border-radius:12px;background:{{ q.tint }};color:{{ q.color }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:19px">{{ q.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 13.5px 'Public Sans',sans-serif;color:#16181F">{{ q.name }}</span>
+<span style="display:block;margin-top:2px;font:400 11px 'Public Sans',sans-serif;color:#8b8f95">{{ q.desc }}</span>
+</span>
+<span style="flex:none;font:500 10.5px 'IBM Plex Mono',monospace;color:#a8acb2">{{ q.handle }}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top:20px;text-align:center;font:400 13px 'Public Sans',sans-serif;color:#6B7280">New here? <button onClick="{{ goSignup }}" style="min-height:44px;font:700 13px 'Public Sans',sans-serif;color:#0B6BCB" style-active="opacity:.7">Join free in 30 seconds</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;background:#F2F2F0;padding:20px 24px 32px;display:flex;flex-direction:column">
+<button onClick="{{ fpBack }}" style="width:44px;height:44px;margin-left:-10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16181F" style-active="transform:scale(.92);background:rgba(22,24,31,.06)"><span style="font-family:'Material Symbols Rounded';font-size:24px">arrow_back</span></button>
+
+<div style="display:flex;gap:6px;margin-top:20px">
+<sc-for list="{{ fpSteps }}" as="s" hint-placeholder-count="3">
+<span style="{{ s.style }}"></span>
+</sc-for>
+</div>
+<div style="margin-top:16px;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#0B6BCB">{{ fpKicker }}</div>
+<h1 style="margin:10px 0 10px;font:800 32px/1.1 'Public Sans',sans-serif;letter-spacing:-.035em;color:#16181F;text-wrap:pretty">{{ fpTitle }}</h1>
+<p style="margin:0;font:400 15px/1.6 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ fpBody }}</p>
+
+<div style="margin-top:26px;display:flex;flex-direction:column">
+
+<sc-if value="{{ fpIsEmail }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">mail</span>
+<input value="{{ fpEmail }}" onChange="{{ onFpEmail }}" placeholder="Email on your account" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+</sc-if>
+
+<sc-if value="{{ fpIsCode }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:18px;background:rgba(11,107,203,.07);margin-bottom:12px">
+<span style="font-family:'Material Symbols Rounded';font-size:20px;color:#0B6BCB">mark_email_read</span>
+<span style="flex:1;min-width:0;font:500 12.5px/1.5 'Public Sans',sans-serif;color:#0B6BCB;overflow:hidden;text-overflow:ellipsis">Code sent to {{ fpEmail }}</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">pin</span>
+<input value="{{ fpCode }}" onChange="{{ onFpCode }}" placeholder="6-digit code" style="flex:1;min-width:0;border:0;background:none;font:600 17px 'IBM Plex Mono',monospace;letter-spacing:.32em;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+<span style="font:400 12px 'Public Sans',sans-serif;color:#8b8f95">Didn't get it?</span>
+<button onClick="{{ fpResend }}" style="min-height:44px;padding-left:8px;font:600 13px 'Public Sans',sans-serif;color:#0B6BCB" style-active="opacity:.6">Resend code</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ fpIsReset }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">lock</span>
+<input value="{{ fpPass }}" onChange="{{ onFpPass }}" type="password" placeholder="New password" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4);margin-top:8px">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">lock_reset</span>
+<input value="{{ fpConfirm }}" onChange="{{ onFpConfirm }}" type="password" placeholder="Confirm new password" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ fpMatchColor }}">{{ fpMatchGlyph }}</span>
+</div>
+<div style="display:flex;gap:6px;margin-top:12px">
+<sc-for list="{{ fpStrengthBars }}" as="b" hint-placeholder-count="3">
+<span style="{{ b.style }}"></span>
+</sc-for>
+</div>
+<div style="margin-top:8px;font:500 11.5px 'Public Sans',sans-serif;color:{{ fpStrengthColor }}">{{ fpStrengthLabel }}</div>
+</sc-if>
+
+<sc-if value="{{ fpIsDone }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px;border-radius:26px;background:#fff;box-shadow:0 1px 2px rgba(22,24,31,.05),0 16px 34px -24px rgba(22,24,31,.45)">
+<span style="width:60px;height:60px;border-radius:50%;background:rgba(15,123,61,.12);color:#0F7B3D;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:32px">task_alt</span></span>
+<div style="margin-top:16px;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">Password updated</div>
+<div style="margin-top:8px;font:400 13px/1.55 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Sign in with your new password. Any other device stays signed out.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ fpError }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:12px;display:flex;gap:9px;padding:14px 16px;border-radius:16px;background:rgba(180,35,24,.08)">
+<span style="font-family:'Material Symbols Rounded';font-size:19px;color:#B42318">error</span>
+<span style="font:500 12.5px/1.5 'Public Sans',sans-serif;color:#B42318">{{ fpError }}</span>
+</div>
+</sc-if>
+
+<button onClick="{{ fpPrimary }}" style="{{ fpPrimaryStyle }}" style-active="transform:scale(.98)">{{ fpPrimaryLabel }}</button>
+
+<sc-if value="{{ fpShowSignInLink }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:20px;text-align:center;font:400 13px 'Public Sans',sans-serif;color:#6B7280">Remembered it? <button onClick="{{ goLogin }}" style="min-height:44px;font:700 13px 'Public Sans',sans-serif;color:#0B6BCB" style-active="opacity:.7">Back to sign in</button></div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;background:#F2F2F0;padding:20px 24px 32px;display:flex;flex-direction:column">
+<button onClick="{{ goLogin }}" style="width:44px;height:44px;margin-left:-10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#16181F" style-active="transform:scale(.92);background:rgba(22,24,31,.06)"><span style="font-family:'Material Symbols Rounded';font-size:24px">arrow_back</span></button>
+<h1 style="margin:22px 0 10px;font:800 32px/1.1 'Public Sans',sans-serif;letter-spacing:-.035em;color:#16181F">Create your<br>account</h1>
+<p style="margin:0;font:400 15px/1.6 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Join 10,000+ community members. Free forever, no hidden fees.</p>
+
+<div style="margin-top:26px">
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4);margin-bottom:8px">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">alternate_email</span>
+<input value="{{ suUser }}" onChange="{{ onSuUser }}" placeholder="Choose a unique username" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4);margin-bottom:8px">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">mail</span>
+<input value="{{ suEmail }}" onChange="{{ onSuEmail }}" placeholder="your.email@example.com" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">lock</span>
+<input value="{{ suPass }}" onChange="{{ onSuPass }}" type="password" placeholder="Create a strong password" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:16px;min-height:56px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -20px rgba(22,24,31,.4);margin-top:8px">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">lock_reset</span>
+<input value="{{ suConfirm }}" onChange="{{ onSuConfirm }}" type="password" placeholder="Confirm password" style="flex:1;min-width:0;border:0;background:none;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<span style="font-family:'Material Symbols Rounded';font-size:20px;color:{{ suMatchColor }}">{{ suMatchGlyph }}</span>
+</div>
+<div style="display:flex;gap:6px;margin-top:12px">
+<sc-for list="{{ strengthBars }}" as="b" hint-placeholder-count="3">
+<span style="{{ b.style }}"></span>
+</sc-for>
+</div>
+<div style="margin-top:8px;font:500 11.5px 'Public Sans',sans-serif;color:{{ strengthColor }}">{{ strengthLabel }}</div>
+
+<div style="display:flex;align-items:flex-start;gap:10px;margin-top:14px">
+<button onClick="{{ toggleTerms }}" style="flex:none;display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin:-11px 0 0 -11px">
+<span style="{{ termsBoxStyle }}"><span style="font-family:'Material Symbols Rounded';font-size:15px">{{ termsGlyph }}</span></span>
+</button>
+<span style="flex:1;font:400 12.5px/1.5 'Public Sans',sans-serif;color:#6B7280;text-align:left">I agree to the <button onClick="{{ openGuidelines }}" style="font:600 12.5px 'Public Sans',sans-serif;color:#0B6BCB;text-decoration:underline;text-underline-offset:2px;padding:6px 0" style-active="opacity:.7">community guidelines and safe meetup rules</button>.</span>
+</div>
+
+<sc-if value="{{ suError }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:12px;display:flex;gap:9px;padding:14px 16px;border-radius:16px;background:rgba(180,35,24,.08)">
+<span style="font-family:'Material Symbols Rounded';font-size:19px;color:#B42318">error</span>
+<span style="font:500 12.5px/1.5 'Public Sans',sans-serif;color:#B42318">{{ suError }}</span>
+</div>
+</sc-if>
+
+<button onClick="{{ submitSignup }}" style="{{ signupStyle }}" style-active="transform:scale(.98)">Create account</button>
+
+<div style="margin-top:22px;display:flex;align-items:center;gap:12px"><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span><span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Or sign up with a social account</span><span style="flex:1;height:1px;background:#DEDDD8;display:block"></span></div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<sc-for list="{{ socials }}" as="s" hint-placeholder-count="3">
+<button onClick="{{ s.go }}" style="flex:1;min-height:64px;border-radius:20px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 26px -20px rgba(22,24,31,.45)" style-active="transform:scale(.95);background:#F7F7F5">
+<span style="{{ s.markStyle }}">{{ s.mark }}</span>
+<span style="font:600 11px 'Public Sans',sans-serif;color:#6B7280">{{ s.name }}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top:22px;text-align:center;font:400 13px 'Public Sans',sans-serif;color:#6B7280">Already a member? <button onClick="{{ goLogin }}" style="min-height:44px;font:700 13px 'Public Sans',sans-serif;color:#0B6BCB" style-active="opacity:.7">Sign in</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isUserDash }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:24px">
+
+<button onClick="{{ goSearch }}" style="display:flex;align-items:center;gap:12px;min-height:52px;background:#fff;border-radius:26px;padding:0 8px 0 18px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -16px rgba(22,24,31,.3)" style-active="transform:scale(.99)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">search</span>
+<span style="flex:1;font:500 14.5px 'Public Sans',sans-serif;color:#9a9ea4">Search the registry</span>
+<span style="width:36px;height:36px;border-radius:50%;background:#F2F2F0;display:flex;align-items:center;justify-content:center;color:#0B6BCB"><span style="font-family:'Material Symbols Rounded';font-size:19px">tune</span></span>
+</button>
+
+<div style="display:flex;gap:8px">
+<sc-for list="{{ myStats }}" as="s" hint-placeholder-count="3">
+<div style="flex:1;background:#fff;border-radius:22px;padding:16px 8px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -18px rgba(22,24,31,.3)">
+<div style="font:800 24px 'Public Sans',sans-serif;letter-spacing:-.04em;color:{{ s.color }}">{{ s.value }}</div>
+<div style="margin-top:4px;font:600 10.5px/1.3 'Public Sans',sans-serif;letter-spacing:.01em;color:#8b8f95">{{ s.label }}</div>
+</div>
+</sc-for>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px">
+<h2 style="margin:0;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Recently handed in</h2>
+<button onClick="{{ goFound }}" style="min-height:44px;padding-left:8px;font:700 12.5px 'Public Sans',sans-serif;color:#0B6BCB;white-space:nowrap">See all</button>
+</div>
+<div style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 8px">
+<sc-for list="{{ handedIn }}" as="it" hint-placeholder-count="4">
+<button onClick="{{ it.open }}" style="flex:none;width:200px;scroll-snap-align:center;background:#fff;border-radius:26px;padding:8px;text-align:left;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(22,24,31,.05),0 16px 32px -20px rgba(22,24,31,.45)" style-active="transform:scale(.97)">
+<span style="position:relative;display:block;height:124px;border-radius:20px;background:linear-gradient(150deg,#F4F4F2,#E9E9E5);overflow:hidden">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b7bbc1"><span style="font-family:'Material Symbols Rounded';font-size:44px">{{ it.icon }}</span></span>
+<span style="{{ it.chipFloat }}">{{ it.status }}</span>
+</span>
+<span style="display:block;padding:14px 10px 10px">
+<span style="display:block;font:700 15px/1.25 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.title }}</span>
+<span style="display:flex;align-items:center;gap:5px;margin-top:6px;color:#8b8f95"><span style="font-family:'Material Symbols Rounded';font-size:15px">location_on</span><span style="font:500 11.5px 'Public Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.location }}</span></span>
+<span style="display:block;margin-top:8px;font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:#a8acb2">{{ it.id }} · {{ it.date }}</span>
+</span>
+</button>
+</sc-for>
+<button onClick="{{ goFound }}" style="flex:none;width:132px;scroll-snap-align:center;border-radius:26px;background:rgba(11,107,203,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#0B6BCB" style-active="transform:scale(.97)">
+<span style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px -4px rgba(11,107,203,.4)"><span style="font-family:'Material Symbols Rounded';font-size:22px">arrow_forward</span></span>
+<span style="font:700 12.5px 'Public Sans',sans-serif">Browse all</span>
+</button>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ shortcuts }}" as="c" hint-placeholder-count="2">
+<button onClick="{{ c.go }}" style="display:flex;align-items:center;gap:14px;min-height:76px;text-align:left;background:#fff;border-radius:24px;padding:16px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)" style-active="transform:scale(.985)">
+<span style="flex:none;width:44px;height:44px;border-radius:16px;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:23px">{{ c.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">{{ c.title }}</span><span style="display:block;margin-top:3px;font:400 12px/1.45 'Public Sans',sans-serif;color:#8b8f95">{{ c.desc }}</span></span>
+<span style="flex:none;font-family:'Material Symbols Rounded';font-size:22px;color:#c6c9ce">chevron_right</span>
+</button>
+</sc-for>
+</div>
+
+<div>
+<h2 style="margin:0 0 12px;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Community</h2>
+<div style="background:#fff;border-radius:26px;padding:8px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4);display:flex;flex-direction:column;gap:4px">
+<sc-for list="{{ comments }}" as="c" hint-placeholder-count="2">
+<div style="display:flex;gap:12px;padding:12px">
+<span style="flex:none;width:36px;height:36px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace;color:#6B7280">{{ c.ini }}</span>
+<div style="flex:1;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font:700 12.5px 'Public Sans',sans-serif;color:#16181F">{{ c.user }} <span style="font-weight:500;color:#0B6BCB">on {{ c.onItem }}</span></span><span style="flex:none;font:500 10px 'IBM Plex Mono',monospace;color:#a8acb2">{{ c.time }}</span></div>
+<p style="margin:6px 0 0;font:400 12.5px/1.6 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ c.text }}</p>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{ adHome.live }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:16px;background:#fff;border-radius:26px;padding:8px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px 10px">
+<span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#a8acb2">Sponsored</span>
+<span style="font:500 10px 'IBM Plex Mono',monospace;color:#c6c9ce">{{ adHome.id }}</span>
+</div>
+<div style="height:104px;border-radius:20px;border:1.5px dashed #D8D8D3;background:#FAFAF8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#a8acb2">
+<span style="font-family:'Material Symbols Rounded';font-size:26px">{{ adHome.icon }}</span>
+<span style="font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.06em">{{ adHome.size }}</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 10px 6px">
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 14px 'Public Sans',sans-serif;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ adHome.campaign }}</span>
+<span style="display:block;margin-top:3px;font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">{{ adHome.advertiser }}</span>
+</span>
+<span style="flex:none;min-height:36px;padding:0 14px;border-radius:12px;background:#F2F2F0;display:flex;align-items:center;font:700 12px 'Public Sans',sans-serif;color:#0B6BCB">Learn more</span>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFreshDash }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:20px">
+
+<div style="padding:24px 20px 20px;border-radius:28px;background:#101319;box-shadow:0 20px 40px -24px rgba(16,19,25,.8)">
+<span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(0,227,155,.14);font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#00E39B"><span style="font-family:'Material Symbols Rounded';font-size:14px">celebration</span>New member</span>
+<h2 style="margin:16px 0 0;font:800 26px/1.15 'Public Sans',sans-serif;letter-spacing:-.035em;color:#fff;text-wrap:pretty">Welcome to Lost Items Community, Nadia.</h2>
+<p style="margin:10px 0 18px;font:400 13.5px/1.6 'Public Sans',sans-serif;color:rgba(255,255,255,.6);text-wrap:pretty">Your account is empty for now. Report something you lost, or hand in something you found — both take under a minute.</p>
+<div style="display:flex;gap:8px">
+<button onClick="{{ openReport }}" style="flex:1;min-height:48px;border-radius:16px;background:#0B6BCB;color:#fff;font:700 13.5px 'Public Sans',sans-serif;box-shadow:0 12px 26px -12px rgba(11,107,203,.9)" style-active="transform:scale(.97)">Report an item</button>
+<button onClick="{{ openGuidelines }}" style="flex:none;min-height:48px;padding:0 18px;border-radius:16px;background:rgba(255,255,255,.1);color:#fff;font:700 13.5px 'Public Sans',sans-serif" style-active="transform:scale(.97)">The rules</button>
+</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px">
+<h2 style="margin:0;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Set up your account</h2>
+<span style="font:600 11px 'IBM Plex Mono',monospace;color:#8b8f95">{{ setupProgress }}</span>
+</div>
+<div style="background:#fff;border-radius:26px;padding:8px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4);display:flex;flex-direction:column">
+<sc-for list="{{ setupSteps }}" as="s" hint-placeholder-count="4">
+<button onClick="{{ s.go }}" style="display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 12px;text-align:left" style-active="opacity:.6">
+<span style="{{ s.markStyle }}"><span style="font-family:'Material Symbols Rounded';font-size:18px">{{ s.mark }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 14px 'Public Sans',sans-serif;color:{{ s.titleColor }}">{{ s.title }}</span>
+<span style="display:block;margin-top:3px;font:400 12px/1.45 'Public Sans',sans-serif;color:#8b8f95">{{ s.desc }}</span>
+</span>
+<span style="flex:none;font-family:'Material Symbols Rounded';font-size:21px;color:#c6c9ce">chevron_right</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px">
+<h2 style="margin:0;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Happening near you</h2>
+<button onClick="{{ goFound }}" style="min-height:44px;padding-left:8px;font:700 12.5px 'Public Sans',sans-serif;color:#0B6BCB;white-space:nowrap">See all</button>
+</div>
+<div style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 8px">
+<sc-for list="{{ handedIn }}" as="it" hint-placeholder-count="3">
+<button onClick="{{ it.open }}" style="flex:none;width:184px;scroll-snap-align:center;background:#fff;border-radius:26px;padding:8px;text-align:left;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(22,24,31,.05),0 16px 32px -20px rgba(22,24,31,.45)" style-active="transform:scale(.97)">
+<span style="position:relative;display:block;height:112px;border-radius:20px;background:linear-gradient(150deg,#F4F4F2,#E9E9E5);overflow:hidden">
+<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#b7bbc1"><span style="font-family:'Material Symbols Rounded';font-size:40px">{{ it.icon }}</span></span>
+<span style="{{ it.chipFloat }}">{{ it.status }}</span>
+</span>
+<span style="display:block;padding:12px 10px 8px">
+<span style="display:block;font:700 14.5px/1.25 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.title }}</span>
+<span style="display:flex;align-items:center;gap:5px;margin-top:6px;color:#8b8f95"><span style="font-family:'Material Symbols Rounded';font-size:15px">location_on</span><span style="font:500 11.5px 'Public Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.location }}</span></span>
+</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ adHome.live }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:26px;padding:8px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px 10px">
+<span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#a8acb2">Sponsored</span>
+<span style="font:500 10px 'IBM Plex Mono',monospace;color:#c6c9ce">{{ adHome.id }}</span>
+</div>
+<div style="height:104px;border-radius:20px;border:1.5px dashed #D8D8D3;background:#FAFAF8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#a8acb2">
+<span style="font-family:'Material Symbols Rounded';font-size:26px">{{ adHome.icon }}</span>
+<span style="font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.06em">{{ adHome.size }}</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 10px 6px">
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 14px 'Public Sans',sans-serif;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ adHome.campaign }}</span>
+<span style="display:block;margin-top:3px;font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">{{ adHome.advertiser }}</span>
+</span>
+<span style="flex:none;min-height:36px;padding:0 14px;border-radius:12px;background:#F2F2F0;display:flex;align-items:center;font:700 12px 'Public Sans',sans-serif;color:#0B6BCB">Learn more</span>
+</div>
+</div>
+</sc-if>
+
+<div style="display:flex;gap:12px;padding:18px;border-radius:26px;background:#fff;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<span style="flex:none;width:40px;height:40px;border-radius:14px;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:21px">inbox</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 14px 'Public Sans',sans-serif;color:#16181F">No messages yet</span>
+<span style="display:block;margin-top:3px;font:400 12.5px/1.5 'Public Sans',sans-serif;color:#8b8f95;text-wrap:pretty">Claim an item or post a report and conversations land in your inbox.</span>
+</span>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAdminDash }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:16px">
+<button onClick="{{ goAds }}" style="display:flex;align-items:center;gap:14px;min-height:76px;padding:0 18px;background:#fff;border-radius:26px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)" style-active="transform:scale(.985)">
+<span style="flex:none;width:44px;height:44px;border-radius:16px;background:rgba(15,123,61,.1);color:#0F7B3D;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:23px">payments</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">Ad placements &amp; revenue</span>
+<span style="display:block;margin-top:3px;font:500 12px 'Public Sans',sans-serif;color:#8b8f95">{{ adRevenue }} this month · {{ adLiveCount }}</span>
+</span>
+<span style="flex:none;font-family:'Material Symbols Rounded';font-size:21px;color:#c6c9ce">chevron_right</span>
+</button>
+
+<div style="background:#101319;border-radius:28px;padding:20px;box-shadow:0 20px 40px -24px rgba(16,19,25,.8)">
+<div style="display:flex;align-items:center;gap:8px;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)"><span style="font-family:'Material Symbols Rounded';font-size:16px;color:#FF8A80">flag</span>Needs moderation</div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:14px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:800 46px 'Public Sans',sans-serif;letter-spacing:-.05em;color:#fff">{{ flaggedCount }}</span><span style="font:500 13px 'Public Sans',sans-serif;color:rgba(255,255,255,.55)">flagged posts</span></div>
+<button onClick="{{ goModeration }}" style="min-height:44px;padding:0 20px;border-radius:22px;background:#0B6BCB;color:#fff;font:700 13.5px 'Public Sans',sans-serif;box-shadow:0 10px 24px -10px rgba(11,107,203,.9)" style-active="transform:scale(.96)">Review</button>
+</div>
+</div>
+
+<div style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 8px">
+<sc-for list="{{ adminMetrics }}" as="m" hint-placeholder-count="3">
+<div style="flex:none;width:176px;scroll-snap-align:start;background:#fff;border-radius:24px;padding:18px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -22px rgba(22,24,31,.45)">
+<div style="display:flex;align-items:center;gap:7px;font:600 11px 'Public Sans',sans-serif;color:#8b8f95"><span style="font-family:'Material Symbols Rounded';font-size:16px;color:{{ m.iconColor }}">{{ m.icon }}</span>{{ m.label }}</div>
+<div style="margin-top:12px;font:800 28px 'Public Sans',sans-serif;letter-spacing:-.04em;color:{{ m.color }}">{{ m.value }}</div>
+<div style="margin-top:6px;font:600 11px 'Public Sans',sans-serif;color:{{ m.deltaColor }}">{{ m.delta }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="background:#fff;border-radius:28px;padding:20px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<h2 style="margin:0;font:800 16px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">Conversation &amp; sentiment</h2>
+<button onClick="{{ goAnalysis }}" style="min-height:44px;padding-left:8px;font:700 12.5px 'Public Sans',sans-serif;color:#0B6BCB;white-space:nowrap">Open hub</button>
+</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<div style="flex:1;padding:14px;border-radius:20px;background:#F7F7F5">
+<div style="font:800 24px 'Public Sans',sans-serif;letter-spacing:-.04em;color:#16181F">142</div>
+<div style="margin-top:3px;font:600 11px 'Public Sans',sans-serif;color:#8b8f95">Active threads</div>
+</div>
+<div style="flex:1;padding:14px;border-radius:20px;background:#F7F7F5">
+<div style="font:800 24px 'Public Sans',sans-serif;letter-spacing:-.04em;color:#0F7B3D">94.2%</div>
+<div style="margin-top:3px;font:600 11px 'Public Sans',sans-serif;color:#8b8f95">Positive</div>
+<div style="margin-top:10px;height:5px;border-radius:999px;background:#E3E3DF;overflow:hidden"><span style="display:block;width:94.2%;height:100%;border-radius:999px;background:#0F7B3D"></span></div>
+</div>
+</div>
+<div style="margin-top:8px;display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ sentimentRows }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:0 4px"><span style="font:500 13px 'Public Sans',sans-serif;color:#6B7280">{{ r.k }}</span><span style="font:700 13px 'Public Sans',sans-serif;color:{{ r.color }}">{{ r.v }}</span></div>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px">
+<h2 style="margin:0;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Flagged content</h2>
+<span style="font:700 11px 'Public Sans',sans-serif;color:#B42318;background:rgba(180,35,24,.1);padding:6px 12px;border-radius:999px;white-space:nowrap">{{ flaggedCount }} pending</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ flagged }}" as="f" hint-placeholder-count="3">
+<div style="background:#fff;border-radius:24px;padding:16px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+<span style="font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:#8b8f95">{{ f.id }}</span>
+<span style="font:600 10.5px 'Public Sans',sans-serif;color:#B42318;background:rgba(180,35,24,.1);padding:5px 10px;border-radius:999px">{{ f.reason }}</span>
+</div>
+<div style="margin-top:10px;font:700 15px/1.3 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;text-wrap:pretty">{{ f.title }}</div>
+<div style="margin-top:4px;font:500 12px 'IBM Plex Mono',monospace;color:#8b8f95">{{ f.sub }}</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onClick="{{ f.approve }}" style="flex:1;min-height:44px;border-radius:16px;background:rgba(15,123,61,.1);color:#0F7B3D;font:700 13.5px 'Public Sans',sans-serif" style-active="transform:scale(.97);background:rgba(15,123,61,.2)">Approve</button>
+<button onClick="{{ f.remove }}" style="flex:1;min-height:44px;border-radius:16px;background:rgba(180,35,24,.1);color:#B42318;font:700 13.5px 'Public Sans',sans-serif" style-active="transform:scale(.97);background:rgba(180,35,24,.2)">Remove</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ flaggedEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:24px;padding:40px 24px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05)">
+<div style="width:48px;height:48px;margin:0 auto;border-radius:50%;background:rgba(15,123,61,.1);color:#0F7B3D;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:26px">task_alt</span></div>
+<div style="margin-top:14px;font:700 14px 'Public Sans',sans-serif;color:#16181F">Queue clear</div>
+<div style="margin-top:4px;font:400 12.5px 'Public Sans',sans-serif;color:#8b8f95">No flagged content pending review.</div>
+</div>
+</sc-if>
+</div>
+</div>
+
+<div style="background:#fff;border-radius:28px;padding:20px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<h2 style="margin:0;font:800 16px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">857 new scouts today</h2>
+<p style="margin:6px 0 16px;font:400 12.5px/1.55 'Public Sans',sans-serif;color:#8b8f95;text-wrap:pretty">Send a welcome message to everyone joining the recovery network.</p>
+<div style="display:flex;align-items:center;gap:8px">
+<sc-for list="{{ scouts }}" as="s" hint-placeholder-count="5">
+<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace;color:#6B7280">{{ s.ini }}</div>
+</sc-for>
+<button onClick="{{ goMembers }}" style="width:44px;height:44px;border-radius:50%;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center" style-active="transform:scale(.92)"><span style="font-family:'Material Symbols Rounded';font-size:20px">arrow_forward</span></button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRegistry }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 8px">
+<div style="display:flex;gap:4px;padding:4px;background:#E7E7E3;border-radius:24px">
+<button onClick="{{ goLost }}" style="{{ regLostStyle }}" style-active="transform:scale(.98)">Lost items</button>
+<button onClick="{{ goFound }}" style="{{ regFoundStyle }}" style-active="transform:scale(.98)">Found items</button>
+</div>
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;background:#fff;border-radius:26px;padding:0 18px;margin-top:12px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -18px rgba(22,24,31,.35)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">search</span>
+<input value="{{ q }}" onChange="{{ onQuery }}" placeholder="Search title, place or ID" style="flex:1;min-width:0;border:0;background:none;font:500 14.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<div style="display:flex;gap:8px;margin:14px -20px 0;padding:0 20px 4px;overflow-x:auto">
+<sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+<button onClick="{{ f.pick }}" style="{{ f.style }}" style-active="transform:scale(.96)">{{ f.name }}</button>
+</sc-for>
+</div>
+</div>
+<div style="padding:12px 20px 32px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ registry }}" as="it" hint-placeholder-count="5">
+<div style="display:contents">
+<button onClick="{{ it.open }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:#fff;border-radius:24px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)" style-active="transform:scale(.985)">
+<span style="flex:none;width:60px;height:60px;border-radius:20px;background:linear-gradient(150deg,#F4F4F2,#E9E9E5);display:flex;align-items:center;justify-content:center;color:#b7bbc1"><span style="font-family:'Material Symbols Rounded';font-size:26px">{{ it.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.title }}</span>
+<span style="display:flex;align-items:center;gap:4px;margin-top:4px;color:#8b8f95"><span style="font-family:'Material Symbols Rounded';font-size:14px">location_on</span><span style="font:500 12px 'Public Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.location }}</span></span>
+<span style="display:block;margin-top:5px;font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:#a8acb2">{{ it.id }} · {{ it.date }}</span>
+</span>
+<span style="{{ it.chip }}">{{ it.status }}</span>
+</button>
+<sc-if value="{{ it.adAfter }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:14px;padding:12px;background:#fff;border-radius:24px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<span style="flex:none;width:60px;height:60px;border-radius:20px;border:1.5px dashed #D8D8D3;background:#FAFAF8;display:flex;align-items:center;justify-content:center;color:#a8acb2"><span style="font-family:'Material Symbols Rounded';font-size:24px">{{ adFeed.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:flex;align-items:center;gap:7px"><span style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#a8acb2">Sponsored</span><span style="font:500 9.5px 'IBM Plex Mono',monospace;color:#d0d3d7">{{ adFeed.id }}</span></span>
+<span style="display:block;margin-top:5px;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ adFeed.campaign }}</span>
+<span style="display:block;margin-top:4px;font:500 12px 'Public Sans',sans-serif;color:#8b8f95">{{ adFeed.advertiser }} · {{ adFeed.size }}</span>
+</span>
+<span style="flex:none;font-family:'Material Symbols Rounded';font-size:21px;color:#c6c9ce">chevron_right</span>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ myPostsEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:26px;padding:44px 24px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="width:52px;height:52px;margin:0 auto;border-radius:18px;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:26px">post_add</span></div>
+<div style="margin-top:16px;font:700 15px 'Public Sans',sans-serif;color:#16181F">You haven't posted anything</div>
+<div style="margin:6px auto 18px;max-width:240px;font:400 13px/1.55 'Public Sans',sans-serif;color:#8b8f95;text-wrap:pretty">Your reports show up here, and you can update their status once the item is handed over.</div>
+<button onClick="{{ openReport }}" style="min-height:48px;padding:0 22px;border-radius:16px;background:#0B6BCB;color:#fff;font:700 13.5px 'Public Sans',sans-serif;box-shadow:0 12px 26px -12px rgba(11,107,203,.7)" style-active="transform:scale(.97)">Report an item</button>
+</div>
+</sc-if>
+<sc-if value="{{ registryEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:64px 24px;text-align:center;font:500 13.5px 'Public Sans',sans-serif;color:#a8acb2">No records match that search.</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isForum }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;padding:0 20px 4px;overflow-x:auto">
+<sc-for list="{{ topics }}" as="t" hint-placeholder-count="4">
+<button onClick="{{ t.pick }}" style="{{ t.style }}" style-active="transform:scale(.96)">{{ t.name }}</button>
+</sc-for>
+</div>
+<div style="padding:14px 20px 32px;display:flex;flex-direction:column;gap:10px">
+<sc-if value="{{ canPost }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ openNewThread }}" style="display:flex;align-items:center;gap:12px;min-height:60px;padding:0 16px;background:#fff;border-radius:22px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)" style-active="transform:scale(.985)">
+<span style="flex:none;width:40px;height:40px;border-radius:14px;background:#0B6BCB;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -8px rgba(11,107,203,.85)"><span style="font-family:'Material Symbols Rounded';font-size:22px">edit</span></span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 14.5px 'Public Sans',sans-serif;color:#16181F">Start a discussion</span><span style="display:block;margin-top:2px;font:400 12px 'Public Sans',sans-serif;color:#8b8f95">Ask the community or share a sighting</span></span>
+</button>
+</sc-if>
+<sc-if value="{{ adForum.live }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:14px;padding:12px;background:#fff;border-radius:22px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<span style="flex:none;width:52px;height:52px;border-radius:18px;border:1.5px dashed #D8D8D3;background:#FAFAF8;display:flex;align-items:center;justify-content:center;color:#a8acb2"><span style="font-family:'Material Symbols Rounded';font-size:22px">{{ adForum.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:flex;align-items:center;gap:7px"><span style="font:600 9.5px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#a8acb2">Sponsored</span><span style="font:500 9.5px 'IBM Plex Mono',monospace;color:#d0d3d7">{{ adForum.id }}</span></span>
+<span style="display:block;margin-top:5px;font:700 14.5px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ adForum.campaign }}</span>
+<span style="display:block;margin-top:3px;font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">{{ adForum.advertiser }} · {{ adForum.size }}</span>
+</span>
+</div>
+</sc-if>
+<sc-for list="{{ threads }}" as="t" hint-placeholder-count="3">
+<div style="{{ t.cardStyle }}">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="flex:none;width:38px;height:38px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace;color:#6B7280">{{ t.ini }}</span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 13.5px 'Public Sans',sans-serif;color:#16181F">{{ t.user }}</span><span style="display:block;margin-top:2px;font:500 11px 'IBM Plex Mono',monospace;color:#a8acb2">{{ t.meta }}</span></span>
+<span style="{{ t.chip }}">{{ t.tag }}</span>
+</div>
+<sc-if value="{{ t.suspended }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(180,35,24,.08);font:600 11.5px 'Public Sans',sans-serif;color:#B42318"><span style="font-family:'Material Symbols Rounded';font-size:16px">visibility_off</span>Suspended by Super Admin — hidden from members</div>
+</sc-if>
+<button onClick="{{ t.open }}" style="display:block;width:100%;text-align:left;margin-top:14px;font:700 16px/1.35 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F;text-wrap:pretty" style-active="opacity:.7">{{ t.title }}</button>
+<p style="margin:8px 0 0;font:400 13px/1.65 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ t.text }}</p>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onClick="{{ t.open }}" style="display:flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:16px;background:#F7F7F5;font:600 12.5px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.96);background:#EDEDEA"><span style="font-family:'Material Symbols Rounded';font-size:17px">chat_bubble</span>{{ t.replyLabel }}</button>
+<button onClick="{{ t.helpful }}" style="display:flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:16px;background:#F7F7F5;font:600 12.5px 'Public Sans',sans-serif;color:#6B7280" style-active="transform:scale(.96)"><span style="font-family:'Material Symbols Rounded';font-size:17px">thumb_up</span>Helpful</button>
+</div>
+<sc-if value="{{ t.isAdmin }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;margin-top:8px;padding-top:12px;border-top:1px solid #F0F0ED">
+<button onClick="{{ t.suspend }}" style="flex:1;min-height:44px;border-radius:16px;background:#F7F7F5;font:700 12.5px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">{{ t.suspendLabel }}</button>
+<button onClick="{{ t.remove }}" style="flex:1;min-height:44px;border-radius:16px;background:rgba(180,35,24,.1);font:700 12.5px 'Public Sans',sans-serif;color:#B42318;display:flex;align-items:center;justify-content:center;gap:6px" style-active="transform:scale(.97);background:rgba(180,35,24,.2)"><span style="font-family:'Material Symbols Rounded';font-size:17px">delete</span>Delete post</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ threadsEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:60px 24px;text-align:center;font:500 13.5px 'Public Sans',sans-serif;color:#a8acb2">No discussions in this topic yet.</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isModeration }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;gap:8px">
+<sc-for list="{{ modStats }}" as="s" hint-placeholder-count="3">
+<div style="flex:1;background:#fff;border-radius:22px;padding:16px 10px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="font:800 24px 'Public Sans',sans-serif;letter-spacing:-.04em;color:{{ s.color }}">{{ s.value }}</div>
+<div style="margin-top:4px;font:600 11px 'Public Sans',sans-serif;color:#8b8f95">{{ s.label }}</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ flagged }}" as="f" hint-placeholder-count="3">
+<div style="background:#fff;border-radius:26px;padding:18px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+<span style="font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:#8b8f95">{{ f.id }} · {{ f.category }}</span>
+<span style="font:600 10.5px 'Public Sans',sans-serif;color:#B42318;background:rgba(180,35,24,.1);padding:5px 10px;border-radius:999px">{{ f.reason }}</span>
+</div>
+<div style="margin-top:10px;font:700 16px/1.3 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F;text-wrap:pretty">{{ f.title }}</div>
+<div style="margin-top:5px;font:500 12px 'IBM Plex Mono',monospace;color:#8b8f95">{{ f.sub }}</div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<button onClick="{{ f.approve }}" style="flex:1;min-height:48px;border-radius:16px;background:rgba(15,123,61,.1);color:#0F7B3D;font:700 14px 'Public Sans',sans-serif" style-active="transform:scale(.97);background:rgba(15,123,61,.2)">Approve</button>
+<button onClick="{{ f.remove }}" style="flex:1;min-height:48px;border-radius:16px;background:#B42318;color:#fff;font:700 14px 'Public Sans',sans-serif;box-shadow:0 10px 22px -12px rgba(180,35,24,.9)" style-active="transform:scale(.97)">Remove</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ flaggedEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:26px;padding:52px 24px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05)">
+<div style="width:52px;height:52px;margin:0 auto;border-radius:50%;background:rgba(15,123,61,.1);color:#0F7B3D;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:28px">task_alt</span></div>
+<div style="margin-top:16px;font:700 15px 'Public Sans',sans-serif;color:#16181F">All reviewed</div>
+<div style="margin-top:5px;font:400 13px 'Public Sans',sans-serif;color:#8b8f95">Queue clear. Nothing waiting on you.</div>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAnalysis }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:12px">
+<div style="background:#101319;border-radius:28px;padding:22px;box-shadow:0 20px 40px -24px rgba(16,19,25,.8)">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)">Positive sentiment rate</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:12px"><span style="font:800 44px 'Public Sans',sans-serif;letter-spacing:-.05em;color:#00E39B">94.2%</span><span style="font:500 12.5px 'Public Sans',sans-serif;color:#6B7280">of 142 threads</span></div>
+<div style="display:flex;height:10px;border-radius:999px;overflow:hidden;margin-top:20px;gap:3px">
+<span style="flex:942;background:#00E39B;border-radius:999px;display:block"></span><span style="flex:38;background:#FFC64D;border-radius:999px;display:block"></span><span style="flex:20;background:#FF6B5E;border-radius:999px;display:block"></span>
+</div>
+<div style="display:flex;justify-content:space-between;margin-top:12px;font:500 10px 'IBM Plex Mono',monospace;color:rgba(255,255,255,.45)"><span>positive 94.2%</span><span>neutral 3.8%</span><span>negative 2.0%</span></div>
+</div>
+<div style="background:#fff;border-radius:28px;padding:20px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<h2 style="margin:0;font:800 16px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">Response velocity</h2>
+<div style="display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:20px">
+<sc-for list="{{ bars }}" as="b" hint-placeholder-count="7">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px"><span style="{{ b.style }}"></span><span style="font:500 9.5px 'IBM Plex Mono',monospace;color:#a8acb2">{{ b.label }}</span></div>
+</sc-for>
+</div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid #EFEFEC;display:flex;justify-content:space-between"><span style="font:500 12.5px 'Public Sans',sans-serif;color:#6B7280">Average this week</span><span style="font:700 12.5px 'Public Sans',sans-serif;color:#0B6BCB">12.4 minutes</span></div>
+</div>
+<div style="background:#fff;border-radius:28px;padding:20px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<h2 style="margin:0 0 8px;font:800 16px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">Flagged keywords</h2>
+<sc-for list="{{ keywords }}" as="k" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px"><span style="font:500 13px 'IBM Plex Mono',monospace;color:#16181F">{{ k.word }}</span><span style="font:700 12px 'Public Sans',sans-serif;color:#B42318;background:rgba(180,35,24,.1);padding:5px 11px;border-radius:999px">{{ k.hits }}</span></div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMessages }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ conversations }}" as="c" hint-placeholder-count="2">
+<button onClick="{{ c.open }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px;background:#fff;border-radius:24px;text-align:left;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)" style-active="transform:scale(.985)">
+<span style="position:relative;flex:none;width:52px;height:52px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:700 13px 'IBM Plex Mono',monospace;color:#6B7280">{{ c.ini }}
+<span style="position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#8b8f95;box-shadow:0 1px 3px rgba(22,24,31,.16)"><span style="font-family:'Material Symbols Rounded';font-size:13px">{{ c.icon }}</span></span>
+</span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.with }}</span><span style="flex:none;font:500 10.5px 'IBM Plex Mono',monospace;color:#a8acb2">{{ c.time }}</span></span>
+<span style="display:block;margin-top:3px;font:500 11px 'IBM Plex Mono',monospace;color:#0B6BCB">{{ c.item }}</span>
+<span style="{{ c.previewStyle }}">{{ c.preview }}</span>
+</span>
+<sc-if value="{{ c.hasUnread }}" hint-placeholder-val="{{ false }}">
+<span style="{{ c.badgeStyle }}">{{ c.unread }}</span>
+</sc-if>
+</button>
+</sc-for>
+<sc-if value="{{ noConversations }}" hint-placeholder-val="{{ false }}">
+<div style="background:#fff;border-radius:26px;padding:52px 24px;text-align:center;box-shadow:0 1px 2px rgba(22,24,31,.05)">
+<div style="width:52px;height:52px;margin:0 auto;border-radius:50%;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:26px">chat</span></div>
+<div style="margin-top:16px;font:700 15px 'Public Sans',sans-serif;color:#16181F">No messages yet</div>
+<div style="margin-top:5px;font:400 13px/1.55 'Public Sans',sans-serif;color:#8b8f95">Claim an item and your chat with the finder appears here.</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAds }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px 32px;display:flex;flex-direction:column;gap:16px">
+
+<div style="background:#101319;border-radius:28px;padding:22px;box-shadow:0 20px 40px -24px rgba(16,19,25,.8)">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)">Revenue this month</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:12px"><span style="font:800 44px 'Public Sans',sans-serif;letter-spacing:-.05em;color:#00E39B">{{ adRevenue }}</span><span style="font:500 12.5px 'Public Sans',sans-serif;color:#6B7280">{{ adRevenueDelta }}</span></div>
+<div style="display:flex;gap:8px;margin-top:20px">
+<sc-for list="{{ adTotals }}" as="s" hint-placeholder-count="3">
+<div style="flex:1;padding:14px 12px;border-radius:18px;background:rgba(255,255,255,.06)">
+<div style="font:800 18px 'Public Sans',sans-serif;letter-spacing:-.03em;color:#fff">{{ s.value }}</div>
+<div style="margin-top:4px;font:600 10.5px 'Public Sans',sans-serif;color:rgba(255,255,255,.5)">{{ s.label }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:12px">
+<h2 style="margin:0;font:800 18px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">Placements</h2>
+<span style="font:600 11px 'IBM Plex Mono',monospace;color:#8b8f95">{{ adLiveCount }}</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ adSlots }}" as="a" hint-placeholder-count="4">
+<div style="background:#fff;border-radius:26px;padding:18px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)">
+<div style="display:flex;align-items:center;gap:10px">
+<span style="flex:none;width:38px;height:38px;border-radius:14px;background:#F2F2F0;color:#6B7280;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:20px">{{ a.screenIcon }}</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">{{ a.screen }}</span>
+<span style="display:block;margin-top:3px;font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.slot }}</span>
+</span>
+<span style="{{ a.statusChip }}">{{ a.statusLabel }}</span>
+</div>
+<div style="margin-top:14px;padding:14px;border-radius:18px;background:#F7F7F5">
+<div style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#a8acb2">{{ a.id }} · {{ a.format }}</div>
+<div style="margin-top:6px;font:700 14px 'Public Sans',sans-serif;color:#16181F;text-wrap:pretty">{{ a.campaign }}</div>
+<div style="margin-top:3px;font:500 12px 'Public Sans',sans-serif;color:#8b8f95">{{ a.advertiser }}</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<sc-for list="{{ a.metrics }}" as="m" hint-placeholder-count="3">
+<div style="flex:1;padding:12px 10px;border-radius:16px;background:#FAFAF8;text-align:center">
+<div style="font:800 15px 'Public Sans',sans-serif;letter-spacing:-.03em;color:{{ m.color }}">{{ m.value }}</div>
+<div style="margin-top:3px;font:600 10px 'Public Sans',sans-serif;color:#a8acb2">{{ m.label }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:12px">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+<span style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#a8acb2">Run time</span>
+<span style="font:600 11.5px 'Public Sans',sans-serif;color:{{ a.runColor }}">{{ a.runLabel }}</span>
+</div>
+<div style="height:7px;margin-top:8px;border-radius:999px;background:#EDEDEA;overflow:hidden">
+<div style="{{ a.barStyle }}"></div>
+</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<button onClick="{{ a.toggle }}" style="{{ a.toggleStyle }}" style-active="transform:scale(.97)">{{ a.toggleLabel }}</button>
+<button onClick="{{ a.edit }}" style="flex:none;min-height:48px;padding:0 18px;border-radius:16px;background:#F7F7F5;font:700 13.5px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">Edit</button>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMembers }}" hint-placeholder-val="{{ false }}">
+<div style="padding:0 20px">
+<div style="display:flex;align-items:center;gap:12px;min-height:52px;background:#fff;border-radius:26px;padding:0 18px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 10px 24px -18px rgba(22,24,31,.35)">
+<span style="font-family:'Material Symbols Rounded';font-size:21px;color:#9a9ea4">search</span>
+<input value="{{ uq }}" onChange="{{ onUserQuery }}" placeholder="Search name or handle" style="flex:1;min-width:0;border:0;background:none;font:500 14.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+</div>
+<div style="padding:14px 20px 32px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ members }}" as="m" hint-placeholder-count="5">
+<div style="background:#fff;border-radius:24px;padding:16px;box-shadow:0 1px 2px rgba(22,24,31,.05),0 12px 28px -22px rgba(22,24,31,.4)">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace;color:#6B7280">{{ m.ini }}</span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">{{ m.name }}</span><span style="display:block;margin-top:3px;font:500 11px 'IBM Plex Mono',monospace;color:#8b8f95">{{ m.meta }}</span></span>
+<span style="{{ m.chip }}">{{ m.status }}</span>
+</div>
+<div style="display:flex;gap:8px;margin-top:14px">
+<button onClick="{{ m.toggle }}" style="{{ m.toggleStyle }}" style-active="transform:scale(.97)">{{ m.toggleLabel }}</button>
+<button onClick="{{ m.remove }}" style="flex:1;min-height:44px;border-radius:16px;background:rgba(180,35,24,.1);color:#B42318;font:700 13px 'Public Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px" style-active="transform:scale(.97);background:rgba(180,35,24,.2)"><span style="font-family:'Material Symbols Rounded';font-size:18px">delete</span>Delete user</button>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ membersEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="padding:64px 24px;text-align:center;font:500 13.5px 'Public Sans',sans-serif;color:#a8acb2">No members match that search.</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+
+<sc-if value="{{ showNav }}" hint-placeholder-val="{{ false }}">
+<div style="flex:none;padding:8px 16px 24px;background:linear-gradient(#F2F2F000,#F2F2F0 40%)">
+<div style="display:flex;align-items:center;gap:2px;background:#fff;border-radius:28px;padding:6px;box-shadow:0 2px 6px rgba(22,24,31,.06),0 18px 36px -18px rgba(22,24,31,.5)">
+<sc-for list="{{ navLeft }}" as="n" hint-placeholder-count="2">
+<button onClick="{{ n.go }}" style="{{ n.style }}" style-active="transform:scale(.94)"><span style="font-family:'Material Symbols Rounded';font-size:23px">{{ n.icon }}</span><span style="{{ n.labelStyle }}">{{ n.label }}</span></button>
+</sc-for>
+<sc-if value="{{ showFab }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ openReport }}" style="flex:none;width:52px;height:52px;margin:0 2px;border-radius:20px;background:#0B6BCB;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px -8px rgba(11,107,203,.85)" style-active="transform:scale(.92)"><span style="font-family:'Material Symbols Rounded';font-size:27px">add</span></button>
+</sc-if>
+<sc-for list="{{ navRight }}" as="n" hint-placeholder-count="2">
+<button onClick="{{ n.go }}" style="{{ n.style }}" style-active="transform:scale(.94)"><span style="font-family:'Material Symbols Rounded';font-size:23px">{{ n.icon }}</span><span style="{{ n.labelStyle }}">{{ n.label }}</span></button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:16px;right:16px;bottom:112px;display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:20px;background:#16181F;color:#fff;font:500 13px/1.45 'Public Sans',sans-serif;z-index:70;box-shadow:0 18px 40px -12px rgba(22,24,31,.6)"><span style="font-family:'Material Symbols Rounded';font-size:19px;color:#00E39B">check_circle</span>{{ toast }}</div>
+</sc-if>
+
+<div onClick="{{ closeSheet }}" style="{{ scrimStyle }}"></div>
+
+<div style="{{ sheetStyle }}">
+<div style="flex:none;padding:10px 0 4px;display:flex;justify-content:center"><span style="width:40px;height:5px;border-radius:999px;background:#DEDEDA;display:block"></span></div>
+<div data-chat-scroll="1" style="flex:1;min-height:0;overflow-y:auto;padding:8px 20px 0">
+
+<sc-if value="{{ sheetDetail }}" hint-placeholder-val="{{ false }}">
+<div style="height:196px;border-radius:24px;background:linear-gradient(150deg,#F4F4F2,#E9E9E5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#b7bbc1">
+<span style="font-family:'Material Symbols Rounded';font-size:52px">{{ detail.icon }}</span>
+<span style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#a8acb2">photo submitted with the record</span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px">
+<span style="font:500 11px 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#8b8f95">{{ detail.id }}</span>
+<span style="{{ detail.chip }}">{{ detail.status }}</span>
+</div>
+<h2 style="margin:10px 0 0;font:800 25px/1.18 'Public Sans',sans-serif;letter-spacing:-.032em;color:#16181F;text-wrap:pretty">{{ detail.title }}</h2>
+<p style="margin:12px 0 0;font:400 14.5px/1.65 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ detail.desc }}</p>
+<div style="margin-top:20px;background:#F7F7F5;border-radius:22px;padding:6px 16px">
+<sc-for list="{{ detailRows }}" as="r" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px"><span style="font:500 13px 'Public Sans',sans-serif;color:#8b8f95">{{ r.k }}</span><span style="font:700 13px 'Public Sans',sans-serif;color:#16181F;text-align:right">{{ r.v }}</span></div>
+</sc-for>
+</div>
+<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:12px;padding:16px;border-radius:22px;background:rgba(11,107,203,.07)">
+<div style="display:flex;align-items:center;gap:9px">
+<span style="font-family:'Material Symbols Rounded';font-size:19px;color:#0B6BCB">how_to_reg</span>
+<span style="font:700 13px 'Public Sans',sans-serif;color:#0B6BCB">You posted this</span>
+</div>
+<div style="margin-top:8px;font:400 12.5px/1.55 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ ownerHint }}</div>
+<button onClick="{{ withdrawPost }}" style="min-height:44px;margin-top:4px;font:600 12.5px 'Public Sans',sans-serif;color:#B42318" style-active="opacity:.7">Withdraw this post</button>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ sheetReport }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:6px">
+<span style="{{ step1Bar }}"></span><span style="{{ step2Bar }}"></span>
+</div>
+<h2 style="margin:16px 0 20px;font:800 24px/1.18 'Public Sans',sans-serif;letter-spacing:-.032em;color:#16181F">{{ reportTitle }}</h2>
+<div style="display:flex;gap:8px;padding:4px;background:#F0F0ED;border-radius:20px">
+<button onClick="{{ setLost }}" style="{{ lostStyle }}" style-active="transform:scale(.98)">I lost it</button>
+<button onClick="{{ setFound }}" style="{{ foundStyle }}" style-active="transform:scale(.98)">I found it</button>
+</div>
+
+<sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:24px">
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">What is it</label>
+<input value="{{ rTitle }}" onChange="{{ onRTitle }}" placeholder="Black leather wallet" style="width:100%;min-height:52px;margin:10px 0 24px;padding:0 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Category</label>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+<sc-for list="{{ categories }}" as="c" hint-placeholder-count="7">
+<button onClick="{{ c.pick }}" style="{{ c.style }}" style-active="transform:scale(.96)">{{ c.name }}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:24px">
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Where</label>
+<input value="{{ rPlace }}" onChange="{{ onRPlace }}" placeholder="Union Square subway station" style="width:100%;min-height:52px;margin:10px 0 20px;padding:0 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Pin it on the map</label>
+<button onClick="{{ useMyLocation }}" style="display:flex;align-items:center;gap:6px;min-height:44px;font:700 12px 'Public Sans',sans-serif;color:#0B6BCB" style-active="transform:scale(.96)"><span style="font-family:'Material Symbols Rounded';font-size:17px">my_location</span>Use my location</button>
+</div>
+<div onClick="{{ onMapTap }}" style="position:relative;height:180px;border-radius:22px;overflow:hidden;background:#E9EBE6;cursor:crosshair;box-shadow:inset 0 0 0 1px rgba(22,24,31,.05)">
+<span style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,rgba(22,24,31,.05) 0 1px,transparent 1px 36px),repeating-linear-gradient(90deg,rgba(22,24,31,.05) 0 1px,transparent 1px 36px);display:block"></span>
+<span style="position:absolute;left:-10%;right:-10%;top:36%;height:18px;background:#FCFCFB;transform:rotate(-7deg);display:block"></span>
+<span style="position:absolute;left:24%;top:-10%;bottom:-10%;width:14px;background:#FCFCFB;display:block"></span>
+<span style="position:absolute;left:64%;top:-10%;bottom:-10%;width:9px;background:#F5F6F3;display:block"></span>
+<span style="position:absolute;left:70%;top:56%;width:78px;height:54px;border-radius:10px;background:#DFE4D9;display:block"></span>
+<span style="position:absolute;left:6%;top:62%;width:48px;height:40px;border-radius:8px;background:#DFE4D9;display:block"></span>
+<sc-if value="{{ hasPin }}" hint-placeholder-val="{{ false }}">
+<span style="{{ pinStyle }}"></span>
+</sc-if>
+<sc-if value="{{ noPin }}" hint-placeholder-val="{{ true }}">
+<span style="position:absolute;left:16px;right:16px;bottom:14px;text-align:center;padding:8px;border-radius:14px;background:rgba(255,255,255,.85);font:600 11.5px 'Public Sans',sans-serif;color:#6B7280;display:block">Tap the map to drop a pin</span>
+</sc-if>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;margin-bottom:12px">
+<span style="font:500 11px 'IBM Plex Mono',monospace;color:#a8acb2">{{ pinLabel }}</span>
+<sc-if value="{{ hasPin }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ clearPin }}" style="min-height:44px;padding-left:8px;font:700 12px 'Public Sans',sans-serif;color:#6B7280">Clear pin</button>
+</sc-if>
+</div>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">When</label>
+<input value="{{ rDate }}" onChange="{{ onRDate }}" placeholder="Yesterday, around 6pm" style="width:100%;min-height:52px;margin:10px 0 20px;padding:0 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Details</label>
+<textarea value="{{ rDesc }}" onChange="{{ onRDesc }}" rows="3" placeholder="Anything that helps verify ownership" style="width:100%;margin:10px 0 16px;padding:14px 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15px/1.5 'Public Sans',sans-serif;color:#16181F;resize:none"></textarea>
+<div style="min-height:96px;border-radius:20px;background:#F7F7F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#a8acb2"><span style="font-family:'Material Symbols Rounded';font-size:24px">add_a_photo</span><span style="font:500 10.5px 'IBM Plex Mono',monospace">add a photo</span></div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ sheetSent }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 0 8px;text-align:center">
+<div style="width:64px;height:64px;margin:0 auto;border-radius:50%;background:rgba(15,123,61,.1);color:#0F7B3D;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:34px">check_circle</span></div>
+<h2 style="margin:20px 0 10px;font:800 25px/1.2 'Public Sans',sans-serif;letter-spacing:-.032em;color:#16181F">Added to the registry</h2>
+<p style="margin:0 auto;max-width:290px;font:400 14.5px/1.65 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Record {{ newId }} is live. A moderator reviews every submission, and we alert you the moment a match appears.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetChat }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:2px 0 14px;border-bottom:1px solid #F0F0ED">
+<span style="flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:700 12px 'IBM Plex Mono',monospace;color:#6B7280">{{ chatIni }}</span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">{{ chatWith }}</span>
+<span style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="width:6px;height:6px;border-radius:50%;background:#0F7B3D;display:block"></span><span style="font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">Online · usually replies in 12 min</span></span>
+</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;margin-top:14px;padding:10px;border-radius:18px;background:#F7F7F5">
+<span style="flex:none;width:40px;height:40px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;color:#b7bbc1"><span style="font-family:'Material Symbols Rounded';font-size:20px">{{ chatIcon }}</span></span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 13px 'Public Sans',sans-serif;color:#16181F">{{ chatItem }}</span><span style="display:block;margin-top:2px;font:500 10.5px 'IBM Plex Mono',monospace;color:#8b8f95">{{ chatItemId }} · claim opened</span></span>
+</div>
+<div style="display:flex;gap:9px;margin-top:14px;padding:12px 14px;border-radius:16px;background:rgba(11,107,203,.07)">
+<span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B6BCB">shield</span>
+<span style="font:500 11.5px/1.55 'Public Sans',sans-serif;color:#0B6BCB">Verify ownership by describing unique features only you would know. Arrange a safe meetup in a public place.</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:18px 0 4px">
+<sc-for list="{{ messages }}" as="m" hint-placeholder-count="3">
+<div style="{{ m.rowStyle }}">
+<span style="{{ m.bubbleStyle }}">{{ m.text }}</span>
+<span style="{{ m.timeStyle }}">{{ m.time }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ showQuickReplies }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 4px">
+<sc-for list="{{ quickReplies }}" as="r" hint-placeholder-count="3">
+<button onClick="{{ r.send }}" style="min-height:44px;padding:0 15px;border-radius:16px;background:#F7F7F5;font:600 12.5px 'Public Sans',sans-serif;color:#16181F;display:flex;align-items:center;gap:7px" style-active="transform:scale(.96);background:#EDEDEA"><span style="font-family:'Material Symbols Rounded';font-size:17px;color:#0B6BCB">{{ r.icon }}</span>{{ r.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ sheetThread }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:2px 0 0">
+<span style="flex:none;width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#F4F4F2,#E7E7E3);display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Mono',monospace;color:#6B7280">{{ thread.ini }}</span>
+<span style="flex:1;min-width:0;display:block"><span style="display:block;font:700 14.5px 'Public Sans',sans-serif;color:#16181F">{{ thread.user }}</span><span style="display:block;margin-top:2px;font:500 11px 'IBM Plex Mono',monospace;color:#a8acb2">{{ thread.meta }}</span></span>
+<span style="{{ thread.chip }}">{{ thread.tag }}</span>
+</div>
+<h2 style="margin:16px 0 0;font:800 23px/1.22 'Public Sans',sans-serif;letter-spacing:-.03em;color:#16181F;text-wrap:pretty">{{ thread.title }}</h2>
+<p style="margin:12px 0 0;font:400 14.5px/1.7 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ thread.text }}</p>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 0 12px;padding-top:16px;border-top:1px solid #F0F0ED">
+<span style="font:800 15px 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">{{ thread.replyLabel }}</span>
+<span style="font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#a8acb2">Newest last</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ threadReplies }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;gap:12px;padding:14px;border-radius:20px;background:#F7F7F5">
+<span style="flex:none;width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Mono',monospace;color:#6B7280">{{ r.ini }}</span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><span style="font:700 12.5px 'Public Sans',sans-serif;color:#16181F">{{ r.user }}</span><span style="flex:none;font:500 10px 'IBM Plex Mono',monospace;color:#a8acb2">{{ r.time }}</span></span>
+<span style="display:block;margin-top:6px;font:400 13px/1.65 'Public Sans',sans-serif;color:#4b5058;text-wrap:pretty">{{ r.text }}</span>
+</span>
+</div>
+</sc-for>
+<sc-if value="{{ noReplies }}" hint-placeholder-val="{{ false }}">
+<div style="padding:28px;text-align:center;border-radius:20px;background:#F7F7F5;font:500 13px 'Public Sans',sans-serif;color:#a8acb2">No replies yet. Be the first to help.</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetNewThread }}" hint-placeholder-val="{{ false }}">
+<h2 style="margin:6px 0 20px;font:800 24px/1.18 'Public Sans',sans-serif;letter-spacing:-.032em;color:#16181F">Start a discussion</h2>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Topic</label>
+<div style="display:flex;gap:8px;margin:12px 0 22px">
+<sc-for list="{{ newTopics }}" as="t" hint-placeholder-count="3">
+<button onClick="{{ t.pick }}" style="{{ t.style }}" style-active="transform:scale(.96)">{{ t.name }}</button>
+</sc-for>
+</div>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Title</label>
+<input value="{{ ntTitle }}" onChange="{{ onNtTitle }}" placeholder="Seen a black backpack near the pier?" style="width:100%;min-height:52px;margin:10px 0 22px;padding:0 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15.5px 'Public Sans',sans-serif;color:#16181F"/>
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Your post</label>
+<textarea value="{{ ntBody }}" onChange="{{ onNtBody }}" rows="5" placeholder="Share what you saw, where and when. The more detail, the more useful it is." style="width:100%;margin:10px 0 4px;padding:14px 16px;border:0;border-radius:18px;background:#F7F7F5;font:500 15px/1.6 'Public Sans',sans-serif;color:#16181F;resize:none"></textarea>
+<div style="display:flex;gap:9px;margin-top:14px;padding:12px 14px;border-radius:16px;background:rgba(11,107,203,.07)">
+<span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B6BCB">shield</span>
+<span style="font:500 11.5px/1.55 'Public Sans',sans-serif;color:#0B6BCB">Never share phone numbers or addresses in a public post. A moderator reviews reported discussions.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetSupport }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:2px 0 14px;border-bottom:1px solid #F0F0ED">
+<span style="flex:none;width:44px;height:44px;border-radius:16px;background:#101319;color:#fff;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:23px">support_agent</span></span>
+<span style="flex:1;min-width:0;display:block">
+<span style="display:block;font:700 15px 'Public Sans',sans-serif;letter-spacing:-.015em;color:#16181F">Community Assistant</span>
+<span style="display:flex;align-items:center;gap:5px;margin-top:3px"><span style="width:6px;height:6px;border-radius:50%;background:#0F7B3D;display:block"></span><span style="font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">Answers in seconds · 24/7</span></span>
+</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:18px 0 4px">
+<sc-for list="{{ supportMessages }}" as="m" hint-placeholder-count="2">
+<div style="{{ m.rowStyle }}">
+<span style="{{ m.bubbleStyle }}">{{ m.text }}</span>
+<span style="{{ m.timeStyle }}">{{ m.time }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ botTyping }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex"><span style="padding:14px 18px;border-radius:20px 20px 20px 6px;background:#F2F2F0;display:flex;gap:5px">
+<span style="width:6px;height:6px;border-radius:50%;background:#b7bbc1;display:block"></span>
+<span style="width:6px;height:6px;border-radius:50%;background:#cfd2d6;display:block"></span>
+<span style="width:6px;height:6px;border-radius:50%;background:#e0e2e5;display:block"></span>
+</span></div>
+</sc-if>
+</div>
+<div style="padding:10px 0 4px">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#a8acb2;margin-bottom:10px">Common questions</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ faqChips }}" as="f" hint-placeholder-count="5">
+<button onClick="{{ f.ask }}" style="min-height:44px;padding:0 15px;border-radius:16px;background:#F7F7F5;font:600 12.5px 'Public Sans',sans-serif;color:#16181F;text-align:left" style-active="transform:scale(.96);background:#EDEDEA">{{ f.q }}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetProfile }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:14px;padding:4px 0 18px">
+<div style="width:56px;height:56px;border-radius:20px;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center;font:700 16px 'IBM Plex Mono',monospace">{{ initials }}</div>
+<div style="min-width:0"><div style="font:800 20px 'Public Sans',sans-serif;letter-spacing:-.025em;color:#16181F">{{ meName }}</div><div style="margin-top:3px;font:500 12px 'IBM Plex Mono',monospace;color:#8b8f95">{{ meEmail }}</div></div>
+</div>
+<div style="background:#F7F7F5;border-radius:22px;padding:4px 16px">
+<sc-for list="{{ settings }}" as="s" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px"><span style="font:500 14.5px 'Public Sans',sans-serif;color:#16181F">{{ s.label }}</span><span style="font:600 13.5px 'Public Sans',sans-serif;color:#8b8f95">{{ s.value }}</span></div>
+</sc-for>
+</div>
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+<button onClick="{{ goAnalysis }}" style="flex:1;min-height:52px;border-radius:18px;background:#F7F7F5;font:700 13px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">Analysis</button>
+<button onClick="{{ goModeration }}" style="flex:1;min-height:52px;border-radius:18px;background:#F7F7F5;font:700 13px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">Moderation</button>
+<button onClick="{{ goAds }}" style="flex:1;min-height:52px;border-radius:18px;background:#F7F7F5;font:700 13px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">Ads</button>
+<button onClick="{{ goMembers }}" style="flex:1;min-height:52px;border-radius:18px;background:#F7F7F5;font:700 13px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">Members</button>
+</div>
+</sc-if>
+<sc-if value="{{ isSimple }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ toastSupport }}" style="width:100%;min-height:56px;margin-top:10px;border-radius:20px;background:#F7F7F5;display:flex;align-items:center;gap:12px;padding:0 18px;font:700 14px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.98)"><span style="font-family:'Material Symbols Rounded';font-size:21px;color:#0B6BCB">support_agent</span>Contact support<span style="margin-left:auto;font-family:'Material Symbols Rounded';font-size:20px;color:#c6c9ce">chevron_right</span></button>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ sheetAd }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:2px 0 16px">
+<span style="flex:none;width:44px;height:44px;border-radius:16px;background:#F2F2F0;color:#6B7280;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:22px">{{ adEdit.screenIcon }}</span></span>
+<div style="min-width:0">
+<div style="font:800 18px/1.2 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">{{ adEdit.screen }} placement</div>
+<div style="font:500 11.5px 'IBM Plex Mono',monospace;color:#8b8f95">{{ adEdit.id }} · {{ adEdit.format }}</div>
+</div>
+</div>
+
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Campaign on this screen</label>
+<div style="display:flex;flex-direction:column;gap:8px;margin:10px 0 22px">
+<sc-for list="{{ adCampaigns }}" as="c" hint-placeholder-count="4">
+<button onClick="{{ c.pick }}" style="{{ c.style }}" style-active="transform:scale(.98)">
+<span style="flex:none;width:34px;height:34px;border-radius:12px;background:#fff;color:#6B7280;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(22,24,31,.06)"><span style="font-family:'Material Symbols Rounded';font-size:18px">{{ c.icon }}</span></span>
+<span style="flex:1;min-width:0;display:block;text-align:left">
+<span style="display:block;font:700 13.5px 'Public Sans',sans-serif;color:#16181F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.campaign }}</span>
+<span style="display:block;margin-top:2px;font:500 11px 'Public Sans',sans-serif;color:#8b8f95">{{ c.advertiser }} · {{ c.rate }}</span>
+</span>
+<span style="flex:none;font-family:'Material Symbols Rounded';font-size:20px;color:{{ c.markColor }}">{{ c.mark }}</span>
+</button>
+</sc-for>
+</div>
+
+<label style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8b8f95">Run for</label>
+<div style="display:flex;gap:8px;margin:10px 0 22px">
+<sc-for list="{{ adDurations }}" as="d" hint-placeholder-count="4">
+<button onClick="{{ d.pick }}" style="{{ d.style }}" style-active="transform:scale(.96)">{{ d.label }}</button>
+</sc-for>
+</div>
+
+<div style="padding:18px;border-radius:22px;background:#101319">
+<div style="font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)">Projected for this run</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:10px"><span style="font:800 34px 'Public Sans',sans-serif;letter-spacing:-.045em;color:#00E39B">{{ adEdit.projected }}</span><span style="font:500 12px 'Public Sans',sans-serif;color:#6B7280">{{ adEdit.projectedNote }}</span></div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<sc-for list="{{ adEdit.metrics }}" as="m" hint-placeholder-count="3">
+<div style="flex:1;padding:12px 10px;border-radius:16px;background:rgba(255,255,255,.06)">
+<div style="font:800 15px 'Public Sans',sans-serif;letter-spacing:-.03em;color:#fff">{{ m.value }}</div>
+<div style="margin-top:3px;font:600 10px 'Public Sans',sans-serif;color:rgba(255,255,255,.5)">{{ m.label }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;gap:9px;margin-top:12px;padding:14px;border-radius:18px;background:rgba(11,107,203,.07)">
+<span style="font-family:'Material Symbols Rounded';font-size:18px;color:#0B6BCB">visibility_off</span>
+<span style="font:500 11.5px/1.55 'Public Sans',sans-serif;color:#0B6BCB;text-wrap:pretty">Ads never appear in chat, claim flows or a new member's first session.</span>
+</div>
+</sc-if>
+
+<sc-if value="{{ sheetGuidelines }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;padding:2px 0 16px">
+<span style="flex:none;width:44px;height:44px;border-radius:16px;background:rgba(11,107,203,.1);color:#0B6BCB;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Rounded';font-size:23px">verified_user</span></span>
+<div style="min-width:0">
+<div style="font:800 18px/1.2 'Public Sans',sans-serif;letter-spacing:-.02em;color:#16181F">Community guidelines</div>
+<div style="font:500 11.5px 'Public Sans',sans-serif;color:#8b8f95">and safe meetup rules</div>
+</div>
+</div>
+<p style="margin:0 0 18px;font:400 14px/1.65 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">Lost Items Community works because members return things to strangers. These rules keep that exchange safe for everyone.</p>
+<sc-for list="{{ guidelineRules }}" as="g" hint-placeholder-count="5">
+<div style="display:flex;gap:14px;padding:16px;margin-bottom:8px;border-radius:20px;background:#F7F7F5">
+<span style="flex:none;width:36px;height:36px;border-radius:13px;background:#fff;color:#0B6BCB;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(22,24,31,.06)"><span style="font-family:'Material Symbols Rounded';font-size:20px">{{ g.icon }}</span></span>
+<div style="flex:1;min-width:0">
+<div style="font:700 13.5px 'Public Sans',sans-serif;color:#16181F">{{ g.title }}</div>
+<div style="margin-top:4px;font:400 12.5px/1.55 'Public Sans',sans-serif;color:#6B7280;text-wrap:pretty">{{ g.body }}</div>
+</div>
+</div>
+</sc-for>
+<div style="display:flex;gap:10px;padding:16px;margin:8px 0 4px;border-radius:20px;background:rgba(180,35,24,.07)">
+<span style="font-family:'Material Symbols Rounded';font-size:20px;color:#B42318">report</span>
+<span style="flex:1;font:500 12.5px/1.55 'Public Sans',sans-serif;color:#B42318;text-wrap:pretty">If a meetup feels wrong, leave. Report the member from the item page — Super Admins review every flag.</span>
+</div>
+</sc-if>
+
+</div>
+
+<div style="flex:none;padding:16px 20px 28px;background:#fff;box-shadow:0 -1px 0 #F0F0ED">
+<sc-if value="{{ sheetDetail }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ canClaim }}" hint-placeholder-val="{{ true }}">
+<button onClick="{{ claim }}" style="{{ claimStyle }}" style-active="transform:scale(.98)">{{ claimLabel }}</button>
+</sc-if>
+<sc-if value="{{ isOwner }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ toggleHandover }}" style="{{ handoverStyle }}" style-active="transform:scale(.98)">{{ handoverLabel }}</button>
+<div style="display:flex;gap:6px;margin-top:8px">
+<sc-for list="{{ ownerStatuses }}" as="s" hint-placeholder-count="3">
+<button onClick="{{ s.pick }}" style="{{ s.style }}" style-active="transform:scale(.97)">{{ s.name }}</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px">
+<button onClick="{{ flagRecord }}" style="flex:1;min-height:54px;border-radius:18px;background:#F7F7F5;color:#16181F;font:700 14px 'Public Sans',sans-serif" style-active="transform:scale(.97)">To queue</button>
+<button onClick="{{ deleteRecord }}" style="flex:1.4;min-height:54px;border-radius:18px;background:#B42318;color:#fff;font:700 14px 'Public Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 26px -12px rgba(180,35,24,.9)" style-active="transform:scale(.97)"><span style="font-family:'Material Symbols Rounded';font-size:20px">delete</span>Delete post</button>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ sheetReport }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ reportNext }}" style="{{ reportBtnStyle }}" style-active="transform:scale(.98)">{{ reportBtnLabel }}</button>
+</sc-if>
+<sc-if value="{{ sheetSent }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px">
+<button onClick="{{ closeSheet }}" style="flex:1;min-height:54px;border-radius:18px;background:#0B6BCB;color:#fff;font:700 14.5px 'Public Sans',sans-serif;box-shadow:0 12px 26px -12px rgba(11,107,203,.9)" style-active="transform:scale(.97)">Done</button>
+<button onClick="{{ goRegistryFromSent }}" style="flex:1;min-height:54px;border-radius:18px;background:#F7F7F5;color:#16181F;font:700 14.5px 'Public Sans',sans-serif" style-active="transform:scale(.97)">View registry</button>
+</div>
+</sc-if>
+<sc-if value="{{ sheetChat }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:8px">
+<button onClick="{{ addPhoto }}" style="flex:none;width:52px;height:52px;border-radius:18px;background:#F7F7F5;color:#6B7280;display:flex;align-items:center;justify-content:center" style-active="transform:scale(.94)"><span style="font-family:'Material Symbols Rounded';font-size:22px">add_a_photo</span></button>
+<div style="flex:1;min-width:0;display:flex;align-items:center;min-height:52px;border-radius:18px;background:#F7F7F5;padding:0 16px">
+<input value="{{ draft }}" onChange="{{ onDraft }}" onKeyDown="{{ onDraftKey }}" placeholder="Message {{ chatFirstName }}" style="flex:1;min-width:0;border:0;background:none;font:500 14.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<button onClick="{{ sendMessage }}" style="{{ sendStyle }}" style-active="transform:scale(.92)"><span style="font-family:'Material Symbols Rounded';font-size:22px">send</span></button>
+</div>
+</sc-if>
+<sc-if value="{{ sheetThread }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="flex:1;min-width:0;display:flex;align-items:center;min-height:52px;border-radius:18px;background:#F7F7F5;padding:0 16px">
+<input value="{{ replyDraft }}" onChange="{{ onReplyDraft }}" onKeyDown="{{ onReplyKey }}" placeholder="Write a reply" style="flex:1;min-width:0;border:0;background:none;font:500 14.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<button onClick="{{ sendReply }}" style="{{ replySendStyle }}" style-active="transform:scale(.92)"><span style="font-family:'Material Symbols Rounded';font-size:22px">send</span></button>
+</div>
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;margin-top:10px">
+<button onClick="{{ suspendThread }}" style="flex:1;min-height:48px;border-radius:16px;background:#F7F7F5;font:700 13px 'Public Sans',sans-serif;color:#16181F" style-active="transform:scale(.97)">{{ thread.suspendLabel }}</button>
+<button onClick="{{ deleteThread }}" style="flex:1;min-height:48px;border-radius:16px;background:#B42318;color:#fff;font:700 13px 'Public Sans',sans-serif;box-shadow:0 10px 22px -12px rgba(180,35,24,.9)" style-active="transform:scale(.97)">Delete post</button>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{ sheetNewThread }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ publishThread }}" style="{{ publishStyle }}" style-active="transform:scale(.98)">Post to the forum</button>
+</sc-if>
+<sc-if value="{{ sheetSupport }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:8px">
+<div style="flex:1;min-width:0;display:flex;align-items:center;min-height:52px;border-radius:18px;background:#F7F7F5;padding:0 16px">
+<input value="{{ supportDraft }}" onChange="{{ onSupportDraft }}" onKeyDown="{{ onSupportKey }}" placeholder="Ask anything about Lost Items Community" style="flex:1;min-width:0;border:0;background:none;font:500 14.5px 'Public Sans',sans-serif;color:#16181F"/>
+</div>
+<button onClick="{{ sendSupport }}" style="{{ supportSendStyle }}" style-active="transform:scale(.92)"><span style="font-family:'Material Symbols Rounded';font-size:22px">send</span></button>
+</div>
+<button onClick="{{ escalate }}" style="width:100%;min-height:44px;margin-top:8px;font:600 12.5px 'Public Sans',sans-serif;color:#0B6BCB" style-active="transform:scale(.98)">Talk to a human instead</button>
+</sc-if>
+<sc-if value="{{ sheetAd }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ saveAd }}" style="width:100%;min-height:54px;border-radius:18px;background:#0B6BCB;color:#fff;font:700 14.5px 'Public Sans',sans-serif;box-shadow:0 12px 26px -12px rgba(11,107,203,.6)" style-active="transform:scale(.98)">Save placement</button>
+<button onClick="{{ closeSheet }}" style="width:100%;min-height:44px;margin-top:6px;font:600 12.5px 'Public Sans',sans-serif;color:#6B7280" style-active="transform:scale(.98)">Cancel</button>
+</sc-if>
+<sc-if value="{{ sheetGuidelines }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ acceptGuidelines }}" style="width:100%;min-height:54px;border-radius:18px;background:#0B6BCB;color:#fff;font:700 14.5px 'Public Sans',sans-serif;box-shadow:0 12px 26px -12px rgba(11,107,203,.6)" style-active="transform:scale(.98)">I understand — agree</button>
+<button onClick="{{ closeSheet }}" style="width:100%;min-height:44px;margin-top:6px;font:600 12.5px 'Public Sans',sans-serif;color:#6B7280" style-active="transform:scale(.98)">Close</button>
+</sc-if>
+<sc-if value="{{ sheetProfile }}" hint-placeholder-val="{{ false }}">
+<button onClick="{{ logout }}" style="width:100%;min-height:54px;border-radius:18px;background:rgba(180,35,24,.1);color:#B42318;font:700 14.5px 'Public Sans',sans-serif" style-active="transform:scale(.98);background:rgba(180,35,24,.2)">Sign out</button>
+</sc-if>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startAt&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Welcome&quot;,&quot;Login&quot;,&quot;Sign up&quot;,&quot;Forgot password&quot;,&quot;Super Admin dashboard&quot;,&quot;Simple User dashboard&quot;],&quot;default&quot;:&quot;Welcome&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:960}}">
+const FLAGGED = [
+  {id:"LOST-1031", title:"Samsung Galaxy S24", author:"alex.j", category:"Electronics", reason:"Unverified ownership claim", date:"2024-06-05"},
+  {id:"FOUND-2009", title:"iPhone 15", author:"subway.finder", category:"Electronics", reason:"Suspicious contact info", date:"2024-06-06"},
+  {id:"POST-091", title:"Lost: Vintage Polaroid Camera", author:"emily.c", category:"Forum", reason:"Spam / Repeated links", date:"2024-06-07"}
+];
+const FOUND = [
+  {id:"FOUND-2018", title:"Black Wallet", location:"Riverside Park bench", date:"11 Jun 2024", status:"Active", kind:"Found", icon:"account_balance_wallet", by:"j.rivera", desc:"Handed in at the park office. Cards inside, no cash. Owner name partially legible."},
+  {id:"FOUND-2015", title:"Silver Watch", location:"Coffee shop on 5th Ave", date:"09 Jun 2024", status:"Active", kind:"Found", icon:"watch", by:"cafe.5th", desc:"Left on a window table. Metal strap, small scratch on the clasp."},
+  {id:"FOUND-2009", title:"iPhone 15", location:"Union Square subway station", date:"06 Jun 2024", status:"Active", kind:"Found", icon:"smartphone", by:"subway.finder", desc:"Locked screen, blue case. Held at the station desk pending verification."},
+  {id:"FOUND-1998", title:"Car Keys with Fob", location:"Parking lot B", date:"31 May 2024", status:"Resolved", kind:"Found", icon:"key", by:"lotb.security", desc:"Returned to owner after fob serial matched the report."},
+  {id:"FOUND-1990", title:"Student ID Card", location:"City College cafeteria", date:"28 May 2024", status:"Active", kind:"Found", icon:"badge", by:"campus.desk", desc:"Card is intact. Waiting for the registered student to claim it."}
+];
+const LOST = [
+  {id:"LOST-1031", title:"Samsung Galaxy S24", location:"Bus 14, evening route", date:"05 Jun 2024", status:"Flagged", kind:"Lost", icon:"smartphone", by:"alex.j", desc:"Left on the rack above the seat. Black case, cracked corner."},
+  {id:"LOST-1029", title:"Prescription glasses", location:"City library, 2nd floor", date:"04 Jun 2024", status:"Active", kind:"Lost", icon:"visibility", by:"m.okafor", desc:"Tortoise frames in a hard black case."},
+  {id:"LOST-1024", title:"Blue Jansport backpack", location:"Central Station platform 3", date:"02 Jun 2024", status:"Active", kind:"Lost", icon:"backpack", by:"simple.user", desc:"Notebook and a grey hoodie inside."},
+  {id:"LOST-1018", title:"Grey tabby cat, no collar", location:"Oak Street", date:"29 May 2024", status:"Reunited", kind:"Lost", icon:"pets", by:"d.pham", desc:"Answers to Miso. Found by a neighbour two streets away."}
+];
+const THREADS = [
+  {id:1, user:"Joyce", ini:"JO", meta:"09:00 AM · Central district", tag:"Sighting", status:"live",
+   title:"Rolex Submariner — possible match at Central Station",
+   text:"Great news! I think I saw this matching description at the Central Station desk. Worth calling before you travel over.",
+   replies:[
+     {user:"Marcus", ini:"MA", time:"09:14 AM", text:"I was there this morning — the desk does hold watches in a sealed bag. Ask for the lost property window, not the ticket office."},
+     {user:"Joyce", ini:"JO", time:"09:22 AM", text:"Exactly. Bring ID and anything with the serial on it, they check before handing anything over."},
+     {user:"Priya", ini:"PR", time:"10:03 AM", text:"Called them, they still have it. Owner has been notified through the app."}
+   ]},
+  {id:2, user:"Gladyce", ini:"GL", meta:"08:45 AM · Verified", tag:"Reunited", status:"live",
+   title:"MacBook Pro 16 returned to its owner",
+   text:"Verified ownership serial number matches. Owner contacted successfully and collected it this morning.",
+   replies:[
+     {user:"Elbert", ini:"EL", time:"09:02 AM", text:"This is the third laptop reunited this month. The serial check makes it so much easier."},
+     {user:"Owner", ini:"DA", time:"11:20 AM", text:"That was mine — thank you all. Two years of work on that drive."}
+   ]},
+  {id:3, user:"Elbert", ini:"EL", meta:"Yesterday · Riverside", tag:"Question", status:"live",
+   title:"How long does the desk hold handed-in items?",
+   text:"Dropped a wallet at the park office last week and it is still showing Active. Does the holding period reset after a claim?",
+   replies:[
+     {user:"Sara", ini:"SV", time:"Yesterday", text:"Most desks hold items 90 days. The status only flips to Resolved once a claim is verified by a moderator."}
+   ]}
+];
+const SCREEN_ICON = {Home:"space_dashboard", Registry:"travel_explore", Forum:"forum", "Report success":"task_alt"};
+const money = n => "$" + n.toLocaleString("en-US");
+const compact = n => n >= 1000 ? (n/1000).toFixed(n >= 10000 ? 0 : 1) + "K" : String(n);
+const CAMPAIGNS = [
+  {key:"keysmart", campaign:"KeySmart tags — 20% off", advertiser:"KeySmart", icon:"key", rate:"$14 CPM", cpm:14},
+  {key:"citylock", campaign:"CityLock 24h locksmith", advertiser:"CityLock", icon:"lock", rate:"$22 CPM", cpm:22},
+  {key:"phonemedic", campaign:"PhoneMedic screen repair", advertiser:"PhoneMedic", icon:"smartphone", rate:"$18 CPM", cpm:18},
+  {key:"trackr", campaign:"Trackr bag tracker bundle", advertiser:"Trackr", icon:"my_location", rate:"$26 CPM", cpm:26}
+];
+const ADS = [
+  {id:"AD-01", screen:"Home", slot:"Below community activity", format:"Native strip", size:"320 × 104", campaignKey:"keysmart", campaign:"KeySmart tags — 20% off", advertiser:"KeySmart", icon:"key", days:30, daysLeft:18, revenue:1240, impressions:41200, ctr:2.4, live:true},
+  {id:"AD-02", screen:"Registry", slot:"In-feed, after 4th listing", format:"In-feed card", size:"In-feed", campaignKey:"citylock", campaign:"CityLock 24h locksmith", advertiser:"CityLock", icon:"lock", days:14, daysLeft:6, revenue:2860, impressions:88400, ctr:3.1, live:true},
+  {id:"AD-03", screen:"Forum", slot:"Above the first thread", format:"In-feed card", size:"In-feed", campaignKey:"phonemedic", campaign:"PhoneMedic screen repair", advertiser:"PhoneMedic", icon:"smartphone", days:7, daysLeft:0, revenue:430, impressions:12900, ctr:1.2, live:false},
+  {id:"AD-04", screen:"Report success", slot:"Confirmation sheet", format:"Single offer", size:"320 × 88", campaignKey:"trackr", campaign:"Trackr bag tracker bundle", advertiser:"Trackr", icon:"my_location", days:30, daysLeft:24, revenue:1980, impressions:9400, ctr:5.6, live:true}
+];
+const SCOUTS = [{ini:"GL"},{ini:"EB"},{ini:"DA"},{ini:"JO"},{ini:"MA"}];
+const MEMBERS = [
+  {id:1, ini:"AJ", name:"Alex Jordan", handle:"alex.j", posts:11, joined:"Mar 2024", suspended:false},
+  {id:2, ini:"SF", name:"Subway Finder", handle:"subway.finder", posts:34, joined:"Jan 2024", suspended:true},
+  {id:3, ini:"EC", name:"Emily Chen", handle:"emily.c", posts:6, joined:"May 2024", suspended:false},
+  {id:4, ini:"SU", name:"Simple User", handle:"user", posts:4, joined:"Feb 2024", suspended:false},
+  {id:5, ini:"MO", name:"Marina Okafor", handle:"m.okafor", posts:2, joined:"Jun 2024", suspended:false}
+];
+const CATS = ["Electronics","Wallets","Keys","Bags","Documents","Pets","Other"];
+const STATUS = {Active:"#6B7280", Resolved:"#0F7B3D", Reunited:"#0F7B3D", Flagged:"#B42318", Sighting:"#0B6BCB", Question:"#6B7280"};
+
+const chip = (s) => {
+  const c = STATUS[s] || "#8b8f95";
+  return {flex:"none", font:"700 11px 'Public Sans',sans-serif", color:c, background:c+"1A", padding:"6px 11px", borderRadius:"999px", whiteSpace:"nowrap"};
+};
+const pill = (on) => ({flex:"none", minHeight:"44px", padding:"0 18px", borderRadius:"999px", whiteSpace:"nowrap",
+  font:`${on?700:600} 13px 'Public Sans',sans-serif`, background:on?"#16181F":"#fff", color:on?"#fff":"#6B7280",
+  boxShadow:on?"0 8px 18px -8px rgba(22,24,31,.7)":"0 1px 2px rgba(22,24,31,.06)"});
+const seg = (on) => ({flex:1, minHeight:"44px", borderRadius:"20px", font:`${on?700:600} 13.5px 'Public Sans',sans-serif`,
+  background:on?"#fff":"transparent", color:on?"#16181F":"#8b8f95", boxShadow:on?"0 1px 3px rgba(22,24,31,.14)":"none"});
+const cta = (on, dark) => ({width:"100%", minHeight:"56px", marginTop: dark ? "16px" : "0", borderRadius:"20px",
+  font:"700 15.5px 'Public Sans',sans-serif",
+  background:on?"#0B6BCB":(dark?"rgba(255,255,255,.1)":"#EDEDEA"),
+  color:on?"#fff":(dark?"rgba(255,255,255,.35)":"#a8acb2"),
+  boxShadow:on?"0 14px 30px -12px rgba(11,107,203,.85)":"none"});
+
+const SLIDES = [
+  {img:"public/images/HomePage1.webp", tint:"#E2ECF7", kicker:"Welcome to Lost Items Community",
+   title:"Lost Something? We'll Help You Find It!",
+   body:"Join thousands of people reuniting with their lost belongings every day. Report what you've found, search for what you've lost, and be part of a caring community."},
+  {img:"public/images/illustration-exchange-item.webp", tint:"#EAF1E7", kicker:"How it works",
+   title:"Simple, Fast & Effective",
+   body:"Report found items in 30 seconds. Search our registry by category, location and date. Get instant notifications when a matching item is reported."},
+  {img:"public/images/illustration-treasure-chest.webp", tint:"#F5EDE2", kicker:"Why choose us",
+   title:"Join 10,000+ Community Members!",
+   body:"100% free forever, instant notifications, and a trusted community with verified users, secure messaging and safe meetup guidelines."}
+];
+const initials = (handle) => {
+  const parts = String(handle || "").split(/[.@_\-]/).filter(Boolean);
+  const s = parts.length > 1 ? parts[0][0] + parts[parts.length-1][0] : String(handle || "?").slice(0,2);
+  return s.toUpperCase();
+};
+const IMG_FIT = [1, 1.16, 1.04];
+const slideImg = (i, active) => ({position:"absolute", left:"9%", top:"9%", width:"82%", height:"82%",
+  objectFit:"contain", objectPosition:"center",
+  opacity: i === active ? 1 : 0,
+  transform: `scale(${(i === active ? 1 : .94) * IMG_FIT[i]})`, transformOrigin:"center center",
+  transition:"opacity .32s ease, transform .32s ease", pointerEvents:"none"});
+const CHAT_SEED = [
+  {from:"them", text:"Hi! I'm the one who handed this in. Can you describe anything unique about it so I can verify?", time:"09:12"},
+  {from:"me", text:"Sure — there's a small scratch on the clasp and a folded metro ticket tucked inside.", time:"09:14"},
+  {from:"them", text:"That matches. Happy to hand it over. Would you rather meet up or should I post it?", time:"09:15"}
+];
+const FAQ = [
+  {q:"How do I report an item?", keys:["report","post","upload","submit"],
+   a:"Super easy! Tap the + button, upload a photo, add a description (colour, brand, location found), and submit. You'll get notifications when potential owners reach out. The whole process takes less than 2 minutes!"},
+  {q:"How can I claim an item?", keys:["claim","mine","owner","collect"],
+   a:"Found your lost item? Open the item and use our secure messaging to contact the finder. Verify ownership by describing unique features only you would know, then arrange a safe meetup in a public place to collect it."},
+  {q:"What if I can't find my lost item?", keys:["can't find","cannot find","no match","nothing","missing"],
+   a:"Don't give up! Create a lost item post with detailed descriptions, photos and location. Enable notifications to get instant alerts when matching items are reported, and check back regularly — new items are added daily."},
+  {q:"Is the platform free?", keys:["free","cost","price","pay","fee","premium"],
+   a:"Absolutely! Lost Items Community is 100% free forever. No hidden fees, no premium plans, no catch. Create unlimited posts, search the entire registry, and message other users completely free."},
+  {q:"Is meeting a stranger safe?", keys:["safe","safety","meet","stranger","scam"],
+   a:"Always meet in a busy public place during daylight, bring someone with you if you can, and never send money upfront. Verify ownership in chat first — and report anything suspicious so a moderator can review it."}
+];
+const SUPPORT_SEED = [
+  {from:"bot", text:"Hi! I'm the Community Assistant. Ask me anything about reporting, claiming or staying safe — or pick a question below.", time:"09:00"}
+];
+const CONVOS = [
+  {itemId:"FOUND-2015", with:"cafe.5th", item:"Silver Watch", icon:"watch", unread:2, time:"09:15", msgs:[
+    {from:"me", text:"Hi, I think the watch you handed in is mine. Lost it near 5th Ave on Sunday.", time:"09:02"},
+    {from:"them", text:"Could be! Can you tell me what's engraved on the back?", time:"09:11"},
+    {from:"them", text:"I'm at the café until 6 today if you want to collect it.", time:"09:15"}
+  ]},
+  {itemId:"FOUND-1990", with:"campus.desk", item:"Student ID Card", icon:"badge", unread:0, time:"Yesterday", msgs:[
+    {from:"them", text:"Your ID is at the cafeteria desk. Bring any second ID and it's yours.", time:"16:40"},
+    {from:"me", text:"Perfect, I'll come by tomorrow morning. Thank you!", time:"17:02"}
+  ]}
+];
+
+class Component extends DCLogic {
+  state = {
+    screen:"welcome", slide:0, convos:CONVOS, activeConvo:null, draft:"", role:null,
+    supportMsgs:SUPPORT_SEED, supportDraft:"", botTyping:false,
+    threads:THREADS, activeThread:null, replyDraft:"", ntTitle:"", ntBody:"", ntTag:"Question",
+    username:"", password:"", remember:true, error:"", busy:false,
+    suUser:"", suEmail:"", suPass:"", suConfirm:"", suTerms:false, suError:"",
+    fpStage:"email", fpEmail:"", fpCode:"", fpPass:"", fpConfirm:"", fpError:"", fpBusy:false,
+    sheet:null,
+    ads:ADS, adEditId:"AD-01", adDraft:null,
+    flagged:FLAGGED, approved:0, removed:0, lost:LOST, found:FOUND, members:MEMBERS,
+    q:"", uq:"", filter:"All", topic:"All", sel:null, claimed:{}, toast:"", newId:"",
+    step:1, rType:"Lost", rTitle:"", rCat:"", rPlace:"", rDate:"", rDesc:"", pin:null
+  };
+
+  componentDidMount(){
+    const s = this.props.startAt;
+    if (s === "Sign up") this.setState({screen:"signup"});
+    if (s === "Login") this.setState({screen:"login"});
+    if (s === "Forgot password") this.setState({screen:"forgot", fpStage:"email"});
+    if (s === "Super Admin dashboard") this.setState({screen:"dash", role:"admin"});
+    if (s === "Simple User dashboard") this.setState({screen:"dash", role:"user"});
+  }
+
+  flash(msg){ clearTimeout(this._t); this.setState({toast:msg}); this._t = setTimeout(()=>this.setState({toast:""}), 2400); }
+
+  stamp(){ const n = new Date(); return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}`; }
+
+  pushMsg(text){
+    const t = (text || "").trim();
+    if (!t) return;
+    const id = this.state.activeConvo, time = this.stamp();
+    this.setState(s => ({draft:"", convos:s.convos.map(c => c.itemId===id
+      ? {...c, time, msgs:[...c.msgs, {from:"me", text:t, time}]} : c)}));
+    this.scrollChat();
+    clearTimeout(this._r);
+    this._r = setTimeout(() => {
+      const reply = "Works for me. I'll bring it in the original box — see you there.";
+      const s = this.state;
+      const open = s.sheet === "chat" && s.activeConvo === id;
+      const c = s.convos.find(x => x.itemId === id);
+      const now = this.stamp();
+      this.setState({convos:s.convos.map(x => x.itemId===id
+        ? {...x, time:now, unread: open ? 0 : (x.unread||0)+1, msgs:[...x.msgs, {from:"them", text:reply, time:now}]} : x)});
+      if (open) this.scrollChat();
+      else if (c) this.flash(`New message from ${c.with}`);
+    }, 1600);
+  }
+
+  postReply(){
+    const t2 = (this.state.replyDraft || "").trim();
+    if (!t2) return;
+    const id = this.state.activeThread, time = this.stamp();
+    this.setState(s => ({replyDraft:"", threads:s.threads.map(v => v.id===id
+      ? {...v, replies:[...v.replies, {user:this.me().name, ini:this.me().ini, time, text:t2}]} : v)}));
+    this.scrollChat();
+  }
+
+  askBot(text){
+    const t = (text || "").trim();
+    if (!t) return;
+    const time = this.stamp();
+    this.setState(s => ({supportMsgs:[...s.supportMsgs, {from:"me", text:t, time}], supportDraft:"", botTyping:true}));
+    this.scrollChat();
+    const low = t.toLowerCase();
+    const hit = FAQ.find(f => f.q.toLowerCase() === low) || FAQ.find(f => f.keys.some(k => low.includes(k)));
+    const answer = hit ? hit.a
+      : "I'm not sure about that one yet. Tap \"Talk to a human instead\" and our support team will pick it up — they usually reply within minutes.";
+    clearTimeout(this._b);
+    this._b = setTimeout(() => {
+      this.setState(s => ({supportMsgs:[...s.supportMsgs, {from:"bot", text:answer, time:this.stamp()}], botTyping:false}));
+      this.scrollChat();
+    }, 900);
+  }
+
+  scrollChat(){
+    [0, 60, 220, 450].forEach(d => setTimeout(() => {
+      const el = document.querySelector('[data-chat-scroll]');
+      if (el) el.scrollTop = el.scrollHeight;
+    }, d));
+  }
+
+  signIn = () => {
+    const u = this.state.username.trim().toLowerCase();
+    if (!u || !this.state.password) { this.setState({error:"Username and password are required."}); return; }
+    this.setState({busy:true, error:""});
+    setTimeout(()=>{
+      if (u === "superadmin" && this.state.password !== "Password1!") {
+        this.setState({busy:false, error:"Invalid password for superadmin. Hint: Password1!"});
+        return;
+      }
+      this.setState({busy:false, screen:"dash", ...this.roleState(u === "superadmin" ? "superadmin" : (u === "newuser" || u === "new") ? "newuser" : "user")});
+    }, 600);
+  };
+
+  quick = (username) => { this.setState({username, password:"Password1!", error:"", busy:true});
+    setTimeout(()=>this.setState({busy:false, screen:"dash", ...this.roleState(username)}), 550); };
+
+  slotFor(screen, fresh, st){
+    const a = st.ads.find(x => x.screen === screen);
+    if (!a) return {live:false};
+    return {...a, live: a.live && a.daysLeft > 0 && !(fresh && !st.suTerms)};
+  }
+
+  toggleAd(id){
+    let msg = "";
+    this.setState(s => ({ads: s.ads.map(a => {
+      if (a.id !== id) return a;
+      const ended = a.daysLeft <= 0;
+      const next = ended ? {...a, live:true, daysLeft:a.days} : {...a, live:!a.live};
+      msg = next.live ? `${id} live on ${a.screen}.` : `${id} paused on ${a.screen}.`;
+      return next;
+    })}), () => this.flash(msg));
+  }
+
+  me(){
+    const r = this.state.role;
+    if (r === "admin") return {name:"Super Admin", ini:"SA", handle:"superadmin"};
+    if (r === "new") return {name:"Nadia Iqbal", ini:"NI", handle:"newuser"};
+    return {name:"Simple User", ini:"SU", handle:"user"};
+  }
+
+  roleState(username){
+    if (username === "superadmin") return {role:"admin"};
+    if (username === "newuser") return {role:"new", filter:"All", suTerms:false,
+      convos:[], activeConvo:null, threads:THREADS,
+      lost:LOST.filter(i => i.by !== "simple.user"), found:FOUND.filter(i => i.by !== "simple.user")};
+    return {role:"user", convos:CONVOS, threads:THREADS, lost:LOST, found:FOUND, filter:"All"};
+  }
+
+  setStatus(id, status){
+    const swap = list => list.map(i => i.id===id ? {...i, status} : i);
+    this.setState(s => ({lost:swap(s.lost), found:swap(s.found)}));
+    this.flash(status === "Reunited" ? `${id} marked as handed over.`
+      : status === "Resolved" ? `${id} closed.` : `${id} is active again.`);
+  }
+
+  renderVals(){
+    const st = this.state, sc = st.screen, admin = st.role === "admin", fresh = st.role === "new", sh = st.sheet;
+    const slide = SLIDES[st.slide];
+    const convo = st.convos.find(c => c.itemId === st.activeConvo) || null;
+    const convoMsgs = convo ? convo.msgs : [];
+    const convoWith = convo ? convo.with : "";
+    const unread = st.convos.reduce((n, c) => n + (c.unread || 0), 0);
+    const thread = st.threads.find(x => x.id === st.activeThread) || null;
+    const pw = st.suPass || "";
+    const strength = pw.length === 0 ? 0 : pw.length < 8 ? 1 : (/[^a-z0-9]/i.test(pw) && /\d/.test(pw) ? 3 : 2);
+    const strengthColor = strength >= 3 ? "#0F7B3D" : strength === 2 ? "#C98A00" : "#B42318";
+    const strengthLabel = strength === 0 ? "Use 8+ characters with a number and a symbol"
+      : strength === 1 ? "Too short — 8 characters minimum"
+      : strength === 2 ? "Good. Add a symbol to make it strong." : "Strong password";
+    const fpw = st.fpPass || "";
+    const fpStrength = fpw.length === 0 ? 0 : fpw.length < 8 ? 1 : (/[^a-z0-9]/i.test(fpw) && /\d/.test(fpw) ? 3 : 2);
+    const fpStrengthColor = fpStrength >= 3 ? "#0F7B3D" : fpStrength === 2 ? "#C98A00" : "#B42318";
+    const fpStage = st.fpStage;
+    const fpCopy = {
+      email: ["Step 1 of 3", "Reset your password", "Enter the email on your account and we'll send a 6-digit code to confirm it's you."],
+      code: ["Step 2 of 3", "Check your inbox", "Enter the 6-digit code we sent. It expires in 10 minutes."],
+      reset: ["Step 3 of 3", "Choose a new password", "Pick something you haven't used here before, then confirm it."],
+      done: ["All set", "You're back in", "Your password has been changed."]
+    }[fpStage];
+    const fpOrder = ["email","code","reset","done"];
+    const fpIdx = fpOrder.indexOf(fpStage);
+    const visibleThreads = st.threads
+      .filter(x => st.topic==="All" || x.tag===st.topic)
+      .filter(x => admin || x.status !== "suspended");
+    const all = [...st.lost, ...st.found];
+    const sel = all.find(i => i.id === st.sel) || all[0];
+    const openItem = (it) => () => this.setState({sel:it.id, sheet:"detail", toast:""});
+    const go = (screen, extra) => () => this.setState({screen, sheet:null, filter:"All", q:"", toast:"", ...(extra||{})});
+
+    const source = sc === "lost" ? st.lost : st.found;
+    const ME = "simple.user";
+    const myPosts = [...st.lost, ...st.found].filter(i => i.by === ME);
+    let registry = st.filter === "All" ? source
+      : st.filter === "My posts" ? source.filter(i => i.by === ME)
+      : source.filter(i => i.status === st.filter);
+    const q = st.q.trim().toLowerCase();
+    if (q) registry = registry.filter(i => (i.title+" "+i.location+" "+i.id).toLowerCase().includes(q));
+
+    const decide = (id, ok) => () => {
+      this.setState(s => ({flagged:s.flagged.filter(f => f.id!==id), approved:s.approved+(ok?1:0), removed:s.removed+(ok?0:1)}));
+      this.flash(ok ? `${id} approved and unflagged.` : `${id} was permanently deleted by Super Admin.`);
+    };
+
+    const titles = {
+      dash: admin ? ["Super admin","System control"] : ["Community member","My dashboard"],
+      lost: ["Registry","Lost items"], found: ["Registry","Found items"], forum: ["Community","Forum"],
+      moderation: ["Super admin","Moderation"], analysis: ["Super admin","Analysis"], members: ["Super admin","Members"],
+      messages: ["Inbox","Messages"],
+      ads: ["Monetization","Ad placements"]
+    };
+    const t = titles[sc] || ["",""];
+
+    const activeKey = admin
+      ? ({dash:"home", lost:"registry", found:"registry", moderation:"moderation", members:"members", forum:"forum", analysis:"home"})[sc] || ""
+      : ({dash:"home", lost:"lost", found:"found", forum:"forum"})[sc] || "";
+    const tab = (key, icon, label, screen) => {
+      const on = key === activeKey;
+      return {icon, label, go: go(screen),
+        style: {flex:1, minWidth:0, minHeight:"52px", padding:"0 4px", borderRadius:"16px", display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center", gap:"3px", overflow:"hidden",
+          background: on ? "#F2F2F0" : "transparent", color: on ? "#0B6BCB" : "#9a9ea4"},
+        labelStyle: {font:`${on?700:600} 10px 'Public Sans',sans-serif`, letterSpacing:".01em"}};
+    };
+
+    const bars = [["M",9],["T",13],["W",11],["T",18],["F",14],["S",8],["S",12]];
+
+    const memberList = st.members.filter(m => !st.uq.trim() || (m.name+" "+m.handle).toLowerCase().includes(st.uq.trim().toLowerCase()));
+
+    return {
+      crumb: sc === "welcome" ? `Welcome ${st.slide+1} of 3` : sc === "signup" ? "Sign up" : sc === "login" ? "Login" : sc === "forgot" ? `Forgot password · ${fpCopy[0]}` : `${admin ? "Super Admin" : fresh ? "New User" : "Simple User"} · ${t[1]}`,
+      reset: () => this.setState({screen:"welcome", slide:0, convos:CONVOS, activeConvo:null, draft:"",
+        supportMsgs:SUPPORT_SEED, supportDraft:"", botTyping:false,
+        threads:THREADS, activeThread:null, replyDraft:"", ntTitle:"", ntBody:"", ntTag:"Question", role:null, username:"", password:"", error:"", sheet:null,
+        suUser:"", suEmail:"", suPass:"", suConfirm:"", suTerms:false, suError:"",
+    fpStage:"email", fpEmail:"", fpCode:"", fpPass:"", fpConfirm:"", fpError:"", fpBusy:false,
+        flagged:FLAGGED, approved:0, removed:0, lost:LOST, found:FOUND, members:MEMBERS,
+        q:"", uq:"", filter:"All", topic:"All", claimed:{}, step:1, rTitle:"", rCat:"", rPlace:"", rDate:"", rDesc:"", pin:null, toast:""}),
+      chromeBg: "#F2F2F0", chromeFg: "#16181F",
+      crumbScreen: sc,
+
+      isWelcome: sc==="welcome", slide,
+      img0: slideImg(0, st.slide), img1: slideImg(1, st.slide), img2: slideImg(2, st.slide),
+      dots: SLIDES.map((_, i) => ({style:{width: i===st.slide ? "24px" : "6px", height:"6px", borderRadius:"999px",
+        background: i===st.slide ? "#0B6BCB" : "#D6D5D0", display:"block", transition:"width .25s ease"}})),
+      nextLabel: st.slide === SLIDES.length-1 ? "Get started free" : "Next",
+      showWelcomeBack: st.slide > 0,
+      prevSlide: () => this.setState(s => ({slide:Math.max(0, s.slide-1)})),
+      nextSlide: () => this.setState(s => s.slide === SLIDES.length-1 ? {screen:"login"} : {slide:s.slide+1}),
+      skipWelcome: () => this.setState({screen:"login"}),
+
+      socials: [
+        {name:"Google", mark:"G", bg:"#fff", fg:"#101319", ring:true},
+        {name:"Facebook", mark:"f", bg:"#1877F2", fg:"#fff"},
+        {name:"X", mark:"X", bg:"#101319", fg:"#fff", ring:true}
+      ].map(s => ({name:s.name, mark:s.mark,
+        markStyle: {width:"24px", height:"24px", borderRadius:"50%", background:s.bg, color:s.fg,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          font:"700 13px 'Public Sans',sans-serif",
+          boxShadow: s.ring ? (s.bg === "#fff" ? "inset 0 0 0 1px #D6D5D0" : "inset 0 0 0 1px rgba(255,255,255,.35)") : "none"},
+        go: () => { this.setState({busy:true});
+          setTimeout(() => this.setState({busy:false, screen:"dash", role:"user"}), 700); }})),
+      goSignup: () => this.setState({screen:"signup", error:""}),
+      goLogin: () => this.setState({screen:"login", suError:""}),
+
+      isSignup: sc==="signup",
+      suUser: st.suUser, suEmail: st.suEmail, suPass: st.suPass, suError: st.suError,
+      onSuUser: e => this.setState({suUser:e.target.value, suError:""}),
+      onSuEmail: e => this.setState({suEmail:e.target.value, suError:""}),
+      onSuPass: e => this.setState({suPass:e.target.value, suError:""}),
+      strengthBars: [0,1,2].map(i => ({style:{flex:1, height:"4px", borderRadius:"999px",
+        background: i < strength ? strengthColor : "#DEDDD8", display:"block", transition:"background .2s ease"}})),
+      strengthColor, strengthLabel,
+      toggleTerms: () => this.setState(s => ({suTerms:!s.suTerms})),
+      termsGlyph: st.suTerms ? "check" : "",
+      termsBoxStyle: {flex:"none", width:"20px", height:"20px", marginTop:"1px", borderRadius:"7px",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        background: st.suTerms ? "#0B6BCB" : "#fff", color:"#fff",
+        boxShadow: st.suTerms ? "none" : "inset 0 0 0 1.5px #D6D5D0"},
+      signupStyle: {...cta(!!(st.suUser.trim() && st.suEmail.trim() && st.suPass && st.suConfirm && st.suTerms), false), marginTop:"16px"},
+      submitSignup: () => {
+        if (!st.suUser.trim() || !st.suEmail.trim() || !st.suPass) { this.setState({suError:"Fill in username, email and password to continue."}); return; }
+        if (!/.+@.+\..+/.test(st.suEmail)) { this.setState({suError:"That email address doesn't look right."}); return; }
+        if (st.suPass.length < 8) { this.setState({suError:"Use at least 8 characters for your password."}); return; }
+        if (st.suPass !== st.suConfirm) { this.setState({suError:"Passwords don't match. Check both fields."}); return; }
+        if (!st.suTerms) { this.setState({suError:"Please accept the community guidelines."}); return; }
+        this.setState({screen:"dash", role:"user", suError:""});
+        this.flash("Welcome to Lost Items Community. Your account is live.");
+      },
+
+      suConfirm: st.suConfirm,
+      onSuConfirm: e => this.setState({suConfirm:e.target.value, suError:""}),
+      suMatchGlyph: !st.suConfirm ? "" : (st.suConfirm === st.suPass ? "check_circle" : "cancel"),
+      suMatchColor: st.suConfirm === st.suPass ? "#0F7B3D" : "#B42318",
+
+      isForgot: sc==="forgot",
+      goForgot: () => this.setState({screen:"forgot", fpStage:"email", fpEmail:st.username.includes("@") ? st.username : "", fpCode:"", fpPass:"", fpConfirm:"", fpError:"", error:""}),
+      fpKicker: fpCopy[0], fpTitle: fpCopy[1], fpBody: fpCopy[2],
+      fpSteps: [0,1,2].map(i => ({style:{flex:1, height:"4px", borderRadius:"999px", display:"block",
+        background: i <= Math.min(fpIdx, 2) ? "#0B6BCB" : "#DEDDD8", transition:"background .2s ease"}})),
+      fpIsEmail: fpStage==="email", fpIsCode: fpStage==="code", fpIsReset: fpStage==="reset", fpIsDone: fpStage==="done",
+      fpShowSignInLink: fpStage!=="done",
+      fpEmail: st.fpEmail, fpCode: st.fpCode, fpPass: st.fpPass, fpConfirm: st.fpConfirm, fpError: st.fpError,
+      onFpEmail: e => this.setState({fpEmail:e.target.value, fpError:""}),
+      onFpCode: e => this.setState({fpCode:e.target.value.replace(/\D/g,"").slice(0,6), fpError:""}),
+      onFpPass: e => this.setState({fpPass:e.target.value, fpError:""}),
+      onFpConfirm: e => this.setState({fpConfirm:e.target.value, fpError:""}),
+      fpMatchGlyph: !st.fpConfirm ? "" : (st.fpConfirm === st.fpPass ? "check_circle" : "cancel"),
+      fpMatchColor: st.fpConfirm === st.fpPass ? "#0F7B3D" : "#B42318",
+      fpStrengthColor,
+      fpStrengthLabel: fpStrength === 0 ? "Use 8+ characters with a number and a symbol"
+        : fpStrength === 1 ? "Too short — 8 characters minimum"
+        : fpStrength === 2 ? "Good. Add a symbol to make it strong." : "Strong password",
+      fpStrengthBars: [0,1,2].map(i => ({style:{flex:1, height:"4px", borderRadius:"999px", display:"block",
+        background: i < fpStrength ? fpStrengthColor : "#DEDDD8", transition:"background .2s ease"}})),
+      fpPrimaryLabel: st.fpBusy ? "Sending…" : fpStage==="email" ? "Send reset code"
+        : fpStage==="code" ? "Verify code" : fpStage==="reset" ? "Update password" : "Back to sign in",
+      fpPrimaryStyle: {...cta(
+        !st.fpBusy && (fpStage==="email" ? !!st.fpEmail.trim()
+          : fpStage==="code" ? st.fpCode.length === 6
+          : fpStage==="reset" ? !!(st.fpPass && st.fpConfirm)
+          : true), false), marginTop:"16px"},
+      fpPrimary: () => {
+        if (fpStage === "email") {
+          if (!/.+@.+\..+/.test(st.fpEmail.trim())) { this.setState({fpError:"Enter the email address on your account."}); return; }
+          this.setState({fpBusy:true, fpError:""});
+          setTimeout(() => this.setState({fpBusy:false, fpStage:"code", fpCode:""}), 650);
+          return;
+        }
+        if (fpStage === "code") {
+          if (st.fpCode.length !== 6) { this.setState({fpError:"Enter all six digits of the code."}); return; }
+          this.setState({fpStage:"reset", fpError:""});
+          return;
+        }
+        if (fpStage === "reset") {
+          if (st.fpPass.length < 8) { this.setState({fpError:"Use at least 8 characters for your new password."}); return; }
+          if (st.fpPass !== st.fpConfirm) { this.setState({fpError:"Passwords don't match. Check both fields."}); return; }
+          this.setState({fpStage:"done", fpError:""});
+          return;
+        }
+        this.setState({screen:"login", fpStage:"email", fpPass:"", fpConfirm:"", fpCode:"", error:"", password:""});
+      },
+      fpResend: () => { this.setState({fpCode:"", fpError:""}); this.flash(`New code sent to ${st.fpEmail}.`); },
+      fpBack: () => {
+        if (fpStage === "code") this.setState({fpStage:"email", fpError:""});
+        else if (fpStage === "reset") this.setState({fpStage:"code", fpError:""});
+        else this.setState({screen:"login", fpStage:"email", fpError:""});
+      },
+
+      isLogin: sc==="login", isUserDash: sc==="dash" && !admin && !fresh, isFreshDash: sc==="dash" && fresh,
+      isAdminDash: sc==="dash" && admin,
+      isRegistry: sc==="lost" || sc==="found", isForum: sc==="forum", isModeration: sc==="moderation",
+      isAnalysis: sc==="analysis", isMembers: sc==="members", isAds: sc==="ads" && admin,
+      isAdmin: admin, isSimple: !admin && sc!=="login",
+      showHeader: !["login","welcome","signup","forgot"].includes(sc), showNav: !["login","welcome","signup","forgot"].includes(sc),
+      showBack: ["moderation","analysis","members","messages"].includes(sc),
+      showInbox: !admin,
+      back: go("dash"),
+      headerKicker: t[0], headerTitle: t[1], toast: st.toast,
+      initials: this.me().ini,
+
+      username: st.username, password: st.password, error: st.error,
+      onUser: e => this.setState({username:e.target.value, error:""}),
+      onPass: e => this.setState({password:e.target.value, error:""}),
+      submit: this.signIn,
+      signInLabel: st.busy ? "Signing in…" : "Sign in & continue",
+      signInStyle: {...cta(!!(st.username && st.password) && !st.busy, false), marginTop:"16px"},
+      toggleRemember: () => this.setState(s => ({remember:!s.remember})),
+      checkGlyph: st.remember ? "check" : "",
+      checkboxStyle: {width:"20px", height:"20px", borderRadius:"7px", display:"flex", alignItems:"center", justifyContent:"center",
+        background: st.remember ? "#0B6BCB" : "#fff", color:"#fff",
+        boxShadow: st.remember ? "none" : "inset 0 0 0 1.5px #D6D5D0"},
+      quickAdmin: () => this.quick("superadmin"), quickUser: () => this.quick("user"),
+      quickLogins: [
+        {name:"Super Admin", handle:"superadmin", desc:"Moderation queue and member controls", icon:"shield", color:"#0B6BCB", tint:"rgba(11,107,203,.1)", go:()=>this.quick("superadmin")},
+        {name:"Simple User", handle:"user", desc:"Existing member with posts and chats", icon:"person", color:"#0F7B3D", tint:"rgba(15,123,61,.1)", go:()=>this.quick("user")},
+        {name:"New User", handle:"newuser", desc:"Fresh account — nothing posted yet", icon:"person_add", color:"#B4611D", tint:"rgba(180,97,29,.12)", go:()=>this.quick("newuser")}
+      ],
+      setupSteps: (() => {
+        const done1 = !!st.suTerms, done2 = myPosts.length > 0, done3 = st.threads.some(t => t.mine);
+        const mk = (done, title, desc, go) => ({
+          title, desc, go, mark: done ? "check" : "radio_button_unchecked", titleColor: done ? "#8b8f95" : "#16181F",
+          markStyle: {flex:"none", width:"34px", height:"34px", borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center",
+            background: done ? "rgba(15,123,61,.12)" : "#F2F2F0", color: done ? "#0F7B3D" : "#0B6BCB",
+            textDecoration:"none"}
+        });
+        return [
+          mk(done1, "Read the safe meetup rules", "Two minutes. It keeps handovers safe.", () => this.setState({sheet:"guidelines"})),
+          mk(done2, "Post your first report", "Lost or found — add a photo, place and date.", () => this.setState({sheet:"report", step:1, toast:""})),
+          mk(done3, "Say hello in the forum", "Ask a question or share a sighting.", () => this.setState({screen:"forum", sheet:null}))
+        ];
+      })(),
+      setupProgress: `${[!!st.suTerms, myPosts.length>0, st.threads.some(t=>t.mine)].filter(Boolean).length} of 3 done`,
+
+      myStats: fresh
+        ? [{value:"0", label:"Active reports", color:"#a8acb2"},{value:"0", label:"Reunited", color:"#a8acb2"},{value:"0", label:"Forum posts", color:"#a8acb2"}]
+        : [{value:"2", label:"Active reports", color:"#0B6BCB"},{value:"1", label:"Reunited", color:"#0F7B3D"},{value:"4", label:"Forum posts", color:"#16181F"}],
+      shortcuts: [
+        {icon:"travel_explore", title:"Search lost items registry", desc:"Browse recent lost reports from members in your city.", go:go("lost")},
+        {icon:"storefront", title:"Search found items registry", desc:"Check if someone handed in what you are missing.", go:go("found")},
+        {icon:"chat", title:"Messages", desc: unread ? `${unread} unread from people returning your items.` : "Your conversations with finders and owners.", go:go("messages")}
+      ],
+      handedIn: st.found.slice(0,5).map(i => ({...i, open:openItem(i),
+        chipFloat: {...chip(i.status), position:"absolute", top:"10px", left:"10px", background:"rgba(255,255,255,.94)", boxShadow:"0 2px 8px rgba(22,24,31,.14)"}})),
+      comments: [
+        {ini:"JO", user:"Joyce", onItem:"Rolex Submariner", time:"09:00 AM", text:"Great news! I think I saw this matching description at the Central Station desk."},
+        {ini:"GL", user:"Gladyce", onItem:"MacBook Pro 16", time:"08:45 AM", text:"Verified ownership serial number matches. Owner contacted successfully."}
+      ],
+      goSearch: go("found"), goFound: go("found"), goLost: go("lost"),
+
+      flaggedCount: st.flagged.length, flaggedEmpty: st.flagged.length===0,
+      flagged: st.flagged.map(f => ({...f, sub:`${f.author} · ${f.date}`, approve:decide(f.id,true), remove:decide(f.id,false)})),
+      adminMetrics: [
+        {label:"Active lost", value:"1,293", color:"#16181F", delta:"↓ 36.8% vs last month", deltaColor:"#0F7B3D", icon:"person_search", iconColor:"#B42318"},
+        {label:"Recovered", value:"256k", color:"#0B6BCB", delta:"↑ 36.8% vs last month", deltaColor:"#0F7B3D", icon:"inventory_2", iconColor:"#0F7B3D"},
+        {label:"Scouts online", value:"857", color:"#16181F", delta:"857 joined today", deltaColor:"#8b8f95", icon:"group", iconColor:"#0B6BCB"}
+      ],
+      sentimentRows: [
+        {k:"Avg response velocity", v:"12.4 min", color:"#0B6BCB"},
+        {k:"Flagged keyword alerts", v:"3 pending", color:"#B42318"},
+        {k:"Active scouts", v:"857 online", color:"#0F7B3D"}
+      ],
+      modStats: [
+        {value:st.flagged.length, label:"Pending", color:"#B42318"},
+        {value:st.approved, label:"Approved", color:"#0F7B3D"},
+        {value:st.removed, label:"Removed", color:"#16181F"}
+      ],
+      scouts: SCOUTS,
+      goModeration: go("moderation"), goAnalysis: go("analysis"), goMembers: go("members", {uq:""}),
+      goAds: go("ads"),
+
+      adSlots: st.ads.map(a => {
+        const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
+        const ended = a.daysLeft <= 0;
+        return {...a,
+          screenIcon: SCREEN_ICON[a.screen] || "web_asset",
+          statusLabel: a.live ? "Live" : ended ? "Ended" : "Paused",
+          statusChip: {flex:"none", padding:"6px 11px", borderRadius:"999px", font:"600 10.5px 'Public Sans',sans-serif",
+            background: a.live ? "rgba(15,123,61,.1)" : ended ? "rgba(180,35,24,.1)" : "#F2F2F0",
+            color: a.live ? "#0F7B3D" : ended ? "#B42318" : "#8b8f95"},
+          metrics: [
+            {value: money(a.revenue), label:"Revenue", color:"#0F7B3D"},
+            {value: compact(a.impressions), label:"Impressions", color:"#16181F"},
+            {value: a.ctr.toFixed(1)+"%", label:"CTR", color:"#0B6BCB"}
+          ],
+          runLabel: ended ? `Ended · ran ${a.days} days` : `${a.daysLeft} of ${a.days} days left`,
+          runColor: ended ? "#B42318" : a.daysLeft <= 3 ? "#B4611D" : "#6B7280",
+          barStyle: {height:"100%", width:`${pct}%`, borderRadius:"999px",
+            background: ended ? "#B42318" : a.live ? "#0F7B3D" : "#c6c9ce"},
+          toggleLabel: a.live ? "Pause on this screen" : ended ? "Relaunch" : "Set live",
+          toggleStyle: {flex:1, minHeight:"48px", borderRadius:"16px", font:"700 13.5px 'Public Sans',sans-serif",
+            background: a.live ? "#F7F7F5" : "#0B6BCB", color: a.live ? "#16181F" : "#fff",
+            boxShadow: a.live ? "none" : "0 10px 22px -12px rgba(11,107,203,.9)"},
+          toggle: () => this.toggleAd(a.id),
+          edit: () => this.setState({sheet:"ad", adEditId:a.id, adDraft:{campaignKey:a.campaignKey, days:a.days}})
+        };
+      }),
+      adRevenue: money(st.ads.reduce((s,a) => s + a.revenue, 0)),
+      adRevenueDelta: "+18% vs last month",
+      adTotals: [
+        {value: compact(st.ads.reduce((s,a) => s + a.impressions, 0)), label:"Impressions"},
+        {value: st.ads.filter(a => a.live).length + " / " + st.ads.length, label:"Slots live"},
+        {value: (st.ads.reduce((s,a) => s + a.ctr, 0) / st.ads.length).toFixed(1) + "%", label:"Avg CTR"}
+      ],
+      adLiveCount: `${st.ads.filter(a => a.live).length} running`,
+
+      adHome: this.slotFor("Home", fresh, st),
+      adFeed: this.slotFor("Registry", fresh, st),
+      adForum: this.slotFor("Forum", fresh, st),
+
+      sheetAd: sh === "ad",
+      adEdit: (() => {
+        const a = st.ads.find(x => x.id === st.adEditId) || st.ads[0];
+        const d = st.adDraft || {campaignKey:a.campaignKey, days:a.days};
+        const c = CAMPAIGNS.find(x => x.key === d.campaignKey) || CAMPAIGNS[0];
+        const proj = Math.round(c.cpm * (a.impressions / a.days) * d.days / 1000);
+        return {...a, ...c, projected: money(proj),
+          projectedNote: `over ${d.days} days at ${c.rate}`,
+          screenIcon: SCREEN_ICON[a.screen] || "web_asset",
+          metrics: [
+            {value: compact(Math.round(a.impressions / a.days * d.days)), label:"Est. impressions"},
+            {value: money(Math.round(proj / d.days)), label:"Per day"},
+            {value: c.rate, label:"Rate"}
+          ]};
+      })(),
+      adCampaigns: CAMPAIGNS.map(c => {
+        const on = (st.adDraft ? st.adDraft.campaignKey : null) === c.key;
+        return {...c, mark: on ? "radio_button_checked" : "radio_button_unchecked",
+          markColor: on ? "#0B6BCB" : "#d0d3d7",
+          style: {display:"flex", alignItems:"center", gap:"12px", minHeight:"62px", padding:"0 14px",
+            borderRadius:"18px", background: on ? "rgba(11,107,203,.08)" : "#F7F7F5",
+            boxShadow: on ? "inset 0 0 0 1.5px #0B6BCB" : "none"},
+          pick: () => this.setState(s => ({adDraft:{...s.adDraft, campaignKey:c.key}}))};
+      }),
+      adDurations: [7,14,30,60].map(n => {
+        const on = (st.adDraft ? st.adDraft.days : 0) === n;
+        return {label: n + " days",
+          style: {flex:1, minHeight:"48px", borderRadius:"16px", font:"700 12.5px 'Public Sans',sans-serif",
+            background: on ? "#16181F" : "#F7F7F5", color: on ? "#fff" : "#6B7280"},
+          pick: () => this.setState(s => ({adDraft:{...s.adDraft, days:n}}))};
+      }),
+      saveAd: () => {
+        const d = st.adDraft, c = CAMPAIGNS.find(x => x.key === d.campaignKey) || CAMPAIGNS[0];
+        this.setState(s => ({sheet:null, ads: s.ads.map(a => a.id === s.adEditId
+          ? {...a, campaignKey:c.key, campaign:c.campaign, advertiser:c.advertiser, icon:c.icon, days:d.days, daysLeft:d.days, live:true}
+          : a)}));
+        this.flash(`${st.adEditId} updated · ${c.advertiser} for ${d.days} days.`);
+      },
+
+      q: st.q, onQuery: e => this.setState({q:e.target.value}),
+      regLostStyle: seg(sc==="lost"), regFoundStyle: seg(sc==="found"),
+      filters: (admin ? ["All","Active","Resolved","Reunited","Flagged"] : ["All","My posts","Active","Reunited","Resolved"])
+        .map(f => ({name:f, style:pill(st.filter===f), pick:()=>this.setState({filter:f})})),
+      registry: registry.map((i, ix) => ({...i, chip:chip(i.status), open:openItem(i),
+        adAfter: !admin && ix === 3 && registry.length > 4 && this.slotFor("Registry", fresh, st).live})),
+      myPostsEmpty: st.filter==="My posts" && registry.length===0,
+      registryEmpty: registry.length===0 && st.filter!=="My posts",
+
+      topics: ["All","Sighting","Reunited","Question"].map(name => ({name, style:pill(st.topic===name), pick:()=>this.setState({topic:name})})),
+      canPost: !admin,
+      threadsEmpty: visibleThreads.length === 0,
+      threads: visibleThreads.map(x => ({
+        ...x, chip:chip(x.tag), isAdmin:admin, suspended: x.status === "suspended",
+        replyLabel: `${x.replies.length} ${x.replies.length===1 ? "reply" : "replies"}`,
+        cardStyle: {background:"#fff", borderRadius:"26px", padding:"18px",
+          opacity: x.status === "suspended" ? .72 : 1,
+          boxShadow: x.status === "suspended"
+            ? "inset 0 0 0 1px rgba(180,35,24,.25), 0 1px 2px rgba(22,24,31,.05)"
+            : "0 1px 2px rgba(22,24,31,.05),0 14px 30px -24px rgba(22,24,31,.45)"},
+        open: () => { this.setState({sheet:"thread", activeThread:x.id, replyDraft:""}); this.scrollChat(); },
+        helpful: () => this.flash("Marked helpful. Thanks for confirming."),
+        suspendLabel: x.status === "suspended" ? "Restore post" : "Suspend post",
+        suspend: () => { this.setState(s => ({threads:s.threads.map(v => v.id===x.id ? {...v, status: v.status==="suspended" ? "live" : "suspended"} : v)}));
+          this.flash(x.status === "suspended" ? "Post restored to the forum." : "Post suspended — hidden from members."); },
+        remove: () => { this.setState(s => ({threads:s.threads.filter(v => v.id!==x.id)}));
+          this.flash("Post permanently deleted by Super Admin."); }
+      })),
+
+      sheetThread: sh==="thread",
+      thread: thread ? {...thread, chip:chip(thread.tag),
+        replyLabel: `${thread.replies.length} ${thread.replies.length===1 ? "reply" : "replies"}`,
+        suspendLabel: thread.status === "suspended" ? "Restore post" : "Suspend post"} : {replies:[]},
+      threadReplies: thread ? thread.replies : [],
+      noReplies: !!thread && thread.replies.length === 0,
+      replyDraft: st.replyDraft,
+      onReplyDraft: e => this.setState({replyDraft:e.target.value}),
+      onReplyKey: e => { if (e.key === "Enter") this.postReply(); },
+      sendReply: () => this.postReply(),
+      replySendStyle: {flex:"none", width:"52px", height:"52px", borderRadius:"18px", display:"flex", alignItems:"center", justifyContent:"center",
+        background: st.replyDraft.trim() ? "#0B6BCB" : "#EDEDEA", color: st.replyDraft.trim() ? "#fff" : "#a8acb2",
+        boxShadow: st.replyDraft.trim() ? "0 10px 22px -10px rgba(11,107,203,.85)" : "none"},
+      suspendThread: () => { const id = st.activeThread;
+        this.setState(s => ({threads:s.threads.map(v => v.id===id ? {...v, status: v.status==="suspended" ? "live" : "suspended"} : v)}));
+        this.flash(thread && thread.status === "suspended" ? "Post restored to the forum." : "Post suspended — hidden from members."); },
+      deleteThread: () => { const id = st.activeThread;
+        this.setState(s => ({threads:s.threads.filter(v => v.id!==id), sheet:null}));
+        this.flash("Post permanently deleted by Super Admin."); },
+
+      sheetNewThread: sh==="newthread",
+      openNewThread: () => this.setState({sheet:"newthread", ntTitle:"", ntBody:"", ntTag:"Question"}),
+      newTopics: ["Sighting","Reunited","Question"].map(name => ({name, style:pill(st.ntTag===name), pick:()=>this.setState({ntTag:name})})),
+      ntTitle: st.ntTitle, ntBody: st.ntBody,
+      onNtTitle: e => this.setState({ntTitle:e.target.value}),
+      onNtBody: e => this.setState({ntBody:e.target.value}),
+      publishStyle: cta(!!(st.ntTitle.trim() && st.ntBody.trim()), false),
+      publishThread: () => {
+        if (!st.ntTitle.trim() || !st.ntBody.trim()) return;
+        const t2 = {id:Date.now(), user:this.me().name, ini:this.me().ini, mine:true, meta:`${this.stamp()} · You`, tag:st.ntTag, status:"live",
+          title:st.ntTitle.trim(), text:st.ntBody.trim(), replies:[]};
+        this.setState(s => ({threads:[t2, ...s.threads], sheet:null, ntTitle:"", ntBody:""}));
+        this.flash("Posted to the forum.");
+      },
+
+      uq: st.uq, onUserQuery: e => this.setState({uq:e.target.value}),
+      membersEmpty: memberList.length===0,
+      members: memberList.map(m => ({
+        ini:m.ini, name:m.name, meta:`@${m.handle} · ${m.posts} posts · joined ${m.joined}`,
+        status: m.suspended ? "Suspended" : "Active", chip: chip(m.suspended ? "Flagged" : "Active"),
+        toggleLabel: m.suspended ? "Restore" : "Suspend",
+        toggleStyle: {flex:1, minHeight:"44px", borderRadius:"16px", background:"#F7F7F5", color:"#16181F", font:"700 13px 'Public Sans',sans-serif"},
+        toggle: () => { this.setState(s => ({members:s.members.map(x => x.id===m.id?{...x, suspended:!x.suspended}:x)}));
+          this.flash(m.suspended ? `${m.name} restored.` : `${m.name} suspended by Super Admin.`); },
+        remove: () => { this.setState(s => ({members:s.members.filter(x => x.id!==m.id)}));
+          this.flash(`${m.name} was permanently deleted by Super Admin.`); }
+      })),
+
+      showFab: !admin,
+      navLeft: admin
+        ? [tab("home","space_dashboard","Home","dash"), tab("registry","travel_explore","Registry","lost"), tab("moderation","flag","Review","moderation")]
+        : [tab("home","space_dashboard","Home","dash"), tab("lost","travel_explore","Lost","lost")],
+      navRight: admin
+        ? [tab("members","group","Members","members"), tab("forum","forum","Forum","forum")]
+        : [tab("found","storefront","Found","found"), tab("forum","forum","Forum","forum")],
+      openReport: () => this.setState({sheet:"report", step:1, toast:""}),
+      openProfile: () => this.setState({sheet:"profile", toast:""}),
+      closeSheet: () => this.setState({sheet:null}),
+      sheetGuidelines: sh==="guidelines",
+      openGuidelines: () => this.setState({sheet:"guidelines"}),
+      acceptGuidelines: () => this.setState({sheet:null, suTerms:true, suError:""}),
+      guidelineRules: [
+        {icon:"public", title:"Meet in public, in daylight", body:"Police station lobbies, café counters and transit hubs are ideal. Never a home address, never a car park after dark."},
+        {icon:"group_add", title:"Bring someone with you", body:"Tell a friend where you're going and when you expect to be back. Handovers take two minutes; a companion costs nothing."},
+        {icon:"quiz", title:"Verify before you hand over", body:"Ask the claimant to describe a detail that isn't in the listing — a scratch, a lock screen, what's in the side pocket."},
+        {icon:"lock", title:"Keep personal data off the post", body:"No phone numbers, addresses, serial numbers or ID scans in listings or the forum. Use in-app chat for anything specific."},
+        {icon:"payments", title:"No money changes hands", body:"Returns are free. Rewards, deposits and 'shipping fees' are the most common scam on the platform — report anyone who asks."},
+        {icon:"chat", title:"Be decent in the forum", body:"No accusations, doxxing or pile-ons. Posts that break this are suspended by Super Admins and repeat accounts are removed."}
+      ],
+      sheetDetail: sh==="detail", sheetReport: sh==="report", sheetSent: sh==="sent", sheetProfile: sh==="profile",
+      scrimStyle: {position:"absolute", inset:0, zIndex:45, background:"rgba(16,19,25,.42)", backdropFilter:"blur(2px)",
+        opacity: sh ? 1 : 0, pointerEvents: sh ? "auto" : "none", transition:"opacity .3s ease"},
+      sheetStyle: {position:"absolute", left:0, right:0, bottom:0, zIndex:50, maxHeight:"88%", background:"#fff",
+        borderRadius:"32px 32px 0 0", boxShadow:"0 -20px 60px -20px rgba(16,19,25,.6)", display:"flex", flexDirection:"column",
+        transform: sh ? "translateY(0)" : "translateY(102%)", transition:"transform .38s cubic-bezier(.32,.72,0,1)"},
+
+      detail: {...sel, chip:chip(sel.status)},
+      detailRows: [{k:"Status", v:sel.status},{k:"Where", v:sel.location}]
+        .concat(sel.coords ? [{k:"Map pin", v:sel.coords}] : [])
+        .concat([{k:"When", v:sel.date},{k:"Submitted by", v:sel.by}]),
+      canClaim: !admin && sel.by !== ME,
+      isOwner: !admin && sel.by === ME,
+      ownerHint: sel.status === "Reunited"
+        ? "Handed over. Members can still read the record but it no longer shows as open."
+        : "When you hand the item to its owner, update the status here so the community stops searching.",
+      handoverLabel: sel.status === "Reunited" ? "Reopen this post" : "Mark as handed over",
+      handoverStyle: cta(true, false),
+      ownerStatuses: ["Active","Reunited","Resolved"].map(name => ({
+        name, style: {flex:1, minHeight:"44px", borderRadius:"14px",
+          background: sel.status===name ? "#16181F" : "#F7F7F5",
+          color: sel.status===name ? "#fff" : "#6B7280",
+          font:"700 12px 'Public Sans',sans-serif"},
+        pick: () => this.setStatus(sel.id, name)
+      })),
+      withdrawPost: () => {
+        this.setState(s => ({lost:s.lost.filter(i => i.id!==sel.id), found:s.found.filter(i => i.id!==sel.id), sheet:null}));
+        this.flash(`${sel.id} withdrawn from the registry.`);
+      },
+      toggleHandover: () => this.setStatus(sel.id, sel.status === "Reunited" ? "Active" : "Reunited"),
+      claim: () => {
+        this.setState(s => {
+          const exists = s.convos.find(c => c.itemId === sel.id);
+          const convos = exists
+            ? s.convos.map(c => c.itemId===sel.id ? {...c, unread:0} : c)
+            : [{itemId:sel.id, with:sel.by, item:sel.title, icon:sel.icon, unread:0, time:this.stamp(), msgs:CHAT_SEED}, ...s.convos];
+          return {claimed:{...s.claimed,[sel.id]:true}, convos, activeConvo:sel.id, sheet:"chat", draft:""};
+        });
+        this.scrollChat();
+        this.flash("Claim opened. You can talk to " + sel.by + " directly.");
+      },
+      claimLabel: st.claimed[sel.id] ? "Open chat with finder" : (sel.kind === "Found" ? "This is mine" : "I have found this"),
+      claimStyle: cta(true, false),
+
+      isMessages: sc==="messages",
+      unreadTotal: unread, hasUnread: unread > 0,
+      unreadBadgeStyle: {position:"absolute", top:"-2px", right:"-2px", minWidth:"18px", height:"18px", padding:"0 5px",
+        borderRadius:"999px", background:"#B42318", color:"#fff", font:"700 10px 'Public Sans',sans-serif",
+        display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 0 3px #F2F2F0"},
+      openMessages: () => this.setState({screen:"messages", sheet:null, toast:""}),
+      conversations: st.convos.map(c => {
+        const last = c.msgs[c.msgs.length-1] || {};
+        return {itemId:c.itemId, item:c.item, icon:c.icon, with:c.with, time:c.time,
+          ini: initials(c.with),
+          preview: (last.from === "me" ? "You: " : "") + (last.text || ""),
+          unread: c.unread, hasUnread: c.unread > 0,
+          previewStyle: {display:"block", marginTop:"4px", font:`${c.unread ? 600 : 400} 12.5px/1.5 'Public Sans',sans-serif`,
+            color: c.unread ? "#16181F" : "#8b8f95", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"},
+          badgeStyle: {flex:"none", minWidth:"22px", height:"22px", padding:"0 7px", borderRadius:"999px",
+            background:"#0B6BCB", color:"#fff", font:"700 11px 'Public Sans',sans-serif",
+            display:"flex", alignItems:"center", justifyContent:"center"},
+          open: () => {
+            this.setState(s => ({sheet:"chat", activeConvo:c.itemId, draft:"",
+              convos:s.convos.map(x => x.itemId===c.itemId ? {...x, unread:0} : x)}));
+            this.scrollChat();
+          }};
+      }),
+      noConversations: st.convos.length === 0,
+
+      sheetChat: sh==="chat",
+      chatWith: convoWith, chatFirstName: convoWith,
+      chatItem: convo ? convo.item : sel.title, chatItemId: convo ? convo.itemId : sel.id,
+      chatIcon: convo ? convo.icon : sel.icon,
+      chatIni: initials(convoWith),
+      messages: convoMsgs.map(m => {
+        const mine = m.from === "me";
+        return {text:m.text, time:m.time,
+          rowStyle: {display:"flex", flexDirection:"column", alignItems: mine ? "flex-end" : "flex-start", gap:"4px"},
+          bubbleStyle: {maxWidth:"78%", padding:"12px 15px", borderRadius: mine ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
+            background: mine ? "#0B6BCB" : "#F2F2F0", color: mine ? "#fff" : "#16181F",
+            font:"500 14px/1.55 'Public Sans',sans-serif", textWrap:"pretty"},
+          timeStyle: {font:"500 10px 'IBM Plex Mono',monospace", color:"#a8acb2", padding:"0 4px"}};
+      }),
+      showQuickReplies: convoMsgs.length < 6,
+      quickReplies: [
+        {label:"Meet in public", icon:"handshake", text:"Could we meet at the station café tomorrow around 6pm? It's public and busy."},
+        {label:"Post it to me", icon:"local_shipping", text:"If meeting is hard, I'm happy to cover postage and send you a prepaid label."},
+        {label:"Share my number", icon:"call", text:"Here's my number so we can sort out the handover faster."}
+      ].map(r => ({...r, send: () => this.pushMsg(r.text)})),
+      draft: st.draft,
+      onDraft: e => this.setState({draft:e.target.value}),
+      onDraftKey: e => { if (e.key === "Enter") this.pushMsg(this.state.draft); },
+      sendMessage: () => this.pushMsg(st.draft),
+      sendStyle: {flex:"none", width:"52px", height:"52px", borderRadius:"18px", display:"flex", alignItems:"center", justifyContent:"center",
+        background: st.draft.trim() ? "#0B6BCB" : "#EDEDEA", color: st.draft.trim() ? "#fff" : "#a8acb2",
+        boxShadow: st.draft.trim() ? "0 10px 22px -10px rgba(11,107,203,.85)" : "none"},
+      addPhoto: () => this.flash("Photo picker opens here."),
+      flagRecord: () => this.flash(`${sel.id} sent to the moderation queue.`),
+      deleteRecord: () => {
+        this.setState(s => ({lost:s.lost.filter(i => i.id!==sel.id), found:s.found.filter(i => i.id!==sel.id),
+          removed:s.removed+1, sheet:null}));
+        this.flash(`${sel.id} was permanently deleted by Super Admin.`);
+      },
+
+      isStep1: st.step===1, isStep2: st.step===2,
+      reportTitle: st.step===1 ? "Report an item" : "Where and when",
+      step1Bar: {flex:1, height:"4px", borderRadius:"999px", background:"#0B6BCB"},
+      step2Bar: {flex:1, height:"4px", borderRadius:"999px", background: st.step===2 ? "#0B6BCB" : "#EAEAE7"},
+      setLost: ()=>this.setState({rType:"Lost"}), setFound: ()=>this.setState({rType:"Found"}),
+      lostStyle: seg(st.rType==="Lost"), foundStyle: seg(st.rType==="Found"),
+      rTitle: st.rTitle, rPlace: st.rPlace, rDate: st.rDate, rDesc: st.rDesc,
+      onRTitle: e=>this.setState({rTitle:e.target.value}), onRPlace: e=>this.setState({rPlace:e.target.value}),
+      onRDate: e=>this.setState({rDate:e.target.value}), onRDesc: e=>this.setState({rDesc:e.target.value}),
+      categories: CATS.map(c => ({name:c, style:pill(st.rCat===c), pick:()=>this.setState({rCat:c})})),
+      reportBtnLabel: st.step===1 ? "Continue" : "Submit to registry",
+      reportBtnStyle: cta(st.step===1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim(), false),
+      reportNext: () => {
+        if (st.step===1) { if (st.rTitle.trim() && st.rCat) this.setState({step:2}); return; }
+        if (!st.rPlace.trim()) return;
+        const lost = st.rType === "Lost";
+        const id = `${lost?"LOST":"FOUND"}-${lost?1032:2019}`;
+        const rec = {id, title:st.rTitle, location:st.rPlace, date:st.rDate || "Today", status:"Active", kind:st.rType,
+          icon:"inventory_2", by:"simple.user", desc: st.rDesc || "No extra details were given.",
+          coords: st.pin ? `${st.pin.lat}, ${st.pin.lng}` : null};
+        const clear = {sheet:"sent", newId:id, step:1, rTitle:"", rCat:"", rPlace:"", rDate:"", rDesc:"", pin:null};
+        this.setState(s => lost ? {lost:[rec,...s.lost], ...clear} : {found:[rec,...s.found], ...clear});
+      },
+      newId: st.newId,
+      goRegistryFromSent: () => this.setState({screen: st.newId.startsWith("LOST") ? "lost" : "found", sheet:null, filter:"All", q:""}),
+
+      hasPin: !!st.pin, noPin: !st.pin,
+      pinLabel: st.pin ? `pin set · ${st.pin.lat}, ${st.pin.lng}` : "no pin set",
+      pinStyle: st.pin ? {position:"absolute", left:`${st.pin.x}%`, top:`${st.pin.y}%`, width:"22px", height:"22px",
+        marginLeft:"-11px", marginTop:"-11px", borderRadius:"50%", background:"#B42318", border:"4px solid #fff",
+        boxShadow:"0 4px 12px rgba(22,24,31,.35)", display:"block"} : {display:"none"},
+      onMapTap: (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        const x = Math.max(4, Math.min(96, ((e.clientX - r.left) / r.width) * 100));
+        const y = Math.max(6, Math.min(94, ((e.clientY - r.top) / r.height) * 100));
+        this.setState({pin:{x, y, lat:(40.7128 + (50-y)/900).toFixed(4), lng:(-73.9960 + (x-50)/900).toFixed(4)}});
+      },
+      clearPin: () => this.setState({pin:null}),
+      useMyLocation: () => this.setState(s => ({pin:{x:50, y:48, lat:"40.7139", lng:"-73.9960"}, rPlace: s.rPlace || "Union Square, current location"})),
+
+      meName: this.me().name,
+      meEmail: admin ? "admin@lostitems.community" : fresh ? "newuser@lostitems.community" : "user@lostitems.community",
+      settings: fresh
+        ? [{label:"Member since", value:"Today"},{label:"Reports posted", value:String(myPosts.length)},{label:"Notifications", value:"On"},{label:"Guidelines accepted", value: st.suTerms ? "Yes" : "Not yet"}]
+        : admin
+        ? [{label:"Role", value:"Super admin"},{label:"Moderation alerts", value:"On"},{label:"Records reviewed", value:String(st.approved+st.removed)},{label:"Audit log", value:"View"}]
+        : [{label:"Notifications", value:"On"},{label:"City", value:"Central"},{label:"Contact sharing", value:"After match"},{label:"Language", value:"English"}],
+      toastSupport: () => { this.setState({sheet:"support", supportDraft:""}); this.scrollChat(); },
+      sheetSupport: sh==="support",
+      supportMessages: st.supportMsgs.map(m => {
+        const mine = m.from === "me";
+        return {text:m.text, time:m.time,
+          rowStyle: {display:"flex", flexDirection:"column", alignItems: mine ? "flex-end" : "flex-start", gap:"4px"},
+          bubbleStyle: {maxWidth:"82%", padding:"12px 15px", borderRadius: mine ? "20px 20px 6px 20px" : "20px 20px 20px 6px",
+            background: mine ? "#0B6BCB" : "#F2F2F0", color: mine ? "#fff" : "#16181F",
+            font:"500 14px/1.6 'Public Sans',sans-serif", textWrap:"pretty"},
+          timeStyle: {font:"500 10px 'IBM Plex Mono',monospace", color:"#a8acb2", padding:"0 4px"}};
+      }),
+      botTyping: st.botTyping,
+      faqChips: FAQ.map(f => ({q:f.q, ask: () => this.askBot(f.q)})),
+      supportDraft: st.supportDraft,
+      onSupportDraft: e => this.setState({supportDraft:e.target.value}),
+      onSupportKey: e => { if (e.key === "Enter") this.askBot(this.state.supportDraft); },
+      sendSupport: () => this.askBot(st.supportDraft),
+      supportSendStyle: {flex:"none", width:"52px", height:"52px", borderRadius:"18px", display:"flex", alignItems:"center", justifyContent:"center",
+        background: st.supportDraft.trim() ? "#0B6BCB" : "#EDEDEA", color: st.supportDraft.trim() ? "#fff" : "#a8acb2",
+        boxShadow: st.supportDraft.trim() ? "0 10px 22px -10px rgba(11,107,203,.85)" : "none"},
+      escalate: () => { this.setState({sheet:null}); this.flash("Handed to the support team — they'll reply in your inbox."); },
+      logout: () => this.setState({screen:"login", role:null, username:"", password:"", sheet:null, toast:"",
+        convos:CONVOS, activeConvo:null, draft:"",
+        suUser:"", suEmail:"", suPass:"", suConfirm:"", suTerms:false, suError:"",
+    fpStage:"email", fpEmail:"", fpCode:"", fpPass:"", fpConfirm:"", fpError:"", fpBusy:false}),
+
+      bars: bars.map(([label, v]) => ({label, style:{width:"100%", maxWidth:"24px", height:`${Math.round(v/18*96)}px`,
+        borderRadius:"8px", background: v===18 ? "#0B6BCB" : "#E6E8EB", display:"block"}})),
+      keywords: [{word:"payment upfront", hits:"7 hits"},{word:"send deposit", hits:"4 hits"},{word:"meet alone", hits:"2 hits"}]
+    };
+  }
+}
+</script>
+</body>
+</html>
