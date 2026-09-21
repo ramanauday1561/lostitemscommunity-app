@@ -12,12 +12,12 @@ export function Forum() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 14 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 10 }}>
           {v.topics.map((t) => <Pill key={t.name} label={t.name} on={t.on} onPress={t.pick} />)}
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 14, paddingBottom: 28, gap: 12 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 12 }}>
         <AdSlot ad={v.adForum} />
         {v.threads.map((t) => (
           <View key={t.id} style={[{

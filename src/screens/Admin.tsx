@@ -105,7 +105,7 @@ export function Members() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20 }}>
-        <Field icon="search" value={v.uq} onChange={v.onUserQuery} placeholder="Search members" />
+        <Field icon="search" value={v.uq} onChange={v.onUserQuery} placeholder="Search members" compact />
       </View>
       <ScrollView contentContainerStyle={{ ...pad, paddingTop: 14 }}>
         {v.members.map((m) => (
