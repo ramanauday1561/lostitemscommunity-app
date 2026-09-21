@@ -30,6 +30,10 @@ jobs:
         run: |
           touch dist/.nojekyll          # Pages runs Jekyll, which strips _expo/
           cp dist/index.html dist/404.html   # SPA fallback for deep links
+          # An Actions deployment replaces the whole site, so the custom domain
+          # has to be republished every time or Pages drops back to the
+          # github.io subpath.
+          echo app.lostitemscommunity.com > dist/CNAME
       # Needs Pages enabled once by hand: Settings -> Pages -> Source: GitHub Actions.
       # The workflow token cannot create the Pages site itself, so this must not
       # block the build.
