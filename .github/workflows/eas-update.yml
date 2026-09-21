@@ -4,7 +4,7 @@ name: Publish EAS Update
 # EXPO_TOKEN secret; skipped automatically when it is not set.
 on:
   push:
-    branches: [main, claude/gracious-darwin-m4s68c]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
