@@ -30,9 +30,11 @@ jobs:
         run: |
           touch dist/.nojekyll          # Pages runs Jekyll, which strips _expo/
           cp dist/index.html dist/404.html   # SPA fallback for deep links
+      # Needs Pages enabled once by hand: Settings -> Pages -> Source: GitHub Actions.
+      # The workflow token cannot create the Pages site itself, so this must not
+      # block the build.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
+        continue-on-error: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
