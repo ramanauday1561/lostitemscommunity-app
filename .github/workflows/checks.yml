@@ -1,0 +1,23 @@
+name: Checks
+
+on:
+  push:
+    branches: [main, claude/gracious-darwin-m4s68c]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Parity against the prototype
+        # Runs the prototype's own renderVals() and this app's buildVals() over
+        # the same state matrix and diffs the data. Fails on any mismatch.
+        run: npm run oracle

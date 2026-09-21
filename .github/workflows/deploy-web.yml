@@ -1,0 +1,54 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main, claude/gracious-darwin-m4s68c]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Export static web build
+        run: npx expo export -p web --output-dir dist
+      - name: Prepare for GitHub Pages
+        run: |
+          touch dist/.nojekyll          # Pages runs Jekyll, which strips _expo/
+          cp dist/index.html dist/404.html   # SPA fallback for deep links
+          # An Actions deployment replaces the whole site, so the custom domain
+          # has to be republished every time or Pages drops back to the
+          # github.io subpath.
+          echo app.lostitemscommunity.com > dist/CNAME
+      # Needs Pages enabled once by hand: Settings -> Pages -> Source: GitHub Actions.
+      # The workflow token cannot create the Pages site itself, so this must not
+      # block the build.
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

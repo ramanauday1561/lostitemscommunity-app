@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Lost Items Community",
+    "slug": "lostitemscommunity-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "community.lostitems.app"
+    },
+    "android": {
+      "package": "community.lostitems.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F2F2F0"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "lostitems",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
