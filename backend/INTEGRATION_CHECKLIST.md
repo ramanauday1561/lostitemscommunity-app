@@ -60,11 +60,17 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 2 — Dashboard
 
-- [ ] 2.1 Replace `myStats` (hardcoded `'2'/'1'/'4'`) with real counts: active reports (`items` where `reporter_id = me`), reunited count, forum post count (`profiles.post_count`)
-- [ ] 2.2 Replace `setupSteps`/`setupProgress` checks (`suTerms`, `myPosts.length`, `threads.some(mine)`) with `profiles.guidelines_accepted_at`, a real items query, a real threads query
-- [ ] 2.3 Admin dashboard tiles (`adminMetrics`) → `select * from admin_dashboard_stats`
+- [x] 2.1 `myStats` → `src/api/dashboard.ts#getMyDashboardStats(userId)`: active reports (`items` where `reporter_id = me` and `status = 'active'`), reunited count, forum post count (`profiles.post_count`, covers threads + replies — a closer match to the "Forum posts" label than counting threads alone). Only replaces the value in **Supabase mode**; demo mode's hardcoded numbers are untouched.
+- [x] 2.2 `setupSteps`/`setupProgress` → `st.suTerms` (already synced from `profiles.guidelines_accepted_at` since Phase 1's `roleFromProfile`), `myDashStats.totalReports > 0`, `myDashStats.myThreads > 0` (a real `forum_threads` count, not `profiles.post_count`, since a reply shouldn't mark "say hello in the forum" done before a thread has ever been posted).
+- [x] 2.3 Admin dashboard tiles (`adminMetrics`) → `select * from admin_dashboard_stats`, via `getAdminDashboardStats()`. Renamed the third tile from "Scouts online" to **"Active members"** since it now shows a real count instead of a fake presence number (see `backend/README.md` "What's intentionally not modeled yet") — dropped the `delta` copy (`"↓ 36.8% vs last month"` etc.) too, since there's no historical baseline to compare against yet.
+- [x] Added `profile: Profile | null` to `AppState`, populated by `roleFromProfile()` on every successful sign-in/signup/session-restore and cleared on logout — a single source of truth other phases (Phase 12's Profile sheet, especially) can reuse instead of re-fetching.
+- [x] Stats load fire-and-forget via `Store#loadDashboardStats`, called right after `roleFromProfile` on all three auth entry points (sign-in, sign-up, session restore). While it's in flight, `myDashStats`/`adminDashStats` are `null` and the tiles show `0` — no spinner. This is a placeholder, not the loading-state pattern promised in 0.9, which is still undecided; revisit once a screen needs something better than "shows zero briefly."
 
-**Test:** as `newuser`, dashboard shows the onboarding checklist with nothing done; as `user`, stats match what's actually in the DB; as `superadmin`, tiles match `admin_dashboard_stats`.
+**Not touched, deliberately out of scope for this phase:** `flaggedCount`/`flagged` (Phase 7), `handedIn`/`comments` (Phase 3/5 — still mock), the "Conversation & sentiment" panel and "857 new scouts today" (decorative, Phase 9 decision pending).
+
+**Verified:** `npx tsc --noEmit` clean, `npm run oracle` 46/46 (oracle only exercises demo-mode state, which none of these changes touch). Confirmed the actual numbers a real login would show, straight from the DB: `admin_dashboard_stats` currently reads `{active_lost: 0, recovered: 0, active_members: 3}` (3 profiles exist: `superadmin`, `testuser1`, `testuser2`; 0 items, since Phase 3/4 haven't given anyone a way to create one against the real backend yet) — this is correct, not a bug, and will move once Phase 4 lands. **Not verified via a live browser round-trip** — same network restriction as Phase 1 (this sandbox can't reach `*.supabase.co`); the checked-in code paths were reviewed against the actual RLS policies instead (`items_select_public`/`forum_threads_select` both permit a user to count their own rows regardless of status, confirmed by re-reading the policies in `0010_rls_policies.sql`).
+
+**Test:** as `newuser`/`testuser2` (fresh, no items yet), dashboard shows the onboarding checklist with nothing done and all-zero grey stat tiles; as `testuser1`, stats should currently read 0 active reports / 0 reunited / 0 forum posts too (no items or threads exist for it yet — expected, not a bug); as `superadmin`, tiles should read `0 / 0 / 3` right now. Once Phase 4 lets `testuser1` report something, its stats and `active_lost` should move.
 
 ---
 

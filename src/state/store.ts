@@ -10,6 +10,7 @@ import {
 // Node-based prototype-parity oracle in tools/oracle/ does -- doesn't try to
 // transform React Native internals through plain esbuild.
 import type * as AuthApi from '../api/auth';
+import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -30,6 +31,10 @@ export interface AppState {
   ntTitle: string; ntBody: string; ntTag: string;
   username: string; password: string; remember: boolean; error: string; busy: boolean;
   authMode: AuthMode;
+  /** Only populated in Supabase mode -- null in demo mode / before login. */
+  profile: AuthApi.Profile | null;
+  myDashStats: MyDashboardStats | null;
+  adminDashStats: AdminDashboardStats | null;
   suUser: string; suEmail: string; suPass: string; suConfirm: string;
   suTerms: boolean; suError: string; suInfo: string;
   fpStage: string; fpEmail: string; fpCode: string; fpPass: string;
@@ -50,6 +55,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
+  profile: null, myDashStats: null, adminDashStats: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -212,8 +218,21 @@ export class Store {
   private roleFromProfile(p: AuthApi.Profile): Partial<AppState> {
     const role: Role = p.role === 'superadmin' ? 'admin'
       : (p.post_count === 0 && !p.guidelines_accepted_at) ? 'new' : 'user';
-    return { role, suTerms: !!p.guidelines_accepted_at };
+    return { role, suTerms: !!p.guidelines_accepted_at, profile: p };
   }
+
+  /** Fetches the dashboard stat tiles for whichever role just signed in. Fire-and-forget:
+   *  the dashboard renders zeros until this resolves, same as a fresh/new account would show. */
+  loadDashboardStats = async (p: AuthApi.Profile) => {
+    const dashboard = await import('../api/dashboard');
+    if (p.role === 'superadmin') {
+      const adminDashStats = await dashboard.getAdminDashboardStats();
+      this.setState({ adminDashStats });
+    } else {
+      const myDashStats = await dashboard.getMyDashboardStats(p.id);
+      this.setState({ myDashStats });
+    }
+  };
 
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
@@ -228,6 +247,7 @@ export class Store {
       const profile = await authApi.getMyProfile();
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
       this.setState({ busy: false, screen: 'dash', ...this.roleFromProfile(profile) });
+      this.loadDashboardStats(profile);
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
@@ -253,6 +273,7 @@ export class Store {
           busy: false, screen: 'dash',
           ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
         });
+        if (profile) this.loadDashboardStats(profile);
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
         this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
@@ -291,6 +312,7 @@ export class Store {
     const profile = await authApi.getMyProfile();
     if (!profile) return;
     this.setState({ authMode: 'supabase', screen: 'dash', ...this.roleFromProfile(profile) });
+    this.loadDashboardStats(profile);
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
