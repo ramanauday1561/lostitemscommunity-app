@@ -279,6 +279,10 @@ export function buildVals(store: Store) {
       return `${[done1, done2, done3].filter(Boolean).length} of 3 done`;
     })(),
 
+    // FreshDash greets the account by name -- "Nadia" is the demo persona;
+    // a real fresh signup gets their own display name instead.
+    freshName: isSupabaseAuth ? (st.profile?.display_name?.split(' ')[0] || st.profile?.username || 'there') : 'Nadia',
+
     myStats: !isSupabaseAuth
       ? (fresh
         ? [{ value: '0', label: 'Active reports', color: '#a8acb2' }, { value: '0', label: 'Reunited', color: '#a8acb2' }, { value: '0', label: 'Forum posts', color: '#a8acb2' }]
@@ -302,8 +306,12 @@ export function buildVals(store: Store) {
     ],
     goSearch: go('found'), goFound: go('found'), goLost: go('lost'),
 
-    flaggedCount: st.flagged.length, flaggedEmpty: st.flagged.length === 0,
-    flagged: st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
+    // Moderation isn't wired to the backend until Phase 7 -- in Supabase mode,
+    // show the real (currently zero) count instead of the mock queue, rather
+    // than letting a real admin "approve/remove" fake posts.
+    flaggedCount: isSupabaseAuth ? 0 : st.flagged.length,
+    flaggedEmpty: isSupabaseAuth ? true : st.flagged.length === 0,
+    flagged: isSupabaseAuth ? [] : st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
     adminMetrics: !isSupabaseAuth ? [
       { label: 'Active lost', value: '1,293', color: '#16181F', delta: '↓ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
       { label: 'Recovered', value: '256k', color: '#0B6BCB', delta: '↑ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
