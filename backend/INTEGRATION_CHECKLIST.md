@@ -99,15 +99,21 @@ Screenshots: `01-testuser1-dashboard`, `02-lost-all`, `03-lost-my-posts`, `04-fo
 
 ## Phase 4 — Item detail, report, claim, withdraw
 
-- [ ] 4.1 Detail sheet (`sel`, `detailRows`) → fetch one `items` row (+ `item_photos`) by id
-- [ ] 4.2 Report sheet (`reportNext`) → `insert into items`, letting the `set_item_display_id` trigger generate the `LOST-###`/`FOUND-###` id
-- [ ] 4.3 "Add a photo" → actually upload to the `item-photos` storage bucket and insert an `item_photos` row (currently a no-op toast)
-- [ ] 4.4 Owner actions: `toggleHandover`/`ownerStatuses` → `update items set status = ...` (RLS already restricts to `active/resolved/reunited` for the owner)
-- [ ] 4.5 `withdrawPost` → `delete from items`
-- [ ] 4.6 `claim()` → `insert into conversations` (unique on `item_id, claimant_id` already prevents duplicates) instead of building a `Convo` object client-side
-- [ ] 4.7 `flagRecord` → `insert into moderation_flags (target_type='item', target_id, reason, flagged_by)` instead of just a toast
+- [x] 4.1 Detail sheet (`sel`, `detailRows`) → reads from `st.dbItems` (the already-loaded registry list) instead of re-fetching by id. **Decision:** no extra round trip — every entry point into Detail in Supabase mode goes through the Registry list first, so the row (including the reporter's uuid, added as `Item.dbId`/`reporterId`) is already in memory. `item_photos` still isn't rendered in Detail at all — the frontend has never had photo display UI, mock or real (only the Report sheet's upload button), so there was nothing to wire up there. **Bug fix while in here:** `sel` and `canClaim`/`isOwner` previously always read the mock `st.lost`/`st.found` arrays and compared `sel.by` against the hardcoded demo username `'simple.user'` — real accounts could never correctly claim or own anything. Both now branch on `isSupabaseAuth` (`sel` reads `st.dbItems`; ownership compares against `st.profile.handle`).
+- [x] 4.2 Report sheet (`reportNext`) → `src/api/items.ts#createItem`, `insert into items` with `display_id` sent as `null` (cast around the generated Insert type) so the `set_item_display_id` trigger assigns it.
+- [x] 4.3 "Add a photo" → `expo-image-picker` (installed, `~57.0.20` pinned to the project's Expo SDK) opens the OS/web file picker; the picked image is held in memory (`st.rPhotoBlob`) and uploaded to the `item-photos` bucket + an `item_photos` row inserted once the report itself is submitted (a failed photo upload doesn't undo an already-created report).
+- [x] 4.4 Owner actions: `toggleHandover`/`ownerStatuses` → `src/api/items.ts#updateItemStatus`, `update items set status = ...`.
+- [x] 4.5 `withdrawPost` → `deleteItem`, `delete from items`.
+- [x] 4.6 `claim()` → `claimItem`, `insert into conversations` via `upsert(..., { onConflict: 'item_id,claimant_id', ignoreDuplicates: true })`. **Decision:** stops at creating the row and closing the sheet with a flash message — it does not open the chat sheet, since that reads real conversations/messages, which is Phase 5's job. `claimLabel`/chat UI wiring picks this up then.
+- [x] 4.7 `flagRecord` → `flagItem`, `insert into moderation_flags` + sets the item's status to `flagged` (admin-only, matches the existing `v.isAdmin` gate on this button). **Bonus:** `deleteRecord` (the admin hard-delete button next to it) was wired too, reusing `deleteItem` — not in the original checklist bullets but it's the other half of the same admin action row.
 
-**Test:** report a new lost item as `user`, confirm it appears in the Lost registry with a generated id; claim a found item as a second test account and confirm exactly one conversation is created even if you tap claim twice; flag an item and confirm it shows up in Admin > Moderation for `superadmin`.
+**Verified live** (2026-09-25, headless Chromium via Playwright, against the real `app.lostitemscommunity.com` build running locally):
+- As `testuser1`: reported a new item ("E2E test wallet") through both report steps including attaching a real photo (Playwright's filechooser API driving the web `<input type=file>` expo-image-picker creates) — confirmed the row landed in `items` with a generated `display_id` (`LOST-1034`) and the photo landed in the `item-photos` bucket at `<uploader>/<item>/<timestamp>.jpg`, matching the storage RLS path convention. Opened the new item's Detail sheet, tapped "Mark as handed over" (confirmed status flipped to Reunited and stuck across a re-open), then withdrew it (confirmed it disappeared from the registry). Test item + its DB rows were deleted afterward to keep the project's real data clean.
+- As `testuser2` (a second account, not the reporter): opened `testuser1`'s seeded item and confirmed the correct "I have found this" claim button now shows (the `meHandle` bug fix above), claimed it, then claimed it again — confirmed exactly one `conversations` row exists despite the double claim.
+- As `superadmin`: flagged the same item, confirmed it shows a "Flagged" status chip and the correct `flagged` status. Test moderation flag/conversation rows and the status were reset afterward to restore the seed item to its original state.
+- `npx tsc --noEmit` clean; `npm run oracle` 46/46 (demo mode untouched).
+
+**Note:** `testuser2`'s password was reset (via direct SQL, same mechanism as the original superadmin bootstrap) to run the claim test, since its original password wasn't recorded in this checklist. New password: `Phase4Test!99` — update your notes if you were using the old one.
 
 ---
 

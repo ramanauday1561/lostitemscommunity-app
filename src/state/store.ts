@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 import type { ScrollView } from 'react-native';
 import {
   ADS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS, SLIDES, SUPPORT_SEED, THREADS,
-  type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Thread,
+  type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Status, type Thread,
 } from '../data/constants';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
@@ -50,6 +50,9 @@ export interface AppState {
   claimed: Record<string, boolean>; toast: string; newId: string;
   step: number; rType: string; rTitle: string; rCat: string;
   rPlace: string; rDate: string; rDesc: string; pin: Pin | null;
+  /** Supabase mode only: a photo picked in the Report sheet, held in memory and
+   *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
+  rPhotoBlob: Blob | null; rPhotoName: string;
 }
 
 export const initialState: AppState = {
@@ -66,6 +69,7 @@ export const initialState: AppState = {
   flagged: FLAGGED, approved: 0, removed: 0, lost: LOST, found: FOUND, members: MEMBERS,
   q: '', uq: '', filter: 'All', topic: 'All', sel: null, claimed: {}, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
+  rPhotoBlob: null, rPhotoName: '',
 };
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
@@ -250,6 +254,147 @@ export class Store {
       kind, filter: st.filter, query: st.q, userId: st.profile?.id,
     });
     this.setState({ dbItems: results });
+  };
+
+  /** Registry items keep their display_id (e.g. "LOST-1031") as `Item.id`, but
+   *  update/delete/claim need the real uuid -- see the `dbId` field added to
+   *  `Item` for Supabase-sourced rows. */
+  private findDbItem(id: string | null): Item | undefined {
+    if (!id) return undefined;
+    return (this.state.dbItems ?? []).find((i) => i.id === id);
+  }
+
+  reportItemSupabase = async () => {
+    const s = this.state;
+    if (s.step === 1) {
+      if (s.rTitle.trim() && s.rCat) this.setState({ step: 2 });
+      return;
+    }
+    if (!s.rPlace.trim() || !s.profile) return;
+    this.setState({ busy: true });
+    try {
+      const items = await import('../api/items');
+      const created = await items.createItem({
+        kind: s.rType === 'Lost' ? 'lost' : 'found',
+        category: s.rCat,
+        title: s.rTitle.trim(),
+        locationText: s.rPlace.trim(),
+        lat: s.pin ? Number(s.pin.lat) : null,
+        lng: s.pin ? Number(s.pin.lng) : null,
+        occurredOn: s.rDate.trim() || null,
+        description: s.rDesc.trim() || null,
+        reporterId: s.profile.id,
+      });
+      if (s.rPhotoBlob && created.dbId) {
+        // A failed photo upload shouldn't undo an already-created report.
+        await items.uploadItemPhoto(created.dbId, s.profile.id, s.rPhotoBlob, s.rPhotoName || 'photo.jpg').catch(() => {});
+      }
+      this.setState({
+        busy: false, sheet: 'sent', newId: created.id, step: 1,
+        rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
+        rPhotoBlob: null, rPhotoName: '',
+      });
+    } catch (e) {
+      this.setState({ busy: false });
+      this.flash(e instanceof Error ? e.message : 'Could not submit the report.');
+    }
+  };
+
+  /** Opens the OS photo picker (works on native and web -- expo-image-picker
+   *  drives a hidden <input type=file> on web) and holds the result in memory;
+   *  it's uploaded once the item itself exists, from reportItemSupabase. */
+  pickPhotoSupabase = async () => {
+    try {
+      const [ImagePicker, RN] = await Promise.all([import('expo-image-picker'), import('react-native')]);
+      if (RN.Platform.OS !== 'web') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) { this.flash('Photo library permission was denied.'); return; }
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      const res = await fetch(asset.uri);
+      const blob = await res.blob();
+      this.setState({ rPhotoBlob: blob, rPhotoName: asset.fileName || `photo-${Date.now()}.jpg` });
+      this.flash('Photo attached — it uploads when you submit.');
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not open the photo picker.');
+    }
+  };
+
+  claimItemSupabase = async () => {
+    const s = this.state;
+    const it = this.findDbItem(s.sel);
+    if (!it?.dbId || !it.reporterId || !s.profile) return;
+    try {
+      const items = await import('../api/items');
+      await items.claimItem(it.dbId, it.reporterId, s.profile.id);
+      this.setState((st) => ({ claimed: { ...st.claimed, [it.id]: true }, sheet: null }));
+      this.flash(`Claim sent. ${it.by} can see it in their conversations.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not send the claim.');
+    }
+  };
+
+  withdrawItemSupabase = async () => {
+    const it = this.findDbItem(this.state.sel);
+    if (!it?.dbId) return;
+    try {
+      const items = await import('../api/items');
+      await items.deleteItem(it.dbId);
+      this.setState((s) => ({ sheet: null, dbItems: (s.dbItems ?? []).filter((x) => x.id !== it.id) }));
+      this.flash(`${it.id} withdrawn from the registry.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not withdraw this post.');
+    }
+  };
+
+  setItemStatusSupabase = async (status: Status) => {
+    const it = this.findDbItem(this.state.sel);
+    if (!it?.dbId) return;
+    try {
+      const items = await import('../api/items');
+      await items.updateItemStatus(it.dbId, status);
+      this.setState((s) => ({ dbItems: (s.dbItems ?? []).map((x) => (x.id === it.id ? { ...x, status } : x)) }));
+      this.flash(status === 'Reunited' ? `${it.id} marked as handed over.`
+        : status === 'Resolved' ? `${it.id} closed.` : `${it.id} is active again.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not update status.');
+    }
+  };
+
+  /** Admin-only, see Detail.tsx's `v.isAdmin` gate. */
+  flagItemSupabase = async () => {
+    const s = this.state;
+    const it = this.findDbItem(s.sel);
+    if (!it?.dbId || !s.profile) return;
+    try {
+      const items = await import('../api/items');
+      await items.flagItem(it.dbId, 'Flagged by a superadmin from the item detail sheet.', s.profile.id);
+      this.setState((st) => ({
+        sheet: null,
+        dbItems: (st.dbItems ?? []).map((x) => (x.id === it.id ? { ...x, status: 'Flagged' as Status } : x)),
+      }));
+      this.flash(`${it.id} sent to the moderation queue.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not flag this item.');
+    }
+  };
+
+  /** Admin-only hard delete, see Detail.tsx's `v.isAdmin` gate. */
+  deleteItemSupabase = async () => {
+    const it = this.findDbItem(this.state.sel);
+    if (!it?.dbId) return;
+    try {
+      const items = await import('../api/items');
+      await items.deleteItem(it.dbId);
+      this.setState((s) => ({ sheet: null, removed: s.removed + 1, dbItems: (s.dbItems ?? []).filter((x) => x.id !== it.id) }));
+      this.flash(`${it.id} was permanently deleted by Super Admin.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not delete this record.');
+    }
   };
 
   signInSupabase = async () => {
