@@ -81,12 +81,19 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 3 — Registry (Lost / Found list, search, filters)
 
-- [ ] 3.1 Replace `st.lost`/`st.found` with a query against `items` filtered by `kind`
-- [ ] 3.2 Wire `filters` (`All`/`My posts`/`Active`/`Resolved`/`Reunited`/`Flagged`) to real `where` clauses instead of client-side `.filter()`
-- [ ] 3.3 Wire the search box (`q`) to `items_search_idx` (`to_tsvector` match) or a simple `ilike`
-- [ ] 3.4 Paginate or infinite-scroll instead of loading the whole table (mock data was 4–5 rows; real data won't be)
+- [x] 3.1 Replace `st.lost`/`st.found` with a query against `items` filtered by `kind` — `src/api/items.ts#listItems`, called from `Store#loadRegistry`.
+- [x] 3.2 Wire `filters` (`All`/`My posts`/`Active`/`Resolved`/`Reunited`/`Flagged`) to real `where` clauses instead of client-side `.filter()` — `.eq('reporter_id', userId)` for "My posts", `.eq('status', filter.toLowerCase())` otherwise.
+- [x] 3.3 Wire the search box (`q`) to a simple `ilike` across `title`/`location_text`/`display_id` (debounced 300ms in `Registry.tsx`). **Decision:** plain `ilike`, not `items_search_idx`/`to_tsvector` — dataset is small enough for now; revisit if search gets slow with real volume.
+- [ ] 3.4 Paginate or infinite-scroll instead of loading the whole table — deferred; still a flat `.limit(50)`. Fine at current data volume, revisit alongside 4.x when real users start generating items at scale.
 
 **Test:** as `user`, "My posts" filter shows only items you reported; as `superadmin`, the `Flagged` filter shows the seeded flagged Samsung Galaxy S24; search for a title substring and confirm it narrows correctly.
+
+**Verified live** (2026-09-25, headless Chromium via Playwright, against the real `app.lostitemscommunity.com` build running locally): logged in as `testuser1` over real Supabase Auth and walked the Registry screen end to end —
+- Lost/All correctly returns `LOST-1031` "Blue backpack with laptop" (resolves an earlier ambiguity where a screenshot taken too soon after navigation appeared empty — a clean re-run confirms it's a genuine, correct result, not a timing race).
+- Lost/My posts correctly narrows to the same item (owned by `testuser1`).
+- Found/All correctly returns `FOUND-2018` "Set of house keys".
+- Found search for "keys" correctly matches; search for a nonsense string correctly renders the "Nothing matches that" empty state.
+Screenshots: `01-testuser1-dashboard`, `02-lost-all`, `03-lost-my-posts`, `04-found-all`, `05-found-search-keys`, `06-found-search-no-match`.
 
 ---
 
