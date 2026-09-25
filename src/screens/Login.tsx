@@ -34,7 +34,7 @@ export function Login() {
         Great to see you again. Let's find what you're looking for.
       </Text>
 
-      <View style={{ marginTop: 'auto', paddingTop: 40 }}>
+      <View style={{ marginTop: 40 }}>
         <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 24, backgroundColor: C.fill, marginBottom: 16 }}>
           {v.authModeOptions.map((o) => <Seg key={o.key} label={o.label} on={o.on} onPress={o.pick} />)}
         </View>
