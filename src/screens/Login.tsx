@@ -5,7 +5,7 @@ import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Cta, Divider } from '../ui/bits';
+import { Cta, Divider, Seg } from '../ui/bits';
 
 function CheckBox({ on }: { on: boolean }) {
   return (
@@ -35,6 +35,10 @@ export function Login() {
       </Text>
 
       <View style={{ marginTop: 'auto', paddingTop: 40 }}>
+        <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 24, backgroundColor: C.fill, marginBottom: 16 }}>
+          {v.authModeOptions.map((o) => <Seg key={o.key} label={o.label} on={o.on} onPress={o.pick} />)}
+        </View>
+
         <Field icon="person" value={v.username} onChange={v.onUser} placeholder="Username or email" style={{ marginBottom: 8 }} />
         <Field icon="lock" value={v.password} onChange={v.onPass} placeholder="Password" secure onSubmit={v.submit} />
 
@@ -57,43 +61,47 @@ export function Login() {
 
         <Cta label={v.signInLabel} on={v.signInEnabled} onPress={v.submit} style={{ marginTop: 16 }} />
 
-        <Divider label="Or continue with a social account" />
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-          {v.socials.map((s) => (
-            <Press key={s.name} style={[{
-              flex: 1, minHeight: 64, borderRadius: 20, backgroundColor: C.white,
-              alignItems: 'center', justifyContent: 'center', gap: 7,
-            }, SHADOW.tile]} scale={0.95} activeBg={C.fillSoft} onPress={s.go}>
-              <View style={{
-                width: 24, height: 24, borderRadius: 12, backgroundColor: s.bg,
-                alignItems: 'center', justifyContent: 'center',
-                ...(s.ring ? { boxShadow: s.bg === '#fff' ? 'inset 0 0 0 1px #D6D5D0' : 'inset 0 0 0 1px rgba(255,255,255,.35)' } : null),
-              }}>
-                <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: s.fg }}>{s.mark}</Text>
-              </View>
-              <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.muted }}>{s.name}</Text>
-            </Press>
-          ))}
-        </View>
+        {v.isDemoAuth && (
+          <>
+            <Divider label="Or continue with a social account" />
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+              {v.socials.map((s) => (
+                <Press key={s.name} style={[{
+                  flex: 1, minHeight: 64, borderRadius: 20, backgroundColor: C.white,
+                  alignItems: 'center', justifyContent: 'center', gap: 7,
+                }, SHADOW.tile]} scale={0.95} activeBg={C.fillSoft} onPress={s.go}>
+                  <View style={{
+                    width: 24, height: 24, borderRadius: 12, backgroundColor: s.bg,
+                    alignItems: 'center', justifyContent: 'center',
+                    ...(s.ring ? { boxShadow: s.bg === '#fff' ? 'inset 0 0 0 1px #D6D5D0' : 'inset 0 0 0 1px rgba(255,255,255,.35)' } : null),
+                  }}>
+                    <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: s.fg }}>{s.mark}</Text>
+                  </View>
+                  <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.muted }}>{s.name}</Text>
+                </Press>
+              ))}
+            </View>
 
-        <Divider label="Quick test logins" />
-        <View style={{ gap: 8, marginTop: 16 }}>
-          {v.quickLogins.map((q) => (
-            <Press key={q.handle} style={[{
-              minHeight: 56, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.white,
-              flexDirection: 'row', alignItems: 'center', gap: 12,
-            }, SHADOW.field]} scale={0.98} activeBg={C.fill} onPress={q.go}>
-              <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: q.tint, alignItems: 'center', justifyContent: 'center' }}>
-                <Icon name={q.icon} size={19} color={q.color} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.ink }}>{q.name}</Text>
-                <Text style={{ fontFamily: FONTS[400], fontSize: 11, color: C.subtle, marginTop: 2 }}>{q.desc}</Text>
-              </View>
-              <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.lighter }}>{q.handle}</Text>
-            </Press>
-          ))}
-        </View>
+            <Divider label="Quick test logins" />
+            <View style={{ gap: 8, marginTop: 16 }}>
+              {v.quickLogins.map((q) => (
+                <Press key={q.handle} style={[{
+                  minHeight: 56, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.white,
+                  flexDirection: 'row', alignItems: 'center', gap: 12,
+                }, SHADOW.field]} scale={0.98} activeBg={C.fill} onPress={q.go}>
+                  <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: q.tint, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={q.icon} size={19} color={q.color} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.ink }}>{q.name}</Text>
+                    <Text style={{ fontFamily: FONTS[400], fontSize: 11, color: C.subtle, marginTop: 2 }}>{q.desc}</Text>
+                  </View>
+                  <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.lighter }}>{q.handle}</Text>
+                </Press>
+              ))}
+            </View>
+          </>
+        )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ fontFamily: FONTS[400], fontSize: 13, color: C.muted }}>New here? </Text>

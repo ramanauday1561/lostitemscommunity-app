@@ -4,8 +4,17 @@ import {
   ADS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS, SLIDES, SUPPORT_SEED, THREADS,
   type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Thread,
 } from '../data/constants';
+// Type-only import: the real module (which pulls in react-native-url-polyfill
+// and other RN-only code) is loaded lazily inside each method below via
+// dynamic import(), so requiring store.ts outside Expo/Metro -- as the
+// Node-based prototype-parity oracle in tools/oracle/ does -- doesn't try to
+// transform React Native internals through plain esbuild.
+import type * as AuthApi from '../api/auth';
 
 export type Role = 'admin' | 'user' | 'new' | null;
+/** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
+ *  Temporary scaffolding for Phase 1 testing -- see backend/INTEGRATION_CHECKLIST.md. */
+export type AuthMode = 'demo' | 'supabase';
 export type Sheet =
   | 'detail' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
   | 'newthread' | 'support' | 'guidelines' | 'ad' | null;
@@ -20,10 +29,11 @@ export interface AppState {
   threads: Thread[]; activeThread: number | null; replyDraft: string;
   ntTitle: string; ntBody: string; ntTag: string;
   username: string; password: string; remember: boolean; error: string; busy: boolean;
+  authMode: AuthMode;
   suUser: string; suEmail: string; suPass: string; suConfirm: string;
-  suTerms: boolean; suError: string;
+  suTerms: boolean; suError: string; suInfo: string;
   fpStage: string; fpEmail: string; fpCode: string; fpPass: string;
-  fpConfirm: string; fpError: string; fpBusy: boolean;
+  fpConfirm: string; fpError: string; fpBusy: boolean; fpInfo: string;
   sheet: Sheet;
   ads: Ad[]; adEditId: string; adDraft: { campaignKey: string; days: number } | null;
   flagged: FlaggedRecord[]; approved: number; removed: number;
@@ -39,8 +49,9 @@ export const initialState: AppState = {
   supportMsgs: SUPPORT_SEED, supportDraft: '', botTyping: false,
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
-  suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '',
-  fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false,
+  authMode: 'demo',
+  suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
+  fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
   ads: ADS, adEditId: 'AD-01', adDraft: null,
   flagged: FLAGGED, approved: 0, removed: 0, lost: LOST, found: FOUND, members: MEMBERS,
@@ -193,6 +204,93 @@ export class Store {
   quick = (username: string) => {
     this.setState({ username, password: 'Password1!', error: '', busy: true });
     setTimeout(() => this.setState({ busy: false, screen: 'dash', ...this.roleState(username) }), 550);
+  };
+
+  setAuthMode = (mode: AuthMode) => this.setState({ authMode: mode, error: '', username: '', password: '' });
+
+  /** role/fresh derived from the real profile row, not a hardcoded username switch. */
+  private roleFromProfile(p: AuthApi.Profile): Partial<AppState> {
+    const role: Role = p.role === 'superadmin' ? 'admin'
+      : (p.post_count === 0 && !p.guidelines_accepted_at) ? 'new' : 'user';
+    return { role, suTerms: !!p.guidelines_accepted_at };
+  }
+
+  signInSupabase = async () => {
+    const identifier = this.state.username.trim();
+    if (!identifier || !this.state.password) {
+      this.setState({ error: 'Username/email and password are required.' });
+      return;
+    }
+    this.setState({ busy: true, error: '' });
+    try {
+      const authApi = await import('../api/auth');
+      await authApi.signIn(identifier, this.state.password);
+      const profile = await authApi.getMyProfile();
+      if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
+      this.setState({ busy: false, screen: 'dash', ...this.roleFromProfile(profile) });
+    } catch (e) {
+      this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
+    }
+  };
+
+  signUpSupabase = async () => {
+    const s = this.state;
+    if (!s.suUser.trim() || !s.suEmail.trim() || !s.suPass) {
+      this.setState({ suError: 'Fill in username, email and password to continue.' }); return;
+    }
+    if (!/.+@.+\..+/.test(s.suEmail)) { this.setState({ suError: "That email address doesn't look right." }); return; }
+    if (s.suPass.length < 8) { this.setState({ suError: 'Use at least 8 characters for your password.' }); return; }
+    if (s.suPass !== s.suConfirm) { this.setState({ suError: "Passwords don't match. Check both fields." }); return; }
+    if (!s.suTerms) { this.setState({ suError: 'Please accept the community guidelines.' }); return; }
+
+    this.setState({ busy: true, suError: '', suInfo: '' });
+    try {
+      const authApi = await import('../api/auth');
+      const result = await authApi.signUp(s.suUser, s.suEmail, s.suPass);
+      if (result.signedIn) {
+        const profile = await authApi.getMyProfile();
+        this.setState({
+          busy: false, screen: 'dash',
+          ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
+        });
+        this.flash('Welcome to Lost Items Community. Your account is live.');
+      } else {
+        this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
+      }
+    } catch (e) {
+      this.setState({ busy: false, suError: e instanceof Error ? e.message : 'Something went wrong.' });
+    }
+  };
+
+  requestResetSupabase = async () => {
+    const email = this.state.fpEmail.trim();
+    if (!/.+@.+\..+/.test(email)) { this.setState({ fpError: 'Enter the email address on your account.' }); return; }
+    this.setState({ fpBusy: true, fpError: '', fpInfo: '' });
+    try {
+      const authApi = await import('../api/auth');
+      await authApi.requestPasswordReset(email);
+      this.setState({ fpBusy: false, fpStage: 'done', fpInfo: `If ${email} has an account, a reset link is on its way.` });
+    } catch {
+      this.setState({ fpBusy: false, fpStage: 'done', fpInfo: `If ${email} has an account, a reset link is on its way.` });
+    }
+  };
+
+  signOutSupabase = async () => {
+    const authApi = await import('../api/auth');
+    await authApi.signOut();
+  };
+
+  /** Restores a previous Supabase session on app launch, so a killed/reopened
+   *  app doesn't drop back to Welcome. No-ops if there is no session, or if
+   *  navigation has already moved past the welcome/login screens. */
+  restoreSession = async () => {
+    const authApi = await import('../api/auth');
+    const session = await authApi.getSession();
+    if (!session) return;
+    if (!['welcome', 'login'].includes(this.state.screen)) return;
+    const profile = await authApi.getMyProfile();
+    if (!profile) return;
+    this.setState({ authMode: 'supabase', screen: 'dash', ...this.roleFromProfile(profile) });
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
