@@ -35,6 +35,9 @@ export interface AppState {
   profile: AuthApi.Profile | null;
   myDashStats: MyDashboardStats | null;
   adminDashStats: AdminDashboardStats | null;
+  /** Real registry results (Supabase mode only), refetched by the Registry screen
+   *  when screen/filter/q change -- see src/screens/Registry.tsx. */
+  dbItems: Item[] | null;
   suUser: string; suEmail: string; suPass: string; suConfirm: string;
   suTerms: boolean; suError: string; suInfo: string;
   fpStage: string; fpEmail: string; fpCode: string; fpPass: string;
@@ -55,7 +58,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, myDashStats: null, adminDashStats: null,
+  profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -232,6 +235,21 @@ export class Store {
       const myDashStats = await dashboard.getMyDashboardStats(p.id);
       this.setState({ myDashStats });
     }
+  };
+
+  /** Refetches the registry for the current screen/filter/search. No-ops outside
+   *  Supabase mode or off the lost/found screens; called from a useEffect in
+   *  Registry.tsx rather than from every place filter/q/screen can change. */
+  loadRegistry = async () => {
+    const st = this.state;
+    if (st.authMode !== 'supabase') return;
+    const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
+    if (!kind) return;
+    const items = await import('../api/items');
+    const results = await items.listItems({
+      kind, filter: st.filter, query: st.q, userId: st.profile?.id,
+    });
+    this.setState({ dbItems: results });
   };
 
   signInSupabase = async () => {

@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useVals } from '../StoreProvider';
+import { useApp } from '../StoreProvider';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Field } from '../ui/Field';
 import { AdSlot } from '../ui/AdSlot';
@@ -7,7 +8,21 @@ import { ItemCard } from '../ui/ItemCard';
 import { Empty, Pill, Seg } from '../ui/bits';
 
 export function Registry() {
-  const v = useVals();
+  const { store, vals: v } = useApp();
+  const st = store.state;
+
+  // Re-fetch whenever screen/filter changes; debounce the search box so we
+  // don't fire a request per keystroke. No-ops in demo mode (see loadRegistry).
+  useEffect(() => {
+    store.loadRegistry();
+  }, [store, st.screen, st.filter, st.authMode]);
+
+  useEffect(() => {
+    const id = setTimeout(() => store.loadRegistry(), 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [st.q]);
+
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingHorizontal: 20, gap: 10 }}>

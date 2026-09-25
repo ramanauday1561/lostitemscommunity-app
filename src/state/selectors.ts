@@ -63,11 +63,19 @@ export function buildVals(store: Store) {
 
   const source = sc === 'lost' ? st.lost : st.found;
   const myPosts = [...st.lost, ...st.found].filter((i) => i.by === ME);
-  let registry = st.filter === 'All' ? source
-    : st.filter === 'My posts' ? source.filter((i) => i.by === ME)
-    : source.filter((i) => i.status === st.filter);
-  const q = st.q.trim().toLowerCase();
-  if (q) registry = registry.filter((i) => (i.title + ' ' + i.location + ' ' + i.id).toLowerCase().includes(q));
+  // In Supabase mode, filter/search/kind are already applied server-side by
+  // Store#loadRegistry (see the useEffect in Registry.tsx) -- st.dbItems is
+  // the result set as-is, not a superset to filter further here.
+  let registry: Item[];
+  if (isSupabaseAuth) {
+    registry = st.dbItems ?? [];
+  } else {
+    registry = st.filter === 'All' ? source
+      : st.filter === 'My posts' ? source.filter((i) => i.by === ME)
+      : source.filter((i) => i.status === st.filter);
+    const q = st.q.trim().toLowerCase();
+    if (q) registry = registry.filter((i) => (i.title + ' ' + i.location + ' ' + i.id).toLowerCase().includes(q));
+  }
 
   const decide = (id: string, ok: boolean) => () => {
     store.setState((s) => ({
@@ -638,7 +646,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, myDashStats: null, adminDashStats: null,
+        profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
