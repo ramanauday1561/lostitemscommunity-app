@@ -316,6 +316,10 @@ export class Store {
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
+    // Ads aren't wired to the backend until Phase 10 -- suppress the mock
+    // placeholders in Supabase mode rather than showing fake sponsors next
+    // to real account data.
+    if (st.authMode === 'supabase') return { live: false } as Ad & { live: boolean };
     const a = st.ads.find((x) => x.screen === screen);
     if (!a) return { live: false } as Ad & { live: boolean };
     return { ...a, live: a.live && a.daysLeft > 0 && !(fresh && !st.suTerms) };

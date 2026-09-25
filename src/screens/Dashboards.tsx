@@ -92,31 +92,38 @@ export function UserDash() {
           <Icon name="chevron_right" size={20} color={C.lighter} />
         </Press>
       ))}
-      <View>
-        <SectionHead title="Recently handed in" action="See all" onAction={v.goFound} />
-        <HandedInRow />
-      </View>
-      <AdSlot ad={v.adHome} />
-      <View>
-        <SectionHead title="Community activity" />
-        <View style={{ gap: 10 }}>
-          {v.comments.map((c) => (
-            <Card key={c.user}>
-              <View style={{ flexDirection: 'row', gap: 11 }}>
-                <Avatar text={c.ini} size={38} bg={C.bg} color={C.ink} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.ink }}>{c.user}</Text>
-                    <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.lighter }}>{c.time}</Text>
-                  </View>
-                  <Text style={{ fontFamily: FONTS[600], fontSize: 11.5, color: C.primary, marginTop: 2 }}>on {c.onItem}</Text>
-                  <Text style={{ fontFamily: FONTS[400], fontSize: 12.5, lineHeight: 19, color: C.muted, marginTop: 5 }}>{c.text}</Text>
-                </View>
-              </View>
-            </Card>
-          ))}
+      {/* Registry (Phase 3/4), ads (Phase 10) and a real activity feed (Phase 5/6)
+          aren't wired yet -- showing their mock content to a real Supabase
+          account would misrepresent what's actually in the database. */}
+      {!v.isSupabaseAuthMode && (
+        <View>
+          <SectionHead title="Recently handed in" action="See all" onAction={v.goFound} />
+          <HandedInRow />
         </View>
-      </View>
+      )}
+      <AdSlot ad={v.adHome} />
+      {!v.isSupabaseAuthMode && (
+        <View>
+          <SectionHead title="Community activity" />
+          <View style={{ gap: 10 }}>
+            {v.comments.map((c) => (
+              <Card key={c.user}>
+                <View style={{ flexDirection: 'row', gap: 11 }}>
+                  <Avatar text={c.ini} size={38} bg={C.bg} color={C.ink} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.ink }}>{c.user}</Text>
+                      <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.lighter }}>{c.time}</Text>
+                    </View>
+                    <Text style={{ fontFamily: FONTS[600], fontSize: 11.5, color: C.primary, marginTop: 2 }}>on {c.onItem}</Text>
+                    <Text style={{ fontFamily: FONTS[400], fontSize: 12.5, lineHeight: 19, color: C.muted, marginTop: 5 }}>{c.text}</Text>
+                  </View>
+                </View>
+              </Card>
+            ))}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -168,7 +175,7 @@ export function FreshDash() {
           <Text style={{ fontFamily: MONO[600], fontSize: 10, letterSpacing: 1.2, color: '#00E39B' }}>NEW MEMBER</Text>
         </View>
         <Text style={{ fontFamily: FONTS[800], fontSize: 26, lineHeight: 30, letterSpacing: -0.9, color: C.white, marginTop: 16 }}>
-          Welcome to Lost Items Community, Nadia.
+          Welcome to Lost Items Community, {v.freshName}.
         </Text>
         <Text style={{ fontFamily: FONTS[400], fontSize: 13.5, lineHeight: 22, color: 'rgba(255,255,255,.6)', marginTop: 10, marginBottom: 18 }}>
           Your account is empty for now. Report something you lost, or hand in something you found — both take under a minute.
@@ -210,10 +217,12 @@ export function FreshDash() {
         </View>
       </View>
 
-      <View>
-        <SectionHead title="Happening near you" action="See all" onAction={v.goFound} />
-        <HandedInRow />
-      </View>
+      {!v.isSupabaseAuthMode && (
+        <View>
+          <SectionHead title="Happening near you" action="See all" onAction={v.goFound} />
+          <HandedInRow />
+        </View>
+      )}
 
       <SponsoredSlot />
 
@@ -236,17 +245,20 @@ export function AdminDash() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={page}>
-      <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
-        scale={0.985} onPress={v.goAds}>
-        <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="payments" size={23} color={C.success} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: FONTS[700], fontSize: 15, letterSpacing: -0.22, color: C.ink }}>Ad placements & revenue</Text>
-          <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 3 }}>{v.adRevenue} this month · {v.adLiveCount}</Text>
-        </View>
-        <Icon name="chevron_right" size={21} color={C.barIdle} />
-      </Press>
+      {/* Ad revenue isn't wired to the backend until Phase 10. */}
+      {!v.isSupabaseAuthMode && (
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+          scale={0.985} onPress={v.goAds}>
+          <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="payments" size={23} color={C.success} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: FONTS[700], fontSize: 15, letterSpacing: -0.22, color: C.ink }}>Ad placements & revenue</Text>
+            <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 3 }}>{v.adRevenue} this month · {v.adLiveCount}</Text>
+          </View>
+          <Icon name="chevron_right" size={21} color={C.barIdle} />
+        </Press>
+      )}
 
       <View style={{ backgroundColor: '#101319', borderRadius: 28, padding: 20, boxShadow: '0 20px 40px -24px rgba(16,19,25,.8)' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -282,35 +294,40 @@ export function AdminDash() {
         ))}
       </ScrollView>
 
-      <View style={[{ backgroundColor: C.white, borderRadius: 28, padding: 20 }, SHADOW.card]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <Text style={{ fontFamily: FONTS[800], fontSize: 16, letterSpacing: -0.32, color: C.ink }}>Conversation & sentiment</Text>
-          <Press style={{ minHeight: 44, paddingLeft: 8, justifyContent: 'center' }} scale={1} onPress={v.goAnalysis}>
-            <Text style={{ fontFamily: FONTS[700], fontSize: 12.5, color: C.primary }}>Open hub</Text>
-          </Press>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-          <View style={{ flex: 1, padding: 14, borderRadius: 20, backgroundColor: C.fillSoft }}>
-            <Text style={{ fontFamily: FONTS[800], fontSize: 24, letterSpacing: -0.96, color: C.ink }}>142</Text>
-            <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle, marginTop: 3 }}>Active threads</Text>
+      {/* Entirely decorative -- not derived from any table, and not planned to
+          become real (see backend/README.md "What's intentionally not
+          modeled yet"). Never shown once logged in with a real account. */}
+      {!v.isSupabaseAuthMode && (
+        <View style={[{ backgroundColor: C.white, borderRadius: 28, padding: 20 }, SHADOW.card]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <Text style={{ fontFamily: FONTS[800], fontSize: 16, letterSpacing: -0.32, color: C.ink }}>Conversation & sentiment</Text>
+            <Press style={{ minHeight: 44, paddingLeft: 8, justifyContent: 'center' }} scale={1} onPress={v.goAnalysis}>
+              <Text style={{ fontFamily: FONTS[700], fontSize: 12.5, color: C.primary }}>Open hub</Text>
+            </Press>
           </View>
-          <View style={{ flex: 1, padding: 14, borderRadius: 20, backgroundColor: C.fillSoft }}>
-            <Text style={{ fontFamily: FONTS[800], fontSize: 24, letterSpacing: -0.96, color: C.success }}>94.2%</Text>
-            <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle, marginTop: 3 }}>Positive</Text>
-            <View style={{ height: 5, borderRadius: 999, backgroundColor: '#E3E3DF', marginTop: 10, overflow: 'hidden' }}>
-              <View style={{ width: '94.2%', height: '100%', borderRadius: 999, backgroundColor: C.success }} />
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
+            <View style={{ flex: 1, padding: 14, borderRadius: 20, backgroundColor: C.fillSoft }}>
+              <Text style={{ fontFamily: FONTS[800], fontSize: 24, letterSpacing: -0.96, color: C.ink }}>142</Text>
+              <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle, marginTop: 3 }}>Active threads</Text>
+            </View>
+            <View style={{ flex: 1, padding: 14, borderRadius: 20, backgroundColor: C.fillSoft }}>
+              <Text style={{ fontFamily: FONTS[800], fontSize: 24, letterSpacing: -0.96, color: C.success }}>94.2%</Text>
+              <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle, marginTop: 3 }}>Positive</Text>
+              <View style={{ height: 5, borderRadius: 999, backgroundColor: '#E3E3DF', marginTop: 10, overflow: 'hidden' }}>
+                <View style={{ width: '94.2%', height: '100%', borderRadius: 999, backgroundColor: C.success }} />
+              </View>
             </View>
           </View>
+          <View style={{ marginTop: 8, gap: 2 }}>
+            {v.sentimentRows.map((r) => (
+              <View key={r.k} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48, paddingHorizontal: 4 }}>
+                <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: C.muted }}>{r.k}</Text>
+                <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: r.color }}>{r.v}</Text>
+              </View>
+            ))}
+          </View>
         </View>
-        <View style={{ marginTop: 8, gap: 2 }}>
-          {v.sentimentRows.map((r) => (
-            <View key={r.k} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48, paddingHorizontal: 4 }}>
-              <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: C.muted }}>{r.k}</Text>
-              <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: r.color }}>{r.v}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
+      )}
 
       <View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 8, marginBottom: 12 }}>
@@ -354,24 +371,28 @@ export function AdminDash() {
         </View>
       </View>
 
-      <View style={[{ backgroundColor: C.white, borderRadius: 28, padding: 20 }, SHADOW.card]}>
-        <Text style={{ fontFamily: FONTS[800], fontSize: 16, letterSpacing: -0.32, color: C.ink }}>857 new scouts today</Text>
-        <Text style={{ fontFamily: FONTS[400], fontSize: 12.5, lineHeight: 19, color: C.subtle, marginTop: 6, marginBottom: 16 }}>
-          Send a welcome message to everyone joining the recovery network.
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {v.scouts.map((s) => (
-            <LinearGradient key={s.ini} colors={['#F4F4F2', '#E7E7E3']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
-              style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontFamily: MONO[600], fontSize: 11, color: C.muted }}>{s.ini}</Text>
-            </LinearGradient>
-          ))}
-          <Press style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(11,107,203,.1)', alignItems: 'center', justifyContent: 'center' }}
-            scale={0.92} onPress={v.goMembers}>
-            <Icon name="arrow_forward" size={20} color={C.primary} />
-          </Press>
+      {/* Decorative fake presence count -- see backend/README.md. Never shown
+          once logged in with a real account. */}
+      {!v.isSupabaseAuthMode && (
+        <View style={[{ backgroundColor: C.white, borderRadius: 28, padding: 20 }, SHADOW.card]}>
+          <Text style={{ fontFamily: FONTS[800], fontSize: 16, letterSpacing: -0.32, color: C.ink }}>857 new scouts today</Text>
+          <Text style={{ fontFamily: FONTS[400], fontSize: 12.5, lineHeight: 19, color: C.subtle, marginTop: 6, marginBottom: 16 }}>
+            Send a welcome message to everyone joining the recovery network.
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {v.scouts.map((s) => (
+              <LinearGradient key={s.ini} colors={['#F4F4F2', '#E7E7E3']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
+                style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: MONO[600], fontSize: 11, color: C.muted }}>{s.ini}</Text>
+              </LinearGradient>
+            ))}
+            <Press style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(11,107,203,.1)', alignItems: 'center', justifyContent: 'center' }}
+              scale={0.92} onPress={v.goMembers}>
+              <Icon name="arrow_forward" size={20} color={C.primary} />
+            </Press>
+          </View>
         </View>
-      </View>
+      )}
     </ScrollView>
   );
 }
