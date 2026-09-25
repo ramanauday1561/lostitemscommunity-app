@@ -30,6 +30,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Claude Code local settings (personal/session-scoped)
+.claude/settings.local.json
+
 # local env files (safe to commit .env.example; never the real values)
 .env
 .env*.local
