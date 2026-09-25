@@ -799,11 +799,13 @@ export type Database = {
     }
     Functions: {
       current_profile_id: { Args: never; Returns: string }
+      email_for_username: { Args: { p_username: string }; Returns: string }
       is_superadmin: { Args: never; Returns: boolean }
       resolve_moderation_flag: {
         Args: { approve: boolean; flag_id: string }
         Returns: undefined
       }
+      username_available: { Args: { p_username: string }; Returns: boolean }
     }
     Enums: {
       ad_screen: "Home" | "Registry" | "Forum" | "Report success"

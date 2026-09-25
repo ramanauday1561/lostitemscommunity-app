@@ -17,6 +17,7 @@ export function buildVals(store: Store) {
   const admin = st.role === 'admin';
   const fresh = st.role === 'new';
   const sh = st.sheet;
+  const isSupabaseAuth = st.authMode === 'supabase';
 
   const slide = SLIDES[st.slide];
   const convo = st.convos.find((c) => c.itemId === st.activeConvo) || null;
@@ -36,12 +37,17 @@ export function buildVals(store: Store) {
   const fpStrength = fpw.length === 0 ? 0 : fpw.length < 8 ? 1 : (/[^a-z0-9]/i.test(fpw) && /\d/.test(fpw) ? 3 : 2);
   const fpStrengthColor = fpStrength >= 3 ? '#0F7B3D' : fpStrength === 2 ? '#C98A00' : '#B42318';
   const fpStage = st.fpStage;
-  const fpCopy = ({
-    email: ['Step 1 of 3', 'Reset your password', "Enter the email on your account and we'll send a 6-digit code to confirm it's you."],
-    code: ['Step 2 of 3', 'Check your inbox', 'Enter the 6-digit code we sent. It expires in 10 minutes.'],
-    reset: ['Step 3 of 3', 'Choose a new password', "Pick something you haven't used here before, then confirm it."],
-    done: ['All set', "You're back in", 'Your password has been changed.'],
-  } as Record<string, string[]>)[fpStage];
+  const fpCopy = st.authMode === 'supabase'
+    ? ({
+        email: ['Forgot password', 'Reset your password', "Enter the email on your account and we'll send you a reset link."],
+        done: ['Check your inbox', 'Reset link sent', st.fpInfo || "If that email has an account, we've sent a reset link to it."],
+      } as Record<string, string[]>)[fpStage] || ['', '', '']
+    : ({
+        email: ['Step 1 of 3', 'Reset your password', "Enter the email on your account and we'll send a 6-digit code to confirm it's you."],
+        code: ['Step 2 of 3', 'Check your inbox', 'Enter the 6-digit code we sent. It expires in 10 minutes.'],
+        reset: ['Step 3 of 3', 'Choose a new password', "Pick something you haven't used here before, then confirm it."],
+        done: ['All set', "You're back in", 'Your password has been changed.'],
+      } as Record<string, string[]>)[fpStage];
   const fpOrder = ['email', 'code', 'reset', 'done'];
   const fpIdx = fpOrder.indexOf(fpStage);
 
@@ -144,7 +150,7 @@ export function buildVals(store: Store) {
     goLogin: () => store.setState({ screen: 'login', suError: '' }),
 
     isSignup: sc === 'signup',
-    suUser: st.suUser, suEmail: st.suEmail, suPass: st.suPass, suError: st.suError, suConfirm: st.suConfirm,
+    suUser: st.suUser, suEmail: st.suEmail, suPass: st.suPass, suError: st.suError, suInfo: st.suInfo, suConfirm: st.suConfirm,
     onSuUser: (v: string) => store.setState({ suUser: v, suError: '' }),
     onSuEmail: (v: string) => store.setState({ suEmail: v, suError: '' }),
     onSuPass: (v: string) => store.setState({ suPass: v, suError: '' }),
@@ -154,8 +160,8 @@ export function buildVals(store: Store) {
     suTerms: st.suTerms,
     suMatchGlyph: !st.suConfirm ? '' : (st.suConfirm === st.suPass ? 'check_circle' : 'cancel'),
     suMatchColor: st.suConfirm === st.suPass ? '#0F7B3D' : '#B42318',
-    signupEnabled: !!(st.suUser.trim() && st.suEmail.trim() && st.suPass && st.suConfirm && st.suTerms),
-    submitSignup: () => {
+    signupEnabled: !!(st.suUser.trim() && st.suEmail.trim() && st.suPass && st.suConfirm && st.suTerms) && !st.busy,
+    submitSignup: isSupabaseAuth ? store.signUpSupabase : () => {
       if (!st.suUser.trim() || !st.suEmail.trim() || !st.suPass) { store.setState({ suError: 'Fill in username, email and password to continue.' }); return; }
       if (!/.+@.+\..+/.test(st.suEmail)) { store.setState({ suError: "That email address doesn't look right." }); return; }
       if (st.suPass.length < 8) { store.setState({ suError: 'Use at least 8 characters for your password.' }); return; }
@@ -166,12 +172,12 @@ export function buildVals(store: Store) {
     },
 
     isForgot: sc === 'forgot',
-    goForgot: () => store.setState({ screen: 'forgot', fpStage: 'email', fpEmail: st.username.includes('@') ? st.username : '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', error: '' }),
+    goForgot: () => store.setState({ screen: 'forgot', fpStage: 'email', fpEmail: st.username.includes('@') ? st.username : '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpInfo: '', error: '' }),
     fpKicker: fpCopy[0], fpTitle: fpCopy[1], fpBody: fpCopy[2], fpIdx,
     fpIsEmail: fpStage === 'email', fpIsCode: fpStage === 'code',
     fpIsReset: fpStage === 'reset', fpIsDone: fpStage === 'done',
     fpShowSignInLink: fpStage !== 'done',
-    fpEmail: st.fpEmail, fpCode: st.fpCode, fpPass: st.fpPass, fpConfirm: st.fpConfirm, fpError: st.fpError,
+    fpEmail: st.fpEmail, fpCode: st.fpCode, fpPass: st.fpPass, fpConfirm: st.fpConfirm, fpError: st.fpError, fpInfo: st.fpInfo,
     onFpEmail: (v: string) => store.setState({ fpEmail: v, fpError: '' }),
     onFpCode: (v: string) => store.setState({ fpCode: v.replace(/\D/g, '').slice(0, 6), fpError: '' }),
     onFpPass: (v: string) => store.setState({ fpPass: v, fpError: '' }),
@@ -182,12 +188,15 @@ export function buildVals(store: Store) {
     fpStrengthLabel: fpStrength === 0 ? 'Use 8+ characters with a number and a symbol'
       : fpStrength === 1 ? 'Too short — 8 characters minimum'
       : fpStrength === 2 ? 'Good. Add a symbol to make it strong.' : 'Strong password',
-    fpPrimaryLabel: st.fpBusy ? 'Sending…' : fpStage === 'email' ? 'Send reset code'
+    fpPrimaryLabel: st.fpBusy ? 'Sending…' : fpStage === 'email' ? (isSupabaseAuth ? 'Send reset link' : 'Send reset code')
       : fpStage === 'code' ? 'Verify code' : fpStage === 'reset' ? 'Update password' : 'Back to sign in',
     fpPrimaryEnabled: !st.fpBusy && (fpStage === 'email' ? !!st.fpEmail.trim()
       : fpStage === 'code' ? st.fpCode.length === 6
       : fpStage === 'reset' ? !!(st.fpPass && st.fpConfirm) : true),
-    fpPrimary: () => {
+    fpPrimary: isSupabaseAuth ? () => {
+      if (fpStage === 'email') { store.requestResetSupabase(); return; }
+      store.setState({ screen: 'login', fpStage: 'email', fpPass: '', fpConfirm: '', fpCode: '', fpInfo: '', error: '', password: '' });
+    } : () => {
       if (fpStage === 'email') {
         if (!/.+@.+\..+/.test(st.fpEmail.trim())) { store.setState({ fpError: 'Enter the email address on your account.' }); return; }
         store.setState({ fpBusy: true, fpError: '' });
@@ -232,11 +241,18 @@ export function buildVals(store: Store) {
     username: st.username, password: st.password, error: st.error,
     onUser: (v: string) => store.setState({ username: v, error: '' }),
     onPass: (v: string) => store.setState({ password: v, error: '' }),
-    submit: store.signIn,
+    submit: isSupabaseAuth ? store.signInSupabase : store.signIn,
     signInLabel: st.busy ? 'Signing in…' : 'Sign in & continue',
     signInEnabled: !!(st.username && st.password) && !st.busy,
     toggleRemember: () => store.setState((s) => ({ remember: !s.remember })),
     remember: st.remember,
+    // Temporary Phase-1 scaffolding -- see backend/INTEGRATION_CHECKLIST.md.
+    // Removed once every screen is wired to Supabase and the demo path is dropped.
+    authMode: st.authMode, isDemoAuth: !isSupabaseAuth, isSupabaseAuthMode: isSupabaseAuth,
+    authModeOptions: [
+      { key: 'demo', label: 'Demo data', on: !isSupabaseAuth, pick: () => store.setAuthMode('demo') },
+      { key: 'supabase', label: 'Supabase account', on: isSupabaseAuth, pick: () => store.setAuthMode('supabase') },
+    ],
     quickLogins: [
       { name: 'Super Admin', handle: 'superadmin', desc: 'Moderation queue and member controls', icon: 'shield', color: '#0B6BCB', tint: 'rgba(11,107,203,.1)', go: () => store.quick('superadmin') },
       { name: 'Simple User', handle: 'user', desc: 'Existing member with posts and chats', icon: 'person', color: '#0F7B3D', tint: 'rgba(15,123,61,.1)', go: () => store.quick('user') },
@@ -590,12 +606,15 @@ export function buildVals(store: Store) {
     onSupportDraft: (v: string) => store.setState({ supportDraft: v }),
     sendSupport: () => store.askBot(st.supportDraft),
     escalate: () => { store.setState({ sheet: null }); store.flash("Handed to the support team — they'll reply in your inbox."); },
-    logout: () => store.setState({
-      screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
-      convos: CONVOS, activeConvo: null, draft: '',
-      suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '',
-      fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false,
-    }),
+    logout: () => {
+      if (isSupabaseAuth) store.signOutSupabase();
+      store.setState({
+        screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
+        convos: CONVOS, activeConvo: null, draft: '',
+        suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
+        fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
+      });
+    },
 
     bars: bars.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
     keywords: [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }],

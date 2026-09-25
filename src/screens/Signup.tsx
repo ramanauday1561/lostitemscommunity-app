@@ -54,6 +54,12 @@ export function Signup() {
             <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.danger }}>{v.suError}</Text>
           </View>
         )}
+        {!!v.suInfo && (
+          <View style={{ flexDirection: 'row', gap: 9, padding: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(11,107,203,.08)' }}>
+            <Icon name="mark_email_read" size={19} color={C.primary} />
+            <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.primary }}>{v.suInfo}</Text>
+          </View>
+        )}
 
         <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} style={{ marginTop: 8 }} />
 
