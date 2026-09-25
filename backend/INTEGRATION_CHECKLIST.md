@@ -11,13 +11,16 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 0 — Foundation (blocks every other phase)
 
-- [ ] 0.1 Create (or link) a Supabase project
-- [ ] 0.2 Apply `backend/supabase/migrations/*` to it, then `backend/supabase/seed.sql` for a dev project
-- [ ] 0.3 Install `@supabase/supabase-js` in the frontend; add `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] 0.4 Add `src/lib/supabase.ts` — a single typed client, exported once
-- [ ] 0.5 Generate TypeScript types from the live schema (`supabase gen types typescript`) into `src/lib/database.types.ts`
-- [ ] 0.6 Decide the username→email bridge: the app logs in with a **username** (`superadmin`, `user`, `alex.j`...) but Supabase Auth signs in with **email**. Simplest: an RPC/view `profile_email_for_username(username)` the login screen calls before `signInWithPassword`, or store email = `${username}@lostitems.community` by convention (matches the seed data already). Pick one and write it down here.
-- [ ] 0.7 Add a thin data-access layer, e.g. `src/api/items.ts`, `src/api/forum.ts`, `src/api/auth.ts` — screens/selectors call these, never `supabase.from(...)` directly. Keeps `Store` swappable phase by phase instead of a big-bang rewrite.
+- [ ] 0.1 Create (or link) a Supabase project. Decide now whether dev/staging/prod are separate projects (recommended) or one project with careful seed hygiene — write the decision here.
+- [ ] 0.2 Apply `backend/supabase/migrations/*` to it, then `backend/supabase/seed.sql` for a dev project only, never prod
+- [ ] 0.3 Install frontend dependencies: `@supabase/supabase-js`, `react-native-url-polyfill` (Supabase's JS client needs it under Hermes/RN), `@react-native-async-storage/async-storage` (session persistence — see 1.6), `expo-image-picker` (needed for 4.3's photo upload, currently a no-op)
+- [ ] 0.4 Add `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` to `.env`. These are safe to ship in the client bundle (protected by RLS) — the **service role key is not**; it must never be added with an `EXPO_PUBLIC_` prefix or bundled client-side at all. Anything needing it (e.g. an admin "remove member" that also disables login, see 8.3) belongs in a Supabase Edge Function, not the app.
+- [ ] 0.5 Add `src/lib/supabase.ts` — a single typed client, exported once
+- [ ] 0.6 Generate TypeScript types from the live schema (`supabase gen types typescript`) into `src/lib/database.types.ts`; add an `npm run` script for it so it's easy to re-run after future migrations
+- [ ] 0.7 Decide the username→email bridge: the app logs in with a **username** (`superadmin`, `user`, `alex.j`...) but Supabase Auth signs in with **email**. Simplest: an RPC/view `profile_email_for_username(username)` the login screen calls before `signInWithPassword`, or store email = `${username}@lostitems.community` by convention (matches the seed data already). Pick one and write it down here.
+- [ ] 0.8 Add a thin data-access layer, e.g. `src/api/items.ts`, `src/api/forum.ts`, `src/api/auth.ts` — screens/selectors call these, never `supabase.from(...)` directly. Keeps `Store` swappable phase by phase instead of a big-bang rewrite.
+- [ ] 0.9 Pick one shared pattern for loading/error/empty UI state before any screen needs it (e.g. a `useQuery`-style hook or a small `<Async>` wrapper component) — every phase from here on renders it instead of inventing its own ad hoc spinner/error text
+- [ ] 0.10 Update `.github/workflows/checks.yml`: add the generated-types check (fails CI if `database.types.ts` is stale) and a step for whatever tests Phase-0-onward code gets (see 13.5)
 
 **Test:** app still builds and runs unchanged (nothing wired yet); a throwaway script or the Supabase dashboard can read the seeded rows.
 
@@ -163,13 +166,30 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [ ] 13.1 Delete the now-unused mock arrays from `src/data/constants.ts` (keep `SLIDES`, `CATS`, `STATUS`, `SCREEN_ICON` — pure UI config, not data)
 - [ ] 13.2 Update `docs/PARITY.md` / `tools/oracle` — the golden-master oracle compares against the prototype's mock state; decide whether it still makes sense once real data replaces it, or whether it becomes a UI-only/offline-fixture test
-- [ ] 13.3 Add loading/error/empty states everywhere a screen used to assume mock data was always present synchronously
+- [ ] 13.3 Confirm every screen touched in Phases 1–12 uses the loading/error/empty pattern from 0.9 (not just the ones that happened to need it first)
 - [ ] 13.4 Full run-through as all three personas (fresh signup, existing user, superadmin) against the real backend
+- [ ] 13.5 Add automated test coverage for the new `src/api/*` data-access layer (unit tests against a local/test Supabase project, or mocked client) — there is currently no test for anything beyond the prototype-parity oracle
+
+---
+
+## Phase 14 — Deployment & ops readiness
+
+Cross-cutting, not tied to one screen — needed before this goes further than your own device.
+
+- [ ] 14.1 Rate limiting / abuse prevention: nothing currently stops one account from spamming reports, messages or forum posts. Add Supabase rate limiting (Auth has built-in limits; app-level actions don't) — e.g. a Postgres check or Edge Function throttle on `items`/`messages`/`forum_threads` inserts per user per minute
+- [ ] 14.2 Push notification delivery for the `notifications` table (12.3) — decide on Expo Notifications + a device-token table, or leave as in-app-only for v1 and note the decision
+- [ ] 14.3 Supabase project hardening: enable point-in-time recovery / backups on prod, review the [Supabase production checklist](https://supabase.com/docs/guides/deployment/going-into-prod), turn on leaked-password protection and email-confirmation requirements in Auth settings
+- [ ] 14.4 Error/crash monitoring (e.g. Sentry) wired into the Expo app, since Supabase errors now happen off-device and won't show up in a dev console in production
+- [ ] 14.5 EAS build/submit: confirm `eas.json` build profiles pick up the right `EXPO_PUBLIC_SUPABASE_*` values per environment (dev/preview/production channels in `eas.json` should map to dev/staging/prod Supabase projects from 0.1)
+- [ ] 14.6 `deploy-web.yml` (GitHub Pages) needs the production `EXPO_PUBLIC_SUPABASE_*` values available at build time as repo/environment secrets — currently the web export has nothing to point at
+- [ ] 14.7 Revisit RLS with a second pass once real screens are calling it under load — in particular confirm the `items_update_own`/`forum_threads_update_own` policies can't be used to smuggle a status/tag change past what the UI intends (e.g. a user directly calling the API to set `status = 'flagged'` on their own item)
+
+**Test:** create a second Supabase environment (or a branch via `create_branch`), point a preview build at it, and confirm the app runs end-to-end against it without touching prod data.
 
 ---
 
 ## Notes
 
 - Each phase is independently shippable — you can stop after any phase and have a working app (later screens just keep using mock data until their phase lands).
-- Suggested order above follows the dependency chain (auth → items → chat/forum → admin), but Phases 6 (Forum) and 3–5 (Registry/Detail/Chat) don't depend on each other and can be swapped if you'd rather do Forum earlier.
+- Suggested order above follows the dependency chain (auth → items → chat/forum → admin), but Phases 6 (Forum) and 3–5 (Registry/Detail/Chat) don't depend on each other and can be swapped if you'd rather do Forum earlier. Phase 14 items can mostly be pulled earlier too (e.g. do 14.1's rate limiting alongside whichever phase first allows user-generated writes) rather than saved to the very end — they're listed last only because they're easy to defer, not because they must be.
 - Tell me which phase/item to start on and I'll do just that slice.
