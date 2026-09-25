@@ -1,6 +1,6 @@
 import {
   CAMPAIGNS, CATS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS,
-  SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Item, type Thread,
+  SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Item, type Status, type Thread,
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
 import type { AppState, Store } from './store';
@@ -56,7 +56,11 @@ export function buildVals(store: Store) {
     .filter((x) => admin || x.status !== 'suspended');
 
   const all = [...st.lost, ...st.found];
-  const sel = all.find((i) => i.id === st.sel) || all[0];
+  // Supabase-mode items live in st.dbItems (real display_id/dbId), not the mock
+  // st.lost/st.found arrays -- look there first so Detail opens the right record.
+  const sel = (isSupabaseAuth ? (st.dbItems ?? []).find((i) => i.id === st.sel) : undefined)
+    || all.find((i) => i.id === st.sel) || all[0];
+  const meHandle = isSupabaseAuth ? (st.profile?.handle ?? '') : ME;
   const openItem = (it: Item) => () => store.setState({ sel: it.id, sheet: 'detail', toast: '' });
   const go = (screen: string, extra?: Partial<AppState>) => () =>
     store.setState({ screen, sheet: null, filter: 'All', q: '', toast: '', ...(extra || {}) });
@@ -520,21 +524,26 @@ export function buildVals(store: Store) {
     detailRows: ([{ k: 'Status', v: sel.status }, { k: 'Where', v: sel.location }] as { k: string; v: string }[])
       .concat(sel.coords ? [{ k: 'Map pin', v: sel.coords }] : [])
       .concat([{ k: 'When', v: sel.date }, { k: 'Submitted by', v: sel.by }]),
-    canClaim: !admin && sel.by !== ME,
-    isOwner: !admin && sel.by === ME,
+    canClaim: !admin && sel.by !== meHandle,
+    isOwner: !admin && sel.by === meHandle,
     ownerHint: sel.status === 'Reunited'
       ? 'Handed over. Members can still read the record but it no longer shows as open.'
       : 'When you hand the item to its owner, update the status here so the community stops searching.',
     handoverLabel: sel.status === 'Reunited' ? 'Reopen this post' : 'Mark as handed over',
     ownerStatuses: ['Active', 'Reunited', 'Resolved'].map((name) => ({
-      name, on: sel.status === name, pick: () => store.setStatus(sel.id, name),
+      name, on: sel.status === name,
+      pick: isSupabaseAuth ? () => store.setItemStatusSupabase(name as Status) : () => store.setStatus(sel.id, name),
     })),
-    withdrawPost: () => {
+    withdrawPost: isSupabaseAuth ? store.withdrawItemSupabase : () => {
       store.setState((s) => ({ lost: s.lost.filter((i) => i.id !== sel.id), found: s.found.filter((i) => i.id !== sel.id), sheet: null }));
       store.flash(`${sel.id} withdrawn from the registry.`);
     },
-    toggleHandover: () => store.setStatus(sel.id, sel.status === 'Reunited' ? 'Active' : 'Reunited'),
-    claim: () => {
+    toggleHandover: isSupabaseAuth
+      ? () => store.setItemStatusSupabase(sel.status === 'Reunited' ? 'Active' : 'Reunited')
+      : () => store.setStatus(sel.id, sel.status === 'Reunited' ? 'Active' : 'Reunited'),
+    // Supabase mode: creates the real conversation row (4.6) and stops there --
+    // the chat sheet itself starts reading real conversations/messages in Phase 5.
+    claim: isSupabaseAuth ? store.claimItemSupabase : () => {
       store.setState((s) => {
         const exists = s.convos.find((c) => c.itemId === sel.id);
         const convos = exists
@@ -579,9 +588,9 @@ export function buildVals(store: Store) {
     draft: st.draft,
     onDraft: (v: string) => store.setState({ draft: v }),
     sendMessage: () => store.pushMsg(st.draft),
-    addPhoto: () => store.flash('Photo picker opens here.'),
-    flagRecord: () => store.flash(`${sel.id} sent to the moderation queue.`),
-    deleteRecord: () => {
+    addPhoto: isSupabaseAuth ? store.pickPhotoSupabase : () => store.flash('Photo picker opens here.'),
+    flagRecord: isSupabaseAuth ? store.flagItemSupabase : () => store.flash(`${sel.id} sent to the moderation queue.`),
+    deleteRecord: isSupabaseAuth ? store.deleteItemSupabase : () => {
       store.setState((s) => ({ lost: s.lost.filter((i) => i.id !== sel.id), found: s.found.filter((i) => i.id !== sel.id), removed: s.removed + 1, sheet: null }));
       store.flash(`${sel.id} was permanently deleted by Super Admin.`);
     },
@@ -598,7 +607,7 @@ export function buildVals(store: Store) {
     categories: CATS.map((c) => ({ name: c, on: st.rCat === c, pick: () => store.setState({ rCat: c }) })),
     reportBtnLabel: st.step === 1 ? 'Continue' : 'Submit to registry',
     reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim(),
-    reportNext: () => {
+    reportNext: isSupabaseAuth ? store.reportItemSupabase : () => {
       if (st.step === 1) { if (st.rTitle.trim() && st.rCat) store.setState({ step: 2 }); return; }
       if (!st.rPlace.trim()) return;
       const lost = st.rType === 'Lost';

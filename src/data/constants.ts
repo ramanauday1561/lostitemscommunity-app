@@ -8,6 +8,11 @@ export interface Item {
   id: string; title: string; location: string; date: string;
   status: Status; kind: Kind; icon: string; by: string; desc: string;
   coords?: string | null;
+  /** Supabase mode only: the real `items.id` uuid + reporter uuid, needed for
+   *  update/delete/claim calls (the display `id` above is `items.display_id`,
+   *  a human-readable string, not the primary key). Undefined for mock items. */
+  dbId?: string;
+  reporterId?: string;
 }
 export interface FlaggedRecord {
   id: string; title: string; author: string; category: string; reason: string; date: string;
