@@ -260,7 +260,9 @@ export function buildVals(store: Store) {
     ],
 
     setupSteps: (() => {
-      const done1 = !!st.suTerms, done2 = myPosts.length > 0, done3 = st.threads.some((x) => x.mine);
+      const done1 = !!st.suTerms;
+      const done2 = isSupabaseAuth ? (st.myDashStats?.totalReports ?? 0) > 0 : myPosts.length > 0;
+      const done3 = isSupabaseAuth ? (st.myDashStats?.myThreads ?? 0) > 0 : st.threads.some((x) => x.mine);
       const mk = (done: boolean, title: string, desc: string, go: () => void) => ({
         title, desc, go, done, mark: done ? 'check' : 'radio_button_unchecked',
       });
@@ -270,11 +272,24 @@ export function buildVals(store: Store) {
         mk(done3, 'Say hello in the forum', 'Ask a question or share a sighting.', () => store.setState({ screen: 'forum', sheet: null })),
       ];
     })(),
-    setupProgress: `${[!!st.suTerms, myPosts.length > 0, st.threads.some((x) => x.mine)].filter(Boolean).length} of 3 done`,
+    setupProgress: (() => {
+      const done1 = !!st.suTerms;
+      const done2 = isSupabaseAuth ? (st.myDashStats?.totalReports ?? 0) > 0 : myPosts.length > 0;
+      const done3 = isSupabaseAuth ? (st.myDashStats?.myThreads ?? 0) > 0 : st.threads.some((x) => x.mine);
+      return `${[done1, done2, done3].filter(Boolean).length} of 3 done`;
+    })(),
 
-    myStats: fresh
-      ? [{ value: '0', label: 'Active reports', color: '#a8acb2' }, { value: '0', label: 'Reunited', color: '#a8acb2' }, { value: '0', label: 'Forum posts', color: '#a8acb2' }]
-      : [{ value: '2', label: 'Active reports', color: '#0B6BCB' }, { value: '1', label: 'Reunited', color: '#0F7B3D' }, { value: '4', label: 'Forum posts', color: '#16181F' }],
+    myStats: !isSupabaseAuth
+      ? (fresh
+        ? [{ value: '0', label: 'Active reports', color: '#a8acb2' }, { value: '0', label: 'Reunited', color: '#a8acb2' }, { value: '0', label: 'Forum posts', color: '#a8acb2' }]
+        : [{ value: '2', label: 'Active reports', color: '#0B6BCB' }, { value: '1', label: 'Reunited', color: '#0F7B3D' }, { value: '4', label: 'Forum posts', color: '#16181F' }])
+      : fresh
+        ? [{ value: '0', label: 'Active reports', color: '#a8acb2' }, { value: '0', label: 'Reunited', color: '#a8acb2' }, { value: '0', label: 'Forum posts', color: '#a8acb2' }]
+        : [
+            { value: String(st.myDashStats?.activeReports ?? 0), label: 'Active reports', color: '#0B6BCB' },
+            { value: String(st.myDashStats?.reunited ?? 0), label: 'Reunited', color: '#0F7B3D' },
+            { value: String(st.profile?.post_count ?? 0), label: 'Forum posts', color: '#16181F' },
+          ],
     shortcuts: [
       { icon: 'travel_explore', title: 'Search lost items registry', desc: 'Browse recent lost reports from members in your city.', go: go('lost') },
       { icon: 'storefront', title: 'Search found items registry', desc: 'Check if someone handed in what you are missing.', go: go('found') },
@@ -289,10 +304,14 @@ export function buildVals(store: Store) {
 
     flaggedCount: st.flagged.length, flaggedEmpty: st.flagged.length === 0,
     flagged: st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
-    adminMetrics: [
+    adminMetrics: !isSupabaseAuth ? [
       { label: 'Active lost', value: '1,293', color: '#16181F', delta: '↓ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
       { label: 'Recovered', value: '256k', color: '#0B6BCB', delta: '↑ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
       { label: 'Scouts online', value: '857', color: '#16181F', delta: '857 joined today', deltaColor: '#8b8f95', icon: 'group', iconColor: '#0B6BCB' },
+    ] : [
+      { label: 'Active lost', value: String(st.adminDashStats?.activeLost ?? 0), color: '#16181F', delta: '', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
+      { label: 'Recovered', value: String(st.adminDashStats?.recovered ?? 0), color: '#0B6BCB', delta: '', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
+      { label: 'Active members', value: String(st.adminDashStats?.activeMembers ?? 0), color: '#16181F', delta: '', deltaColor: '#8b8f95', icon: 'group', iconColor: '#0B6BCB' },
     ],
     sentimentRows: [
       { k: 'Avg response velocity', v: '12.4 min', color: '#0B6BCB' },
@@ -611,6 +630,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
+        profile: null, myDashStats: null, adminDashStats: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
