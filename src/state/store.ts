@@ -11,6 +11,7 @@ import {
 // transform React Native internals through plain esbuild.
 import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
+import type { ModerationFlag } from '../api/moderation';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -56,6 +57,11 @@ export interface AppState {
   /** Supabase mode only: a photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
   rPhotoBlob: Blob | null; rPhotoName: string;
+  /** Supabase mode only: moderation queue (pending flags). Real data replaces
+   *  the mock flagged array in Admin > Moderation screen. */
+  dbModerationQueue: ModerationFlag[] | null;
+  /** Supabase mode only: count of moderation flags by status (pending, approved, removed). */
+  dbModerationStats: { pending: number; approved: number; removed: number } | null;
 }
 
 export const initialState: AppState = {
@@ -74,6 +80,7 @@ export const initialState: AppState = {
   q: '', uq: '', filter: 'All', topic: 'All', sel: null, claimed: {}, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
   rPhotoBlob: null, rPhotoName: '',
+  dbModerationQueue: null, dbModerationStats: null,
 };
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
@@ -573,6 +580,37 @@ export class Store {
     }
   };
 
+  loadModerationQueueSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const modApi = await import('../api/moderation');
+      const queue = await modApi.loadModerationQueue();
+      const stats = await modApi.loadModerationStats();
+      this.setState({ dbModerationQueue: queue, dbModerationStats: stats });
+    } catch (e) {
+      console.error('loadModerationQueue failed:', e);
+    }
+  };
+
+  takeModActionSupabase = async (flagId: string, action: 'approve' | 'remove') => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const modApi = await import('../api/moderation');
+      if (action === 'approve') {
+        await modApi.approveFlag(flagId, s.profile.id);
+        this.flash(`${flagId} approved and unflagged.`);
+      } else if (action === 'remove') {
+        await modApi.removeFlag(flagId, s.profile.id);
+        this.flash(`${flagId} was permanently deleted by Super Admin.`);
+      }
+      await this.loadModerationQueueSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not process moderation action.');
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -589,6 +627,7 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
+      if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
