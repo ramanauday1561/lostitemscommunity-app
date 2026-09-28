@@ -324,12 +324,22 @@ export function buildVals(store: Store) {
     ],
     goSearch: go('found'), goFound: go('found'), goLost: go('lost'),
 
-    // Moderation isn't wired to the backend until Phase 7 -- in Supabase mode,
-    // show the real (currently zero) count instead of the mock queue, rather
-    // than letting a real admin "approve/remove" fake posts.
-    flaggedCount: isSupabaseAuth ? 0 : st.flagged.length,
-    flaggedEmpty: isSupabaseAuth ? true : st.flagged.length === 0,
-    flagged: isSupabaseAuth ? [] : st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
+    // Phase 7: Moderation queue (real data from Supabase in admin mode)
+    flaggedCount: isSupabaseAuth ? (st.dbModerationStats?.pending ?? 0) : st.flagged.length,
+    flaggedEmpty: isSupabaseAuth ? ((st.dbModerationStats?.pending ?? 0) === 0) : st.flagged.length === 0,
+    flagged: isSupabaseAuth
+      ? (st.dbModerationQueue ?? []).map((f) => ({
+          id: f.id,
+          title: f.target_title || '(Unknown)',
+          author: f.target_author || '(Unknown)',
+          category: f.target_type === 'item' ? 'Item' : 'Forum Thread',
+          reason: f.reason,
+          date: f.created_at,
+          sub: `${f.target_author || 'Unknown'} · ${f.target_date || f.created_at}`,
+          approve: decide(f.id, true),
+          remove: decide(f.id, false),
+        }))
+      : st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
     adminMetrics: !isSupabaseAuth ? [
       { label: 'Active lost', value: '1,293', color: '#16181F', delta: '↓ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
       { label: 'Recovered', value: '256k', color: '#0B6BCB', delta: '↑ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
@@ -344,11 +354,17 @@ export function buildVals(store: Store) {
       { k: 'Flagged keyword alerts', v: '3 pending', color: '#B42318' },
       { k: 'Active scouts', v: '857 online', color: '#0F7B3D' },
     ],
-    modStats: [
-      { value: st.flagged.length, label: 'Pending', color: '#B42318' },
-      { value: st.approved, label: 'Approved', color: '#0F7B3D' },
-      { value: st.removed, label: 'Removed', color: '#16181F' },
-    ],
+    modStats: isSupabaseAuth
+      ? [
+          { value: st.dbModerationStats?.pending ?? 0, label: 'Pending', color: '#B42318' },
+          { value: st.dbModerationStats?.approved ?? 0, label: 'Approved', color: '#0F7B3D' },
+          { value: st.dbModerationStats?.removed ?? 0, label: 'Removed', color: '#16181F' },
+        ]
+      : [
+          { value: st.flagged.length, label: 'Pending', color: '#B42318' },
+          { value: st.approved, label: 'Approved', color: '#0F7B3D' },
+          { value: st.removed, label: 'Removed', color: '#16181F' },
+        ],
     scouts: SCOUTS,
     goModeration: go('moderation'), goAnalysis: go('analysis'),
     goMembers: go('members', { uq: '' }), goAds: go('ads'),
