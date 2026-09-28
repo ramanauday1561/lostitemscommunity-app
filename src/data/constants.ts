@@ -38,6 +38,7 @@ export interface Member {
 export interface Slide { img: string; tint: string; kicker: string; title: string; body: string }
 export interface ChatMsg { from: 'me' | 'them' | 'bot'; text: string; time: string }
 export interface Convo {
+  id: string;
   itemId: string; with: string; item: string; icon: string;
   unread: number; time: string; msgs: ChatMsg[];
 }
@@ -154,12 +155,12 @@ export const SUPPORT_SEED: ChatMsg[] = [
 ];
 
 export const CONVOS: Convo[] = [
-  {itemId:"FOUND-2015", with:"cafe.5th", item:"Silver Watch", icon:"watch", unread:2, time:"09:15", msgs:[
+  {id:"c001", itemId:"FOUND-2015", with:"cafe.5th", item:"Silver Watch", icon:"watch", unread:2, time:"09:15", msgs:[
     {from:"me", text:"Hi, I think the watch you handed in is mine. Lost it near 5th Ave on Sunday.", time:"09:02"},
     {from:"them", text:"Could be! Can you tell me what's engraved on the back?", time:"09:11"},
     {from:"them", text:"I'm at the café until 6 today if you want to collect it.", time:"09:15"}
   ]},
-  {itemId:"FOUND-1990", with:"campus.desk", item:"Student ID Card", icon:"badge", unread:0, time:"Yesterday", msgs:[
+  {id:"c002", itemId:"FOUND-1990", with:"campus.desk", item:"Student ID Card", icon:"badge", unread:0, time:"Yesterday", msgs:[
     {from:"them", text:"Your ID is at the cafeteria desk. Bring any second ID and it's yours.", time:"16:40"},
     {from:"me", text:"Perfect, I'll come by tomorrow morning. Thank you!", time:"17:02"}
   ]}

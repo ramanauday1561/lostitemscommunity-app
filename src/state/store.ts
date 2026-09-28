@@ -397,6 +397,63 @@ export class Store {
     }
   };
 
+  // ============= Phase 5: Chat (conversations, messages, realtime) =============
+
+  loadConversationsSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const convApi = await import('../api/conversations');
+      const convos = await convApi.loadConversations(s.profile.id);
+      this.setState({ convos });
+    } catch (e) {
+      console.error('loadConversations failed:', e);
+    }
+  };
+
+  loadMessagesSupabase = async (conversationId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const convApi = await import('../api/conversations');
+      const msgs = await convApi.loadMessages(conversationId, s.profile.id);
+      // Update the active conversation's messages.
+      this.setState((st) => ({
+        convos: st.convos.map((c) => (c.id === conversationId ? { ...c, msgs } : c)),
+      }));
+      // Mark as read.
+      await convApi.markConversationRead(conversationId, s.profile.id);
+      this.setState((st) => ({
+        convos: st.convos.map((c) => (c.id === conversationId ? { ...c, unread: 0 } : c)),
+      }));
+    } catch (e) {
+      console.error('loadMessages failed:', e);
+    }
+  };
+
+  sendMessageSupabase = async () => {
+    const s = this.state;
+    const activeConvo = s.convos.find((c) => c.id === s.activeConvo);
+    if (s.authMode !== 'supabase' || !s.profile || !activeConvo || !s.draft.trim()) return;
+    const text = s.draft;
+    this.setState({ draft: '' });
+    try {
+      const convApi = await import('../api/conversations');
+      await convApi.sendMessage(activeConvo.id, s.profile.id, text);
+      // Reload messages to sync with server.
+      await this.loadMessagesSupabase(activeConvo.id);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not send message.');
+      this.setState({ draft: text });
+    }
+  };
+
+  openChatSupabase = (conversationId: string) => {
+    this.setState({ sheet: 'chat', activeConvo: conversationId });
+    // Load messages for this conversation.
+    this.loadMessagesSupabase(conversationId).catch(console.error);
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -411,6 +468,7 @@ export class Store {
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
       this.setState({ busy: false, screen: 'dash', ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
+      this.loadConversationsSupabase();
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
@@ -476,6 +534,7 @@ export class Store {
     if (!profile) return;
     this.setState({ authMode: 'supabase', screen: 'dash', ...this.roleFromProfile(profile) });
     this.loadDashboardStats(profile);
+    this.loadConversationsSupabase();
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
