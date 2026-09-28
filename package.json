@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
+    "@playwright/test": "^1.48.2",
     "@types/react": "~19.2.2",
     "babel-preset-expo": "~57.0.0",
     "tsx": "^4.23.15",
@@ -45,10 +46,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "dev": "expo start --web",
     "export:web": "expo export -p web --output-dir dist",
     "oracle": "tsx tools/oracle/check.ts",
     "typecheck": "tsc --noEmit",
-    "gen:types": "supabase gen types typescript --project-id tqkmpirusmdckccqfxyd > src/lib/database.types.ts"
+    "gen:types": "supabase gen types typescript --project-id tqkmpirusmdckccqfxyd > src/lib/database.types.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report"
   },
   "private": true
 }
