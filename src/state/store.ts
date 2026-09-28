@@ -401,14 +401,10 @@ export class Store {
 
   loadConversationsSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) {
-      console.log('[loadConversationsSupabase] skipped - auth or profile missing', { authMode: s.authMode, hasProfile: !!s.profile });
-      return;
-    }
+    if (s.authMode !== 'supabase' || !s.profile) return;
     try {
       const convApi = await import('../api/conversations');
       const convos = await convApi.loadConversations(s.profile.id);
-      console.log('[loadConversationsSupabase] setting state', { count: convos.length });
       this.setState({ convos });
     } catch (e) {
       console.error('loadConversations failed:', e);

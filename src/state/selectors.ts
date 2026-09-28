@@ -20,7 +20,8 @@ export function buildVals(store: Store) {
   const isSupabaseAuth = st.authMode === 'supabase';
 
   const slide = SLIDES[st.slide];
-  const convo = st.convos.find((c) => c.itemId === st.activeConvo) || null;
+  // Demo mode keys activeConvo by item id; Supabase mode keys it by the conversation's own id.
+  const convo = st.convos.find((c) => c.id === st.activeConvo || c.itemId === st.activeConvo) || null;
   const convoMsgs = convo ? convo.msgs : [];
   const convoWith = convo ? convo.with : '';
   const unread = st.convos.reduce((n, c) => n + (c.unread || 0), 0);
