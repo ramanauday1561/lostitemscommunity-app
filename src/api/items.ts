@@ -134,12 +134,13 @@ export async function deleteItem(dbId: string): Promise<void> {
 /** Unique on (item_id, claimant_id) -- a second claim by the same person is a
  *  no-op rather than a duplicate conversation (see 0004_conversations_messages.sql). */
 export async function claimItem(itemDbId: string, reporterId: string, claimantId: string): Promise<void> {
-  const { error } = await supabase
+  const { error, data } = await supabase
     .from('conversations')
     .upsert(
       { item_id: itemDbId, reporter_id: reporterId, claimant_id: claimantId },
       { onConflict: 'item_id,claimant_id', ignoreDuplicates: true },
     );
+  console.log('[claimItem]', { itemDbId, reporterId, claimantId, error: error?.message, dataCount: (data as any)?.length });
   if (error) throw new Error(error.message);
 }
 

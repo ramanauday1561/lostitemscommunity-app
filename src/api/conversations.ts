@@ -41,17 +41,25 @@ export async function loadConversations(userId: string): Promise<Convo[]> {
       claimant_id,
       created_at,
       items!inner(title, icon, display_id),
-      messages!inner(id, read_at, sender_id)
+      messages(id, read_at, sender_id),
+      reporter:profiles!reporter_id(handle),
+      claimant:profiles!claimant_id(handle)
     `)
     .or(`reporter_id.eq.${userId},claimant_id.eq.${userId}`)
     .order('created_at', { ascending: false });
 
-  if (error || !data) return [];
+  console.log('[loadConversations]', { userId, error: error?.message, dataCount: data?.length });
+  if (error) {
+    console.error('[loadConversations error]', error.message);
+    return [];
+  }
+  if (!data) return [];
 
   return (data as any[]).map((c) => {
     const isReporter = c.reporter_id === userId;
-    const otherUserId = isReporter ? c.claimant_id : c.reporter_id;
     const item = c.items?.[0];
+    const otherProfile = isReporter ? c.claimant : c.reporter;
+    const otherHandle = otherProfile?.handle || 'Unknown';
     // Derive unread: messages in this conversation where read_at is null and sender is not me.
     const unreads = (c.messages || []).filter((m: any) => !m.read_at && m.sender_id !== userId);
     // Last message time, or conversation created_at.
@@ -65,7 +73,7 @@ export async function loadConversations(userId: string): Promise<Convo[]> {
       itemId: c.item_id,
       item: item?.title || '(item deleted)',
       icon: item?.icon || 'inventory_2',
-      with: `${item?.display_id}` || 'Unknown',
+      with: otherHandle,
       time,
       unread: unreads.length,
       msgs: [],
