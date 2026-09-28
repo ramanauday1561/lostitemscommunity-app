@@ -127,11 +127,11 @@ export class Store {
     if (username === 'superadmin') return { role: 'admin' };
     if (username === 'newuser') return {
       role: 'new', filter: 'All', suTerms: false,
-      convos: [], activeConvo: null, threads: THREADS,
+      activeConvo: null, threads: THREADS,
       lost: LOST.filter((i) => i.by !== 'simple.user'),
       found: FOUND.filter((i) => i.by !== 'simple.user'),
     };
-    return { role: 'user', convos: CONVOS, threads: THREADS, lost: LOST, found: FOUND, filter: 'All' };
+    return { role: 'user', threads: THREADS, lost: LOST, found: FOUND, filter: 'All' };
   }
 
   /** The finder replies automatically after 1600ms. */
@@ -401,10 +401,14 @@ export class Store {
 
   loadConversationsSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (s.authMode !== 'supabase' || !s.profile) {
+      console.log('[loadConversationsSupabase] skipped - auth or profile missing', { authMode: s.authMode, hasProfile: !!s.profile });
+      return;
+    }
     try {
       const convApi = await import('../api/conversations');
       const convos = await convApi.loadConversations(s.profile.id);
+      console.log('[loadConversationsSupabase] setting state', { count: convos.length });
       this.setState({ convos });
     } catch (e) {
       console.error('loadConversations failed:', e);
@@ -466,7 +470,7 @@ export class Store {
       await authApi.signIn(identifier, this.state.password);
       const profile = await authApi.getMyProfile();
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
-      this.setState({ busy: false, screen: 'dash', ...this.roleFromProfile(profile) });
+      this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
     } catch (e) {
@@ -532,7 +536,7 @@ export class Store {
     if (!['welcome', 'login'].includes(this.state.screen)) return;
     const profile = await authApi.getMyProfile();
     if (!profile) return;
-    this.setState({ authMode: 'supabase', screen: 'dash', ...this.roleFromProfile(profile) });
+    this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
     this.loadDashboardStats(profile);
     this.loadConversationsSupabase();
   };
