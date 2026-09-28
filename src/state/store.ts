@@ -27,13 +27,16 @@ export interface AppState {
   screen: string; slide: number; convos: Convo[]; activeConvo: string | null;
   draft: string; role: Role;
   supportMsgs: ChatMsg[]; supportDraft: string; botTyping: boolean;
-  threads: Thread[]; activeThread: number | null; replyDraft: string;
+  threads: Thread[]; activeThread: string | number | null; replyDraft: string;
   ntTitle: string; ntBody: string; ntTag: string;
   username: string; password: string; remember: boolean; error: string; busy: boolean;
   authMode: AuthMode;
   /** Only populated in Supabase mode -- null in demo mode / before login. */
   profile: AuthApi.Profile | null;
   myDashStats: MyDashboardStats | null;
+  dbThreads: any[] | null;
+  dbReplies: any[] | null;
+  forumTag: string;
   adminDashStats: AdminDashboardStats | null;
   /** Real registry results (Supabase mode only), refetched by the Registry screen
    *  when screen/filter/q change -- see src/screens/Registry.tsx. */
@@ -62,6 +65,7 @@ export const initialState: AppState = {
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
   profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
+  dbThreads: null, dbReplies: null, forumTag: '',
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -454,6 +458,79 @@ export class Store {
     this.loadMessagesSupabase(conversationId).catch(console.error);
   };
 
+  loadForumSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      const threads = await forumApi.loadThreads(s.profile.id, s.forumTag || undefined);
+      this.setState({ dbThreads: threads });
+    } catch (e) {
+      console.error('loadThreads failed:', e);
+    }
+  };
+
+  loadRepliesSupabase = async (threadId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      const replies = await forumApi.loadReplies(threadId, s.profile.id);
+      this.setState({ dbReplies: replies });
+    } catch (e) {
+      console.error('loadReplies failed:', e);
+    }
+  };
+
+  createThreadSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile || !s.ntTitle.trim() || !s.ntBody.trim()) return;
+    const tag = s.ntTag as 'Sighting' | 'Question' | 'Reunited';
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.createThread(s.profile.id, s.ntTitle, s.ntBody, tag);
+      this.setState({ ntTitle: '', ntBody: '', ntTag: 'Question', sheet: null });
+      this.loadForumSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not create thread.');
+    }
+  };
+
+  replyToThreadSupabase = async () => {
+    const s = this.state;
+    const activeThread = s.activeThread;
+    if (s.authMode !== 'supabase' || !s.profile || !activeThread || !s.replyDraft.trim()) return;
+    const threadId = String(activeThread);
+    const text = s.replyDraft;
+    this.setState({ replyDraft: '' });
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.replyToThread(threadId, s.profile.id, text);
+      await this.loadRepliesSupabase(threadId);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not reply.');
+      this.setState({ replyDraft: text });
+    }
+  };
+
+  toggleThreadHelpfulSupabase = async (threadId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.toggleThreadHelpful(threadId, s.profile.id);
+      await this.loadForumSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not toggle vote.');
+    }
+  };
+
+
+  setForumTag = (tag: string) => {
+    this.setState({ forumTag: tag });
+    this.loadForumSupabase();
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -466,9 +543,10 @@ export class Store {
       await authApi.signIn(identifier, this.state.password);
       const profile = await authApi.getMyProfile();
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
-      this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], ...this.roleFromProfile(profile) });
+      this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
+      this.loadForumSupabase();
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }

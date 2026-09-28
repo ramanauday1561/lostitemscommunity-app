@@ -52,8 +52,13 @@ export function buildVals(store: Store) {
   const fpOrder = ['email', 'code', 'reset', 'done'];
   const fpIdx = fpOrder.indexOf(fpStage);
 
-  const visibleThreads = st.threads
-    .filter((x) => st.topic === 'All' || x.tag === st.topic)
+  const threadList = isSupabaseAuth ? (st.dbThreads ?? []) : st.threads;
+  const visibleThreads = threadList
+    .filter((x) => {
+      const tag = isSupabaseAuth ? st.forumTag : st.topic;
+      if (tag === 'All' || !tag) return true;
+      return x.tag === tag;
+    })
     .filter((x) => admin || x.status !== 'suspended');
 
   const all = [...st.lost, ...st.found];
@@ -412,52 +417,107 @@ export function buildVals(store: Store) {
     myPostsEmpty: st.filter === 'My posts' && registry.length === 0,
     registryEmpty: registry.length === 0 && st.filter !== 'My posts',
 
-    topics: ['All', 'Sighting', 'Reunited', 'Question'].map((name) => ({
-      name, on: st.topic === name, pick: () => store.setState({ topic: name }),
-    })),
+    topics: ['All', 'Sighting', 'Reunited', 'Question'].map((name) => {
+      const currentTag = isSupabaseAuth ? st.forumTag : st.topic;
+      const isOn = name === 'All' ? !currentTag : name === currentTag;
+      return {
+        name,
+        on: isOn,
+        pick: () => isSupabaseAuth ? store.setForumTag(name === 'All' ? '' : name) : store.setState({ topic: name }),
+      };
+    }),
     canPost: !admin,
     threadsEmpty: visibleThreads.length === 0,
-    threads: visibleThreads.map((x) => ({
-      ...x, isAdmin: admin, suspended: x.status === 'suspended',
-      replyLabel: `${x.replies.length} ${x.replies.length === 1 ? 'reply' : 'replies'}`,
-      open: () => { store.setState({ sheet: 'thread', activeThread: x.id, replyDraft: '' }); store.scrollChat(); },
-      helpful: () => store.flash('Marked helpful. Thanks for confirming.'),
-      suspendLabel: x.status === 'suspended' ? 'Restore post' : 'Suspend post',
-      suspend: () => {
-        store.setState((s) => ({ threads: s.threads.map((v) => v.id === x.id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v) }));
-        store.flash(x.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
-      },
-      remove: () => {
-        store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== x.id) }));
-        store.flash('Post permanently deleted by Super Admin.');
-      },
-    })),
+    threads: visibleThreads.map((x) => {
+      const supabaseThread = isSupabaseAuth ? x : null;
+      return {
+        ...x,
+        isAdmin: admin,
+        suspended: x.status === 'suspended',
+        ini: initials(isSupabaseAuth ? x.author_handle : x.user),
+        user: isSupabaseAuth ? x.author_handle : x.user,
+        meta: isSupabaseAuth ? `${x.created_at} · ${x.author_display_name}` : x.meta,
+        replyLabel: isSupabaseAuth ? `${x.reply_count} ${x.reply_count === 1 ? 'reply' : 'replies'}` : `${x.replies.length} ${x.replies.length === 1 ? 'reply' : 'replies'}`,
+        helpfulCount: isSupabaseAuth ? x.helpful_vote_count : 0,
+        open: () => {
+          store.setState({ sheet: 'thread', activeThread: x.id, replyDraft: '' });
+          if (isSupabaseAuth) store.loadRepliesSupabase(x.id).catch(console.error);
+          store.scrollChat();
+        },
+        helpful: () => {
+          if (isSupabaseAuth) {
+            store.toggleThreadHelpfulSupabase(x.id);
+          } else {
+            store.flash('Marked helpful. Thanks for confirming.');
+          }
+        },
+        suspendLabel: x.status === 'suspended' ? 'Restore post' : 'Suspend post',
+        suspend: () => {
+          if (isSupabaseAuth) {
+            store.flash('Admin moderation not yet implemented for Supabase mode.');
+          } else {
+            store.setState((s) => ({ threads: s.threads.map((v) => v.id === x.id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v) }));
+            store.flash(x.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
+          }
+        },
+        remove: () => {
+          if (isSupabaseAuth) {
+            store.flash('Admin moderation not yet implemented for Supabase mode.');
+          } else {
+            store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== x.id) }));
+            store.flash('Post permanently deleted by Super Admin.');
+          }
+        },
+      };
+    }),
 
     sheetThread: sh === 'thread',
     // Mirrors the prototype: an absent thread still yields an empty replies array.
     thread: thread
-      ? { ...thread, replyLabel: `${thread.replies.length} ${thread.replies.length === 1 ? 'reply' : 'replies'}`, suspendLabel: thread.status === 'suspended' ? 'Restore post' : 'Suspend post' }
+      ? {
+        ...thread,
+        replyLabel: isSupabaseAuth
+          ? `${(st.dbReplies || []).length} ${(st.dbReplies || []).length === 1 ? 'reply' : 'replies'}`
+          : `${thread.replies.length} ${thread.replies.length === 1 ? 'reply' : 'replies'}`,
+        suspendLabel: thread.status === 'suspended' ? 'Restore post' : 'Suspend post',
+      }
       : { replies: [] as Thread['replies'] },
     hasThread: !!thread,
-    threadReplies: thread ? thread.replies : [],
-    noReplies: !!thread && thread.replies.length === 0,
+    threadReplies: isSupabaseAuth
+      ? (st.dbReplies || []).map((r: any) => ({
+        ...r,
+        ini: initials(r.author_handle),
+        user: r.author_handle,
+        time: r.created_at,
+        text: r.body,
+      }))
+      : (thread ? thread.replies : []),
+    noReplies: isSupabaseAuth ? !st.dbReplies || st.dbReplies.length === 0 : !!thread && thread.replies.length === 0,
     replyDraft: st.replyDraft,
     onReplyDraft: (v: string) => store.setState({ replyDraft: v }),
-    sendReply: () => store.postReply(),
+    sendReply: () => isSupabaseAuth ? store.replyToThreadSupabase() : store.postReply(),
     // The prototype leaves the sheet open here; closing it matches how delete
     // behaves and avoids the sheet showing a now-stale action label.
     suspendThread: () => {
-      const id = st.activeThread;
-      store.setState((s) => ({
-        threads: s.threads.map((v) => v.id === id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v),
-        sheet: null,
-      }));
-      store.flash(thread && thread.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
+      if (isSupabaseAuth) {
+        store.flash('Admin moderation not yet implemented for Supabase mode.');
+      } else {
+        const id = st.activeThread;
+        store.setState((s) => ({
+          threads: s.threads.map((v) => v.id === id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v),
+          sheet: null,
+        }));
+        store.flash(thread && thread.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
+      }
     },
     deleteThread: () => {
-      const id = st.activeThread;
-      store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== id), sheet: null }));
-      store.flash('Post permanently deleted by Super Admin.');
+      if (isSupabaseAuth) {
+        store.flash('Admin moderation not yet implemented for Supabase mode.');
+      } else {
+        const id = st.activeThread;
+        store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== id), sheet: null }));
+        store.flash('Post permanently deleted by Super Admin.');
+      }
     },
 
     sheetNewThread: sh === 'newthread',
@@ -471,13 +531,18 @@ export function buildVals(store: Store) {
     publishEnabled: !!(st.ntTitle.trim() && st.ntBody.trim()),
     publishThread: () => {
       if (!st.ntTitle.trim() || !st.ntBody.trim()) return;
-      const t2 = {
-        id: Date.now(), user: store.me().name, ini: store.me().ini, mine: true,
-        meta: `${store.stamp()} · You`, tag: st.ntTag, status: 'live',
-        title: st.ntTitle.trim(), text: st.ntBody.trim(), replies: [],
-      };
-      store.setState((s) => ({ threads: [t2, ...s.threads], sheet: null, ntTitle: '', ntBody: '' }));
-      store.flash('Posted to the forum.');
+      if (isSupabaseAuth) {
+        store.createThreadSupabase();
+        store.flash('Posted to the forum.');
+      } else {
+        const t2 = {
+          id: Date.now(), user: store.me().name, ini: store.me().ini, mine: true,
+          meta: `${store.stamp()} · You`, tag: st.ntTag, status: 'live',
+          title: st.ntTitle.trim(), text: st.ntBody.trim(), replies: [],
+        };
+        store.setState((s) => ({ threads: [t2, ...s.threads], sheet: null, ntTitle: '', ntBody: '' }));
+        store.flash('Posted to the forum.');
+      }
     },
 
     uq: st.uq, onUserQuery: (v: string) => store.setState({ uq: v }),
