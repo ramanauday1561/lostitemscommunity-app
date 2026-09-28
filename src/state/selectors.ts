@@ -20,7 +20,8 @@ export function buildVals(store: Store) {
   const isSupabaseAuth = st.authMode === 'supabase';
 
   const slide = SLIDES[st.slide];
-  const convo = st.convos.find((c) => c.itemId === st.activeConvo) || null;
+  // Demo mode keys activeConvo by item id; Supabase mode keys it by the conversation's own id.
+  const convo = st.convos.find((c) => c.id === st.activeConvo || c.itemId === st.activeConvo) || null;
   const convoMsgs = convo ? convo.msgs : [];
   const convoWith = convo ? convo.with : '';
   const unread = st.convos.reduce((n, c) => n + (c.unread || 0), 0);
@@ -548,7 +549,7 @@ export function buildVals(store: Store) {
         const exists = s.convos.find((c) => c.itemId === sel.id);
         const convos = exists
           ? s.convos.map((c) => c.itemId === sel.id ? { ...c, unread: 0 } : c)
-          : [{ itemId: sel.id, with: sel.by, item: sel.title, icon: sel.icon, unread: 0, time: store.stamp(), msgs: CHAT_SEED }, ...s.convos];
+          : [{ id: `c-${sel.id}`, itemId: sel.id, with: sel.by, item: sel.title, icon: sel.icon, unread: 0, time: store.stamp(), msgs: CHAT_SEED }, ...s.convos];
         return { claimed: { ...s.claimed, [sel.id]: true }, convos, activeConvo: sel.id, sheet: 'chat' as const, draft: '' };
       });
       store.scrollChat();
@@ -560,14 +561,15 @@ export function buildVals(store: Store) {
     unreadTotal: unread, hasUnread: unread > 0,
     openMessages: () => store.setState({ screen: 'messages', sheet: null, toast: '' }),
     conversations: st.convos.map((c) => {
-      const last = c.msgs[c.msgs.length - 1] || ({} as { from?: string; text?: string });
+      const msgs = (c as any).msgs || [];
+      const last = msgs[msgs.length - 1] || ({} as { from?: string; text?: string });
       return {
-        itemId: c.itemId, item: c.item, icon: c.icon, with: c.with, time: c.time,
+        itemId: c.id, item: c.item, icon: c.icon, with: c.with, time: c.time,
         ini: initials(c.with),
         preview: (last.from === 'me' ? 'You: ' : '') + (last.text || ''),
         unread: c.unread, hasUnread: c.unread > 0,
-        open: () => {
-          store.setState((s) => ({ sheet: 'chat', activeConvo: c.itemId, draft: '', convos: s.convos.map((x) => x.itemId === c.itemId ? { ...x, unread: 0 } : x) }));
+        open: isSupabaseAuth ? () => store.openChatSupabase(c.id) : () => {
+          store.setState((s) => ({ sheet: 'chat', activeConvo: c.id, draft: '', convos: s.convos.map((x) => x.id === c.id ? { ...x, unread: 0 } : x) }));
           store.scrollChat();
         },
       };
@@ -587,7 +589,7 @@ export function buildVals(store: Store) {
     ].map((r) => ({ ...r, send: () => store.pushMsg(r.text) })),
     draft: st.draft,
     onDraft: (v: string) => store.setState({ draft: v }),
-    sendMessage: () => store.pushMsg(st.draft),
+    sendMessage: isSupabaseAuth ? store.sendMessageSupabase : () => store.pushMsg(st.draft),
     addPhoto: isSupabaseAuth ? store.pickPhotoSupabase : () => store.flash('Photo picker opens here.'),
     flagRecord: isSupabaseAuth ? store.flagItemSupabase : () => store.flash(`${sel.id} sent to the moderation queue.`),
     deleteRecord: isSupabaseAuth ? store.deleteItemSupabase : () => {
