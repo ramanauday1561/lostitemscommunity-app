@@ -176,3 +176,30 @@ export async function toggleThreadHelpful(threadId: string, userId: string): Pro
     if (error) throw new Error(error.message);
   }
 }
+
+/** Admin: Suspend a thread (hide from regular users) */
+export async function suspendThread(threadId: string): Promise<void> {
+  const { error } = await supabase
+    .from('forum_threads')
+    .update({ status: 'suspended' })
+    .eq('id', threadId);
+  if (error) throw new Error(error.message);
+}
+
+/** Admin: Restore a suspended thread */
+export async function restoreThread(threadId: string): Promise<void> {
+  const { error } = await supabase
+    .from('forum_threads')
+    .update({ status: 'live' })
+    .eq('id', threadId);
+  if (error) throw new Error(error.message);
+}
+
+/** Admin: Delete a thread permanently */
+export async function deleteThread(threadId: string): Promise<void> {
+  const { error } = await supabase
+    .from('forum_threads')
+    .delete()
+    .eq('id', threadId);
+  if (error) throw new Error(error.message);
+}
