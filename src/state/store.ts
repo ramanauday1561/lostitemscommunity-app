@@ -531,6 +531,48 @@ export class Store {
     this.loadForumSupabase();
   };
 
+  suspendThreadSupabase = async (threadId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.suspendThread(threadId);
+      this.setState({ sheet: null });
+      this.flash('Post suspended — hidden from members.');
+      await this.loadForumSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not suspend thread.');
+    }
+  };
+
+  restoreThreadSupabase = async (threadId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.restoreThread(threadId);
+      this.setState({ sheet: null });
+      this.flash('Post restored to the forum.');
+      await this.loadForumSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not restore thread.');
+    }
+  };
+
+  deleteThreadSupabase = async (threadId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const forumApi = await import('../api/forum');
+      await forumApi.deleteThread(threadId);
+      this.setState({ sheet: null });
+      this.flash('Post permanently deleted by Super Admin.');
+      await this.loadForumSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not delete thread.');
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {

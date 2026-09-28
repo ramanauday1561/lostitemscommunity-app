@@ -499,10 +499,16 @@ export function buildVals(store: Store) {
     // The prototype leaves the sheet open here; closing it matches how delete
     // behaves and avoids the sheet showing a now-stale action label.
     suspendThread: () => {
+      const id = st.activeThread;
+      if (!id) return;
       if (isSupabaseAuth) {
-        store.flash('Admin moderation not yet implemented for Supabase mode.');
+        const currentThread = st.dbThreads?.find((t) => t.id === id);
+        if (currentThread?.status === 'suspended') {
+          store.restoreThreadSupabase(String(id));
+        } else {
+          store.suspendThreadSupabase(String(id));
+        }
       } else {
-        const id = st.activeThread;
         store.setState((s) => ({
           threads: s.threads.map((v) => v.id === id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v),
           sheet: null,
@@ -511,10 +517,11 @@ export function buildVals(store: Store) {
       }
     },
     deleteThread: () => {
+      const id = st.activeThread;
+      if (!id) return;
       if (isSupabaseAuth) {
-        store.flash('Admin moderation not yet implemented for Supabase mode.');
+        store.deleteThreadSupabase(String(id));
       } else {
-        const id = st.activeThread;
         store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== id), sheet: null }));
         store.flash('Post permanently deleted by Super Admin.');
       }

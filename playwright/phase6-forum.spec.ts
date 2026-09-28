@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 const APP_URL = 'http://localhost:3000';
 const TESTUSER_EMAIL = 'testuser@example.com';
@@ -9,7 +9,7 @@ const SUPERADMIN_EMAIL = 'superadmin@example.com';
 const SUPERADMIN_PASS = 'Admin@12345';
 
 /** Helper: login with given credentials */
-async function loginAs(page, email: string, password: string) {
+async function loginAs(page: Page, email: string, password: string) {
   await page.goto(APP_URL);
   await page.waitForSelector('text=Sign In');
 
@@ -28,7 +28,7 @@ async function loginAs(page, email: string, password: string) {
 }
 
 /** Helper: navigate to forum */
-async function goToForum(page) {
+async function goToForum(page: Page) {
   // Click forum tab or navigate
   const forumTab = await page.locator('text=Forum, text=forum').first().isVisible().catch(() => false);
   if (forumTab) {
@@ -120,7 +120,7 @@ test.describe('Phase 6: Forum - E2E Tests', () => {
     await firstThread.click();
 
     // Verify thread detail sheet opens
-    await expect(page.locator('text=reply|replies', { exact: false }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=/reply|replies/i').first()).toBeVisible({ timeout: 5000 });
 
     // Check for reply composer
     const replyComposer = page.locator('input[placeholder*="reply" i], textarea[placeholder*="reply" i]').first();

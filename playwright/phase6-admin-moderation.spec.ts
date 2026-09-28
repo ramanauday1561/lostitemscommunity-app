@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 const APP_URL = 'http://localhost:3000';
 const TESTUSER_EMAIL = 'testuser@example.com';
@@ -9,7 +9,7 @@ const SUPERADMIN_EMAIL = 'superadmin@example.com';
 const SUPERADMIN_PASS = 'Admin@12345';
 
 /** Helper: login with given credentials */
-async function loginAs(page, email: string, password: string) {
+async function loginAs(page: Page, email: string, password: string) {
   await page.goto(APP_URL);
   await page.waitForSelector('text=Sign In', { timeout: 5000 });
 
@@ -26,7 +26,7 @@ async function loginAs(page, email: string, password: string) {
 }
 
 /** Helper: navigate to forum */
-async function goToForum(page) {
+async function goToForum(page: Page) {
   const forumTab = await page.locator('text=Forum').first().isVisible().catch(() => false);
   if (forumTab) {
     await page.locator('text=Forum').first().click();
@@ -91,7 +91,7 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
       console.log(`Updated button label: ${updatedLabel}`);
 
       // Click restore to undo
-      if (updatedLabel.toLowerCase().includes('restore')) {
+      if (updatedLabel && updatedLabel.toLowerCase().includes('restore')) {
         await suspendBtn.click();
         await page.waitForLoadState('networkidle');
         console.log('✓ Suspend and restore works');
