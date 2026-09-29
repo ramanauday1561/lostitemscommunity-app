@@ -12,6 +12,7 @@ import {
 import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
+import type { MemberProfile } from '../api/members';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -62,6 +63,10 @@ export interface AppState {
   dbModerationQueue: ModerationFlag[] | null;
   /** Supabase mode only: count of moderation flags by status (pending, approved, removed). */
   dbModerationStats: { pending: number; approved: number; removed: number } | null;
+  /** Supabase mode only: list of all members for admin management (Phase 8). */
+  dbMembers: MemberProfile[] | null;
+  /** Search query for members list (Phase 8). */
+  memberSearchQuery: string;
 }
 
 export const initialState: AppState = {
@@ -81,6 +86,7 @@ export const initialState: AppState = {
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
   rPhotoBlob: null, rPhotoName: '',
   dbModerationQueue: null, dbModerationStats: null,
+  dbMembers: null, memberSearchQuery: '',
 };
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
@@ -611,6 +617,66 @@ export class Store {
     }
   };
 
+  // Phase 8: Members Management
+  loadMembersSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      const members = await membersApi.loadMembers();
+      this.setState({ dbMembers: members });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load members.');
+    }
+  };
+
+  searchMembersSupabase = async (query: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    this.setState({ memberSearchQuery: query });
+    try {
+      const membersApi = await import('../api/members');
+      const members = await membersApi.searchMembers(query);
+      this.setState({ dbMembers: members });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not search members.');
+    }
+  };
+
+  suspendMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.suspendMember(memberId);
+      this.flash('Member suspended.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not suspend member.');
+    }
+  };
+
+  restoreMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.restoreMember(memberId);
+      this.flash('Member restored.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not restore member.');
+    }
+  };
+
+  removeMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.removeMember(memberId);
+      this.flash('Member removed.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not remove member.');
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -627,7 +693,10 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
-      if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
+      if (profile.role === 'superadmin') {
+        this.loadModerationQueueSupabase();
+        this.loadMembersSupabase();
+      }
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }

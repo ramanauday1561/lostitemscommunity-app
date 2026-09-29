@@ -106,6 +106,9 @@ export async function navigateTo(page: Page, screenName: string) {
     'profile': 'Profile',
     'admin': 'Admin',
     'moderation': 'Moderation',
+    'members': 'Members',
+    'analysis': 'Analysis',
+    'ads': 'Ads, Ad placements',
   };
 
   const searchText = mapping[screenName.toLowerCase()] || screenName;
