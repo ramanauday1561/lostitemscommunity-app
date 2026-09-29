@@ -107,7 +107,7 @@ test.describe('Phase 8: Admin Members Management', () => {
     expect(membersBtn).toBe(false);
 
     // Try direct navigation
-    await page.goto('http://localhost:3000/members').catch(() => {});
+    await page.goto('http://localhost:8081/members').catch(() => {});
     await page.waitForTimeout(500);
 
     // Should either redirect or show access denied
