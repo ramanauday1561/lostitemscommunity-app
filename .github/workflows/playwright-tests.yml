@@ -24,7 +24,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        uses: playwright-community/playwright-github-action@v1
 
       - name: Create live app config
         run: |
