@@ -1,0 +1,93 @@
+name: Playwright E2E Tests - Live App
+
+on:
+  push:
+    branches: [main, claude/**]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Create live app config
+        run: |
+          cat > playwright.live.config.ts << 'EOF'
+          import { defineConfig, devices } from '@playwright/test';
+
+          export default defineConfig({
+            testDir: './playwright',
+            fullyParallel: false,
+            forbidOnly: false,
+            retries: 1,
+            workers: 1,
+            reporter: [
+              ['html'],
+              ['github'],
+              ['list']
+            ],
+            use: {
+              baseURL: 'https://app.lostitemscommunity.com',
+              trace: 'on',
+              screenshot: 'on',
+              video: 'on',
+              actionTimeout: 10000,
+            },
+            projects: [
+              {
+                name: 'chromium',
+                use: { ...devices['Desktop Chrome'] },
+              },
+            ],
+            timeout: 60000,
+          });
+          EOF
+
+      - name: Run Phase 8 Tests (Superadmin + Regular User)
+        run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Publish test report
+        if: always()
+        uses: daun/playwright-report-comment@v3
+        with:
+          report-path: playwright-report
+
+      - name: Comment test results on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'playwright-report/index.html';
+            if (fs.existsSync(reportPath)) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '✅ Playwright E2E Tests completed! View the [detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+              });
+            }
