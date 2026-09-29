@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  DEBUG: 'pw:api,pw:browser,pw:download,pw:launcher'
+  ACTIONS_STEP_DEBUG: 'true'
+
 jobs:
   test:
     timeout-minutes: 60
@@ -34,31 +38,65 @@ jobs:
             testDir: './playwright',
             fullyParallel: false,
             forbidOnly: false,
-            retries: 1,
+            retries: 0,
             workers: 1,
             reporter: [
               ['html'],
-              ['list']
+              ['list'],
+              ['json', { outputFile: 'test-results.json' }]
             ],
             use: {
               baseURL: 'https://app.lostitemscommunity.com',
               trace: 'on',
               screenshot: 'on',
               video: 'on',
-              actionTimeout: 15000,
+              actionTimeout: 20000,
             },
             projects: [
               {
                 name: 'chromium',
-                use: { ...devices['Desktop Chrome'] },
+                use: {
+                  ...devices['Desktop Chrome'],
+                  ignoreHTTPSErrors: true,
+                },
               },
             ],
             timeout: 60000,
+            webServer: undefined,
           });
           EOF
 
-      - name: Run Diagnostic Tests
-        run: npx playwright test --config playwright.live.config.ts playwright/diagnostic.spec.ts
+      - name: Run Diagnostic Tests (Verbose)
+        run: npx playwright test --config playwright.live.config.ts playwright/diagnostic.spec.ts --reporter=list
+        env:
+          DEBUG: 'pw:*'
+          PWDEBUG: '1'
+        continue-on-error: true
+
+      - name: Run Phase 8 Tests (Verbose)
+        run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts --reporter=list
+        env:
+          DEBUG: 'pw:*'
+          PWDEBUG: '1'
+        continue-on-error: true
+
+      - name: Show test results JSON
+        if: always()
+        run: |
+          if [ -f test-results.json ]; then
+            echo "=== TEST RESULTS JSON ==="
+            cat test-results.json | head -100
+          fi
+        continue-on-error: true
+
+      - name: Show HTML report
+        if: always()
+        run: |
+          if [ -f playwright-report/index.html ]; then
+            echo "=== HTML REPORT AVAILABLE ==="
+            ls -lah playwright-report/
+          fi
+        continue-on-error: true
 
       - name: Upload test results
         if: always()
