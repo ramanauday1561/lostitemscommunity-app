@@ -1,11 +1,10 @@
 import { supabase } from '../lib/supabase';
 
-export interface Member {
+export interface MemberProfile {
   id: string;
   username: string;
   handle: string;
   display_name: string;
-  email: string;
   role: 'user' | 'superadmin';
   is_suspended: boolean;
   post_count: number;
@@ -14,7 +13,7 @@ export interface Member {
 }
 
 // Load all members (superadmin only)
-export async function loadMembers(): Promise<Member[]> {
+export async function loadMembers(): Promise<MemberProfile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -25,7 +24,7 @@ export async function loadMembers(): Promise<Member[]> {
 }
 
 // Search members by username, handle, or display_name
-export async function searchMembers(query: string): Promise<Member[]> {
+export async function searchMembers(query: string): Promise<MemberProfile[]> {
   if (!query.trim()) {
     return loadMembers();
   }
@@ -79,7 +78,7 @@ export async function removeMember(memberId: string): Promise<void> {
 }
 
 // Get member details
-export async function getMember(memberId: string): Promise<Member | null> {
+export async function getMember(memberId: string): Promise<MemberProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')

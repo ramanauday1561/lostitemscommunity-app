@@ -12,7 +12,7 @@ import {
 import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
-import type { Member } from '../api/members';
+import type { MemberProfile } from '../api/members';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -64,7 +64,7 @@ export interface AppState {
   /** Supabase mode only: count of moderation flags by status (pending, approved, removed). */
   dbModerationStats: { pending: number; approved: number; removed: number } | null;
   /** Supabase mode only: list of all members for admin management (Phase 8). */
-  dbMembers: Member[] | null;
+  dbMembers: MemberProfile[] | null;
   /** Search query for members list (Phase 8). */
   memberSearchQuery: string;
 }
