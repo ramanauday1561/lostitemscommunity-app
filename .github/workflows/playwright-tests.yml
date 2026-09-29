@@ -57,8 +57,8 @@ jobs:
           });
           EOF
 
-      - name: Run Phase 8 Tests
-        run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts
+      - name: Run Diagnostic Tests
+        run: npx playwright test --config playwright.live.config.ts playwright/diagnostic.spec.ts
 
       - name: Upload test results
         if: always()
