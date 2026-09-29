@@ -106,8 +106,8 @@ test.describe('Phase 8: Admin Members Management', () => {
     const membersBtn = await isVisible(page, 'Members');
     expect(membersBtn).toBe(false);
 
-    // Try direct navigation
-    await page.goto('http://localhost:8081/members').catch(() => {});
+    // Try direct navigation to members (will use baseURL from config)
+    await page.goto('/members').catch(() => {});
     await page.waitForTimeout(500);
 
     // Should either redirect or show access denied

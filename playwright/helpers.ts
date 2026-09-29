@@ -1,7 +1,5 @@
 import { Page } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:8081';
-
 export interface TestUser {
   username: string;
   password: string;
@@ -25,7 +23,7 @@ export const TEST_USERS = {
  * Login to the app with given credentials
  */
 export async function loginAs(page: Page, user: TestUser) {
-  await page.goto(BASE_URL);
+  await page.goto('/');
   await page.waitForLoadState('networkidle');
 
   // Click sign in button
