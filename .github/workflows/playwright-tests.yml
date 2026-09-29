@@ -11,6 +11,8 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.40.0-focal
 
     steps:
       - uses: actions/checkout@v4
@@ -19,13 +21,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Install Playwright
-        run: npx playwright install chromium
 
       - name: Create live app config
         run: |
