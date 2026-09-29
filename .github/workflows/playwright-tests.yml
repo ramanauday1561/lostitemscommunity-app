@@ -19,12 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        uses: playwright-community/playwright-github-action@v1
+      - name: Install Playwright
+        run: npx playwright install chromium
 
       - name: Create live app config
         run: |
@@ -39,7 +40,6 @@ jobs:
             workers: 1,
             reporter: [
               ['html'],
-              ['github'],
               ['list']
             ],
             use: {
@@ -47,7 +47,7 @@ jobs:
               trace: 'on',
               screenshot: 'on',
               video: 'on',
-              actionTimeout: 10000,
+              actionTimeout: 15000,
             },
             projects: [
               {
@@ -59,7 +59,7 @@ jobs:
           });
           EOF
 
-      - name: Run Phase 8 Tests (Superadmin + Regular User)
+      - name: Run Phase 8 Tests
         run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts
 
       - name: Upload test results
@@ -69,25 +69,3 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-
-      - name: Publish test report
-        if: always()
-        uses: daun/playwright-report-comment@v3
-        with:
-          report-path: playwright-report
-
-      - name: Comment test results on PR
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const reportPath = 'playwright-report/index.html';
-            if (fs.existsSync(reportPath)) {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: '✅ Playwright E2E Tests completed! View the [detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})'
-              });
-            }
