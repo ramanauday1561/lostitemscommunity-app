@@ -43,3 +43,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+playwright.config.test.ts
+.last-run.json
