@@ -73,7 +73,28 @@ jobs:
           PWDEBUG: '1'
         continue-on-error: true
 
-      - name: Run Phase 8 Tests (Verbose)
+      - name: Run Phase 5 Tests (Chat)
+        run: npx playwright test --config playwright.live.config.ts playwright/phase5-chat.spec.ts --reporter=list
+        env:
+          DEBUG: 'pw:*'
+          PWDEBUG: '1'
+        continue-on-error: true
+
+      - name: Run Phase 6 Tests (Forum)
+        run: npx playwright test --config playwright.live.config.ts playwright/phase6-forum.spec.ts --reporter=list
+        env:
+          DEBUG: 'pw:*'
+          PWDEBUG: '1'
+        continue-on-error: true
+
+      - name: Run Phase 7 Tests (Moderation)
+        run: npx playwright test --config playwright.live.config.ts playwright/phase7-moderation.spec.ts --reporter=list
+        env:
+          DEBUG: 'pw:*'
+          PWDEBUG: '1'
+        continue-on-error: true
+
+      - name: Run Phase 8 Tests (Members)
         run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts --reporter=list
         env:
           DEBUG: 'pw:*'
