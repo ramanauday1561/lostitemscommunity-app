@@ -58,6 +58,7 @@ jobs:
                 use: {
                   ...devices['Desktop Chrome'],
                   ignoreHTTPSErrors: true,
+                  headless: true,
                 },
               },
             ],
