@@ -66,15 +66,19 @@ jobs:
           });
           EOF
 
-      - name: Run Diagnostic Tests (Verbose)
-        run: npx playwright test --config playwright.live.config.ts playwright/diagnostic.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 8 Tests (Verbose)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts --reporter=list
+      - name: Run All Phase Tests (1-8) with Diagnostic
+        run: |
+          npx playwright test --config playwright.live.config.ts \
+            playwright/diagnostic.spec.ts \
+            playwright/phase1-auth.spec.ts \
+            playwright/phase2-dashboard.spec.ts \
+            playwright/phase3-registry.spec.ts \
+            playwright/phase4-items.spec.ts \
+            playwright/phase5-chat.spec.ts \
+            playwright/phase6-forum.spec.ts \
+            playwright/phase7-moderation.spec.ts \
+            playwright/phase8-members.spec.ts \
+            --reporter=list
         env:
           DEBUG: 'pw:*'
           PWDEBUG: '1'
