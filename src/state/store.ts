@@ -628,11 +628,6 @@ export class Store {
     }
   };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> origin/main
   // Phase 8: Members Management
   loadMembersSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
@@ -693,7 +688,6 @@ export class Store {
     }
   };
 
-<<<<<<< HEAD
   loadAnalysisSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
     try {
