@@ -111,7 +111,11 @@ export function buildVals(store: Store) {
     icon, label, key, on: key === activeKey, go: go(screen),
   });
 
-  const bars: [string, number][] = [['M', 9], ['T', 13], ['W', 11], ['T', 18], ['F', 14], ['S', 8], ['S', 12]];
+  // Build bars from weekly report data (Supabase mode) or use mock data (demo mode)
+  const barsData = st.isSupabaseAuthMode && st.dbWeeklyReports
+    ? st.dbWeeklyReports.map((r) => [r.day || '', r.count] as [string, number])
+    : [['M', 9], ['T', 13], ['W', 11], ['T', 18], ['F', 14], ['S', 8], ['S', 12]] as [string, number][];
+
   const memberList = st.members.filter((m) =>
     !st.uq.trim() || (m.name + ' ' + m.handle).toLowerCase().includes(st.uq.trim().toLowerCase()));
 
@@ -751,8 +755,10 @@ export function buildVals(store: Store) {
       });
     },
 
-    bars: bars.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
-    keywords: [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }],
+    bars: barsData.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
+    keywords: (st.isSupabaseAuthMode && st.dbKeywords
+      ? st.dbKeywords.map((k) => ({ word: k.word, hits: `${k.hits} ${k.hits === 1 ? 'hit' : 'hits'}` }))
+      : [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }]),
   };
 }
 

@@ -12,6 +12,8 @@ import {
 import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
+import type { MemberProfile } from '../api/members';
+import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -62,6 +64,14 @@ export interface AppState {
   dbModerationQueue: ModerationFlag[] | null;
   /** Supabase mode only: count of moderation flags by status (pending, approved, removed). */
   dbModerationStats: { pending: number; approved: number; removed: number } | null;
+  /** Supabase mode only: list of all members for admin management (Phase 8). */
+  dbMembers: MemberProfile[] | null;
+  /** Search query for members list (Phase 8). */
+  memberSearchQuery: string;
+  /** Supabase mode only: weekly report counts for analysis dashboard (Phase 9). */
+  dbWeeklyReports: WeeklyReportCount[] | null;
+  /** Supabase mode only: moderation keyword hits for analysis dashboard (Phase 9). */
+  dbKeywords: ModerationKeyword[] | null;
 }
 
 export const initialState: AppState = {
@@ -72,6 +82,7 @@ export const initialState: AppState = {
   authMode: 'demo',
   profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
+  dbWeeklyReports: null, dbKeywords: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -611,6 +622,83 @@ export class Store {
     }
   };
 
+<<<<<<< HEAD
+=======
+  // Phase 8: Members Management
+  loadMembersSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      const members = await membersApi.loadMembers();
+      this.setState({ dbMembers: members });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load members.');
+    }
+  };
+
+  searchMembersSupabase = async (query: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    this.setState({ memberSearchQuery: query });
+    try {
+      const membersApi = await import('../api/members');
+      const members = await membersApi.searchMembers(query);
+      this.setState({ dbMembers: members });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not search members.');
+    }
+  };
+
+  suspendMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.suspendMember(memberId);
+      this.flash('Member suspended.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not suspend member.');
+    }
+  };
+
+  restoreMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.restoreMember(memberId);
+      this.flash('Member restored.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not restore member.');
+    }
+  };
+
+  removeMemberSupabase = async (memberId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const membersApi = await import('../api/members');
+      await membersApi.removeMember(memberId);
+      this.flash('Member removed.');
+      await this.loadMembersSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not remove member.');
+    }
+  };
+
+  loadAnalysisSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const analysisApi = await import('../api/analysis');
+      const [reports, keywords] = await Promise.all([
+        analysisApi.getWeeklyReportCounts(),
+        analysisApi.getModerationKeywords(),
+      ]);
+      this.setState({ dbWeeklyReports: reports, dbKeywords: keywords });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load analysis data.');
+    }
+  };
+
+>>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -627,7 +715,15 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
+<<<<<<< HEAD
       if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
+=======
+      if (profile.role === 'superadmin') {
+        this.loadModerationQueueSupabase();
+        this.loadMembersSupabase();
+        this.loadAnalysisSupabase();
+      }
+>>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
