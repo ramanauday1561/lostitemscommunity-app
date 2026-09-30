@@ -373,6 +373,29 @@ export function buildVals(store: Store) {
     goModeration: go('moderation'), goAnalysis: go('analysis'),
     goMembers: go('members', { uq: '' }), goAds: go('ads'),
 
+    // Phase 8: Members Management (real data from Supabase in admin mode)
+    memberRows: isSupabaseAuth
+      ? (st.dbMembers ?? []).map((m) => ({
+          id: m.id,
+          name: m.display_name || m.handle,
+          handle: m.handle,
+          username: m.username,
+          role: m.role === 'superadmin' ? 'Super Admin' : 'Member',
+          posts: String(m.post_count),
+          joined: m.created_at,
+          status: m.is_suspended ? 'Suspended' : 'Active',
+          suspended: m.is_suspended,
+          suspend: () => store.suspendMemberSupabase(m.id),
+          restore: () => store.restoreMemberSupabase(m.id),
+          remove: () => store.removeMemberSupabase(m.id),
+        }))
+      : st.members.map((m) => ({ ...m, suspended: false, status: 'Active', suspend: () => {}, restore: () => {}, remove: () => {} })),
+    memberCount: isSupabaseAuth ? st.dbMembers?.length ?? 0 : st.members.length,
+    suspendedCount: isSupabaseAuth ? (st.dbMembers?.filter(m => m.is_suspended).length ?? 0) : 0,
+    memberSearchActive: st.memberSearchQuery.length > 0,
+    searchMembers: (q: string) => store.searchMembersSupabase(q),
+    clearMemberSearch: () => store.searchMembersSupabase(''),
+
     adSlots: st.ads.map((a) => {
       const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
       const ended = a.daysLeft <= 0;

@@ -92,6 +92,7 @@ export const initialState: AppState = {
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
   rPhotoBlob: null, rPhotoName: '',
   dbModerationQueue: null, dbModerationStats: null,
+  dbMembers: null, memberSearchQuery: '',
 };
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
@@ -623,7 +624,10 @@ export class Store {
   };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> origin/main
   // Phase 8: Members Management
   loadMembersSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
@@ -684,6 +688,7 @@ export class Store {
     }
   };
 
+<<<<<<< HEAD
   loadAnalysisSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
     try {
@@ -699,6 +704,8 @@ export class Store {
   };
 
 >>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
+=======
+>>>>>>> origin/main
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -716,6 +723,7 @@ export class Store {
       this.loadConversationsSupabase();
       this.loadForumSupabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
       if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
 =======
       if (profile.role === 'superadmin') {
@@ -724,6 +732,12 @@ export class Store {
         this.loadAnalysisSupabase();
       }
 >>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
+=======
+      if (profile.role === 'superadmin') {
+        this.loadModerationQueueSupabase();
+        this.loadMembersSupabase();
+      }
+>>>>>>> origin/main
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
