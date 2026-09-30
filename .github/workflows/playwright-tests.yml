@@ -12,8 +12,6 @@ env:
   E2E_SUPERADMIN_PASSWORD: ${{ secrets.E2E_SUPERADMIN_PASSWORD }}
   E2E_USER_USERNAME: ${{ secrets.E2E_USER_USERNAME }}
   E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
-  DEBUG: 'pw:api,pw:browser,pw:download,pw:launcher'
-  ACTIONS_STEP_DEBUG: 'true'
 
 jobs:
   test:
@@ -45,15 +43,15 @@ jobs:
             retries: 0,
             workers: 1,
             reporter: [
-              ['html'],
+              ['html', { open: 'never' }],
               ['list'],
               ['json', { outputFile: 'test-results.json' }]
             ],
             use: {
               baseURL: 'https://app.lostitemscommunity.com',
-              trace: 'on',
-              screenshot: 'on',
-              video: 'on',
+              trace: 'retain-on-failure',
+              screenshot: 'only-on-failure',
+              video: 'retain-on-failure',
               actionTimeout: 20000,
             },
             projects: [
@@ -71,47 +69,11 @@ jobs:
           });
           EOF
 
-      - name: Run Diagnostic Tests (Verbose)
-        run: npx playwright test --config playwright.live.config.ts playwright/diagnostic.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 5 Tests (Chat)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase5-chat.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 6 Tests (Forum)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase6-forum.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 7 Tests (Moderation)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase7-moderation.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 11 Tests (Support & FAQ)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase11-support.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
-
-      - name: Run Phase 8 Tests (Members)
-        run: npx playwright test --config playwright.live.config.ts playwright/phase8-members.spec.ts --reporter=list
-        env:
-          DEBUG: 'pw:*'
-          PWDEBUG: '1'
-        continue-on-error: true
+      # Runs every spec in ./playwright. No PWDEBUG/DEBUG: PWDEBUG forces a headed
+      # browser, which cannot start in this display-less container. No
+      # continue-on-error: a failing test must fail the job.
+      - name: Run Playwright tests
+        run: npx playwright test --config playwright.live.config.ts
 
       - name: Show test results JSON
         if: always()
