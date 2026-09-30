@@ -112,8 +112,8 @@ export function buildVals(store: Store) {
   });
 
   // Build bars from weekly report data (Supabase mode) or use mock data (demo mode)
-  const barsData = st.isSupabaseAuthMode && st.dbWeeklyReports
-    ? st.dbWeeklyReports.map((r) => [r.day || '', r.count] as [string, number])
+  const barsData = isSupabaseAuth && st.dbWeeklyReports
+    ? st.dbWeeklyReports.map((r) => [r.day || '', (r.reports ?? 0) as number] as [string, number])
     : [['M', 9], ['T', 13], ['W', 11], ['T', 18], ['F', 14], ['S', 8], ['S', 12]] as [string, number][];
 
   const memberList = st.members.filter((m) =>
@@ -396,7 +396,7 @@ export function buildVals(store: Store) {
     searchMembers: (q: string) => store.searchMembersSupabase(q),
     clearMemberSearch: () => store.searchMembersSupabase(''),
 
-    adSlots: (st.isSupabaseAuthMode && st.dbAdPlacements
+    adSlots: (isSupabaseAuth && st.dbAdPlacements
       ? st.dbAdPlacements.map((a) => {
           const pct = a.duration_days ? Math.max(0, Math.min(100, Math.round((a.duration_days - a.days_left) / a.duration_days * 100))) : 0;
           const ended = a.days_left <= 0;
@@ -805,7 +805,7 @@ export function buildVals(store: Store) {
     },
 
     bars: barsData.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
-    keywords: (st.isSupabaseAuthMode && st.dbKeywords
+    keywords: (isSupabaseAuth && st.dbKeywords
       ? st.dbKeywords.map((k) => ({ word: k.word, hits: `${k.hits} ${k.hits === 1 ? 'hit' : 'hits'}` }))
       : [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }]),
   };

@@ -89,36 +89,27 @@ export async function loadModerationQueue(): Promise<ModerationFlag[]> {
 
 /** Get moderation stats (count of pending, approved, removed) */
 export async function loadModerationStats(): Promise<ModerationStats> {
-  const { data: stats, error } = await supabase.rpc(
-    'get_moderation_stats',
-    {}
-  ) as any;
+  // Count manually since RPC function doesn't exist
+  const { count: pendingCount } = await supabase
+    .from('moderation_flags')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
 
-  if (error || !stats) {
-    // Fallback: count manually
-    const { count: pendingCount } = await supabase
-      .from('moderation_flags')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
+  const { count: approvedCount } = await supabase
+    .from('moderation_flags')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'approved');
 
-    const { count: approvedCount } = await supabase
-      .from('moderation_flags')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'approved');
+  const { count: removedCount } = await supabase
+    .from('moderation_flags')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'removed');
 
-    const { count: removedCount } = await supabase
-      .from('moderation_flags')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'removed');
-
-    return {
-      pending: pendingCount ?? 0,
-      approved: approvedCount ?? 0,
-      removed: removedCount ?? 0,
-    };
-  }
-
-  return stats;
+  return {
+    pending: pendingCount ?? 0,
+    approved: approvedCount ?? 0,
+    removed: removedCount ?? 0,
+  };
 }
 
 /** Approve a flag (close it, keep content) */

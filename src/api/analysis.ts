@@ -1,14 +1,15 @@
 import { supabase } from '../lib/supabase';
 
 export interface WeeklyReportCount {
-  day: string;
-  count: number;
-  day_of_week: number;
+  day: string | null;
+  reports: number | null;
 }
 
 export interface ModerationKeyword {
-  word: string;
-  hits: number;
+  keyword?: string;
+  word?: string;
+  hits?: number;
+  hit_count?: number;
 }
 
 export interface AnalysisData {
@@ -21,9 +22,12 @@ export async function getWeeklyReportCounts(): Promise<WeeklyReportCount[]> {
   const { data, error } = await supabase
     .from('weekly_report_counts')
     .select('*')
-    .order('day_of_week', { ascending: true });
+    .order('day', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Failed to fetch weekly report counts:', error);
+    return [];
+  }
   return data || [];
 }
 
@@ -31,10 +35,13 @@ export async function getWeeklyReportCounts(): Promise<WeeklyReportCount[]> {
 export async function getModerationKeywords(): Promise<ModerationKeyword[]> {
   const { data, error } = await supabase
     .from('moderation_keywords')
-    .select('word, hits')
+    .select('*')
     .order('hits', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error('Failed to fetch moderation keywords:', error);
+    return [];
+  }
   return data || [];
 }
 
