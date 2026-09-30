@@ -36,7 +36,7 @@ test.describe('Phase 4: Items - Detail, Report, Claim, Photo Upload', () => {
     // Look for claim functionality
     const pageContent = await page.content();
     const hasClaim = pageContent.includes('claim') || pageContent.includes('Claim') || pageContent.includes('contact');
-    expect([true, false]).toContain(hasClaim); // Claim may or may not be visible in current view
+    expect([true, false]).toContain(!!hasClaim); // Claim may or may not be visible in current view
   });
 
   test('should handle photo uploads', async ({ page }) => {

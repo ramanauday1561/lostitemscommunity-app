@@ -130,3 +130,18 @@ Tests will:
 - Retry failed tests 2 times
 - Capture screenshots/videos on failure
 - Generate HTML report
+
+
+## Credentials (required for authenticated tests)
+
+Passwords are never stored in the repo. Set these env vars (locally, or as GitHub
+Actions secrets for `playwright-tests.yml`); tests that need a login are skipped
+when the password is unset:
+
+| Variable | Default |
+|---|---|
+| `E2E_SUPERADMIN_USERNAME` / `E2E_SUPERADMIN_PASSWORD` | `superadmin` / – |
+| `E2E_USER_USERNAME` / `E2E_USER_PASSWORD` | `testuser2` / – |
+| `E2E_ALLOW_DESTRUCTIVE=1` | opt in to tests that delete real data |
+
+Local run: copy `.env.production` to `.env`, start `npm run dev`, then `npx playwright test`.

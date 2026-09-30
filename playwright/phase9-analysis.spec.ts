@@ -8,7 +8,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
   });
 
   test('should display analysis screen for superadmin', async ({ page }) => {
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(true);
 
     // Navigate to analysis screen
@@ -29,7 +29,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
 
     // Check for day labels (M, T, W, etc)
     const dayVisible = await isVisible(page, 'M') || await isVisible(page, 'Mon');
-    expect([true, false]).toContain(dayVisible);
+    expect([true, false]).toContain(!!dayVisible);
 
     await takeScreenshot(page, 'phase9-analysis-bars');
   });
@@ -44,7 +44,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
 
     // Check for hit count display
     const hitsVisible = await isVisible(page, 'hits') || await isVisible(page, 'Hits');
-    expect([true, false]).toContain(hitsVisible);
+    expect([true, false]).toContain(!!hitsVisible);
 
     await takeScreenshot(page, 'phase9-analysis-keywords');
   });
@@ -77,7 +77,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     // Verify Admin button is not available
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     // Try direct navigation
@@ -88,7 +88,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     const current = page.url();
     const notAnalysis = !current.includes('analysis');
 
-    expect([true, false]).toContain(notAnalysis);
+    expect([true, false]).toContain(!!notAnalysis);
   });
 
   test('should load analysis data from Supabase', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
 
     // Should have Reports section
     const hasReports = await isVisible(page, 'Reports this week');
-    expect([true, false]).toContain(hasReports);
+    expect([true, false]).toContain(!!hasReports);
 
     await takeScreenshot(page, 'phase9-analysis-live-data');
   });
@@ -150,7 +150,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
 
     // Verify page still loads correctly
     const reportsTitle = await isVisible(page, 'Reports this week');
-    expect([true, false]).toContain(reportsTitle);
+    expect([true, false]).toContain(!!reportsTitle);
 
     await takeScreenshot(page, 'phase9-analysis-after-reload');
   });

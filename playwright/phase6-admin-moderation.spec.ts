@@ -1,28 +1,17 @@
 import { test, expect, Page } from '@playwright/test';
 
-const APP_URL = 'http://localhost:3000';
-const TESTUSER_EMAIL = 'testuser@example.com';
-const TESTUSER_PASS = 'Test@12345';
-const TESTUSER2_EMAIL = 'testuser2@example.com';
-const TESTUSER2_PASS = 'Test@12345';
-const SUPERADMIN_EMAIL = 'superadmin@example.com';
-const SUPERADMIN_PASS = 'Admin@12345';
+import { loginAs as helperLogin, TEST_USERS } from './helpers';
 
-/** Helper: login with given credentials */
-async function loginAs(page: Page, email: string, password: string) {
-  await page.goto(APP_URL);
-  await page.waitForSelector('text=Sign In', { timeout: 5000 });
+const APP_URL = '';
+const SUPERADMIN_EMAIL = TEST_USERS.superadmin.username;
+const SUPERADMIN_PASS = TEST_USERS.superadmin.password;
+const TESTUSER_EMAIL = TEST_USERS.regularUser.username;
+const TESTUSER_PASS = TEST_USERS.regularUser.password;
 
-  const welcomeSignIn = await page.locator('text=Sign In').first().isVisible().catch(() => false);
-  if (welcomeSignIn) {
-    await page.locator('text=Sign In').first().click();
-  }
-
-  await page.fill('input[type="email"], input[placeholder*="email" i], input[placeholder*="username" i]', email);
-  await page.fill('input[type="password"]', password);
-  await page.click('text=Sign In');
-
-  await page.waitForURL('**/dash', { timeout: 10000 });
+/** Login through the shared helper (real Supabase flow, skips without E2E_* passwords) */
+async function loginAs(page: Page, username: string, password: string) {
+  const user = username === SUPERADMIN_EMAIL ? TEST_USERS.superadmin : TEST_USERS.regularUser;
+  await helperLogin(page, { ...user, username, password });
 }
 
 /** Helper: navigate to forum */
@@ -31,7 +20,7 @@ async function goToForum(page: Page) {
   if (forumTab) {
     await page.locator('text=Forum').first().click();
   } else {
-    await page.goto(`${APP_URL}/forum`);
+    await page.goto('/');
   }
   await page.waitForLoadState('networkidle');
 }
@@ -100,6 +89,7 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
   });
 
   test('Admin: Superadmin can delete thread (DESTRUCTIVE)', async ({ page }) => {
+    test.skip(!process.env.E2E_ALLOW_DESTRUCTIVE, 'Deletes a real forum thread; set E2E_ALLOW_DESTRUCTIVE=1 to run');
     await loginAs(page, SUPERADMIN_EMAIL, SUPERADMIN_PASS);
     await goToForum(page);
 
