@@ -15,6 +15,7 @@ import type { ModerationFlag } from '../api/moderation';
 import type { MemberProfile } from '../api/members';
 import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 import type { AdPlacementWithStatus, AdCampaign } from '../api/ads';
+import type { FaqEntry, SupportMessage } from '../api/support';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -77,6 +78,10 @@ export interface AppState {
   dbAdPlacements: AdPlacementWithStatus[] | null;
   /** Supabase mode only: available ad campaigns for editor (Phase 10). */
   dbAdCampaigns: AdCampaign[] | null;
+  /** Supabase mode only: FAQ entries for support bot (Phase 11). */
+  dbFaqEntries: FaqEntry[] | null;
+  /** Supabase mode only: support messages for current user (Phase 11). */
+  dbSupportMessages: SupportMessage[] | null;
 }
 
 export const initialState: AppState = {
@@ -88,6 +93,7 @@ export const initialState: AppState = {
   profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
+  dbFaqEntries: null, dbSupportMessages: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -716,6 +722,58 @@ export class Store {
     }
   };
 
+  // Phase 11: Support Chat & FAQ
+  loadFaqSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const supportApi = await import('../api/support');
+      const faqEntries = await supportApi.getFaqEntries();
+      this.setState({ dbFaqEntries: faqEntries });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load FAQ data.');
+    }
+  };
+
+  loadSupportMessagesSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const supportApi = await import('../api/support');
+      const messages = await supportApi.loadSupportMessages(s.profile.id);
+      this.setState({ dbSupportMessages: messages });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load support messages.');
+    }
+  };
+
+  sendSupportMessageSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile || !s.supportDraft.trim()) return;
+    const text = s.supportDraft;
+    this.setState({ supportDraft: '' });
+    try {
+      const supportApi = await import('../api/support');
+      await supportApi.sendSupportMessage(s.profile.id, text, 'user');
+      // Reload messages to sync with server
+      await this.loadSupportMessagesSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not send message.');
+      this.setState({ supportDraft: text });
+    }
+  };
+
+  escalateSupportMessageSupabase = async (messageId: string) => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const supportApi = await import('../api/support');
+      await supportApi.escalateSupportMessage(messageId);
+      this.flash('Message escalated for agent review.');
+      await this.loadSupportMessagesSupabase();
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not escalate message.');
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -732,6 +790,8 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
+      this.loadFaqSupabase();
+      this.loadSupportMessagesSupabase();
       if (profile.role === 'superadmin') {
         this.loadModerationQueueSupabase();
         this.loadMembersSupabase();
