@@ -1,14 +1,17 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const isLiveApp = !!process.env.LIVE_APP;
+
 export default defineConfig({
   testDir: './playwright',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 1,
+  workers: 1,
   reporter: 'html',
+  timeout: 60000,
   use: {
-    baseURL: 'http://localhost:8081',
+    baseURL: isLiveApp ? 'https://app.lostitemscommunity.com' : 'http://localhost:8081',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -17,11 +20,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        executablePath: '/opt/pw-browsers/chromium',
+      },
     },
   ],
 
-  webServer: {
+  webServer: isLiveApp ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:8081',
     reuseExistingServer: true,
