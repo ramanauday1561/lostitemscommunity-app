@@ -13,6 +13,7 @@ import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
 import type { MemberProfile } from '../api/members';
+import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -67,6 +68,10 @@ export interface AppState {
   dbMembers: MemberProfile[] | null;
   /** Search query for members list (Phase 8). */
   memberSearchQuery: string;
+  /** Supabase mode only: weekly report counts for analysis dashboard (Phase 9). */
+  dbWeeklyReports: WeeklyReportCount[] | null;
+  /** Supabase mode only: moderation keyword hits for analysis dashboard (Phase 9). */
+  dbKeywords: ModerationKeyword[] | null;
 }
 
 export const initialState: AppState = {
@@ -77,6 +82,7 @@ export const initialState: AppState = {
   authMode: 'demo',
   profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
+  dbWeeklyReports: null, dbKeywords: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -617,6 +623,11 @@ export class Store {
     }
   };
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> origin/main
   // Phase 8: Members Management
   loadMembersSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
@@ -677,6 +688,24 @@ export class Store {
     }
   };
 
+<<<<<<< HEAD
+  loadAnalysisSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const analysisApi = await import('../api/analysis');
+      const [reports, keywords] = await Promise.all([
+        analysisApi.getWeeklyReportCounts(),
+        analysisApi.getModerationKeywords(),
+      ]);
+      this.setState({ dbWeeklyReports: reports, dbKeywords: keywords });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load analysis data.');
+    }
+  };
+
+>>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
+=======
+>>>>>>> origin/main
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -693,10 +722,22 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
+<<<<<<< HEAD
+<<<<<<< HEAD
+      if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
+=======
+      if (profile.role === 'superadmin') {
+        this.loadModerationQueueSupabase();
+        this.loadMembersSupabase();
+        this.loadAnalysisSupabase();
+      }
+>>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
+=======
       if (profile.role === 'superadmin') {
         this.loadModerationQueueSupabase();
         this.loadMembersSupabase();
       }
+>>>>>>> origin/main
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
