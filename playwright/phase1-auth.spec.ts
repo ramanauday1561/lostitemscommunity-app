@@ -3,11 +3,11 @@ import { loginAs, logout, isLoggedIn, takeScreenshot, TEST_USERS } from './helpe
 
 test.describe('Phase 1: Authentication', () => {
   test('should load welcome screen', async ({ page }) => {
-    await page.goto('http://localhost:8081');
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
 
-    const signInBtn = await page.locator('text=Sign In, text=sign in').first().isVisible();
-    expect(signInBtn).toBe(true);
+    await expect(page.getByText('Welcome to Lost Items Community')).toBeVisible();
+    await expect(page.getByText('Sign in', { exact: true }).first()).toBeVisible();
 
     await takeScreenshot(page, 'phase1-welcome-screen');
   });
@@ -43,29 +43,15 @@ test.describe('Phase 1: Authentication', () => {
   });
 
   test('should show error on invalid credentials', async ({ page }) => {
-    await page.goto('http://localhost:8081');
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await page.getByText('Sign in', { exact: true }).first().click();
+    await page.getByText('Supabase account', { exact: true }).click();
+    await page.getByPlaceholder('Username or email').fill('no_such_user_e2e');
+    await page.getByPlaceholder('Password').fill('definitely-wrong-password');
+    await page.keyboard.press('Enter');
 
-    const signInBtn = page.locator('text=Sign In, text=sign in').first();
-    if (await signInBtn.isVisible().catch(() => false)) {
-      await signInBtn.click();
-      await page.waitForLoadState('networkidle');
-    }
-
-    const emailInputs = await page.locator(
-      'input[type="text"], input[type="email"], input[placeholder*="name" i]'
-    ).all();
-    const passwordInputs = await page.locator('input[type="password"]').all();
-
-    if (emailInputs.length > 0 && passwordInputs.length > 0) {
-      await emailInputs[0].fill('invalid_user');
-      await passwordInputs[0].fill('invalid_pass');
-
-      await page.click('button:has-text("Sign In"), button:has-text("Log In")');
-      await page.waitForTimeout(2000);
-
-      // Error message should be visible
-      const errorVisible = await page.locator('text=error, text=invalid, text=failed').first().isVisible().catch(() => false);
-      expect([true, false]).toContain(errorVisible); // Could show error or just not login
-    }
+    await expect(page.getByText('Invalid username/email or password.')).toBeVisible({ timeout: 20000 });
+    await takeScreenshot(page, 'phase1-invalid-credentials');
   });
 });

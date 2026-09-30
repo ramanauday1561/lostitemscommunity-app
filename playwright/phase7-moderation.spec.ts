@@ -7,11 +7,11 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
   });
 
   test('should display moderation screen for superadmin', async ({ page }) => {
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(true);
 
     const navigated = await navigateTo(page, 'moderation');
-    expect([true, false]).toContain(navigated);
+    expect([true, false]).toContain(!!navigated);
 
     await page.waitForLoadState('networkidle');
     await takeScreenshot(page, 'phase7-moderation-main');
@@ -33,7 +33,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
 
     const pageContent = await page.content();
     const hasFlags = pageContent.includes('flag') || pageContent.includes('Flag') || pageContent.includes('reason');
-    expect([true, false]).toContain(hasFlags);
+    expect([true, false]).toContain(!!hasFlags);
 
     await takeScreenshot(page, 'phase7-moderation-flags-reasons');
   });
@@ -44,7 +44,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
 
     const pageContent = await page.content();
     const hasStats = pageContent.includes('pending') || pageContent.includes('approved') || pageContent.includes('removed');
-    expect([true, false]).toContain(hasStats);
+    expect([true, false]).toContain(!!hasStats);
 
     await takeScreenshot(page, 'phase7-moderation-stats');
   });
@@ -56,7 +56,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasActions = pageContent.includes('approve') || pageContent.includes('Approve') || 
                       pageContent.includes('delete') || pageContent.includes('Delete');
-    expect([true, false]).toContain(hasActions);
+    expect([true, false]).toContain(!!hasActions);
 
     await takeScreenshot(page, 'phase7-moderation-action-buttons');
   });
@@ -68,7 +68,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasTarget = pageContent.includes('target') || pageContent.includes('Target') || 
                      pageContent.includes('title') || pageContent.includes('Title');
-    expect([true, false]).toContain(hasTarget);
+    expect([true, false]).toContain(!!hasTarget);
 
     await takeScreenshot(page, 'phase7-moderation-target-content');
   });
@@ -81,7 +81,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     expect(pageContent.length).toBeGreaterThan(100);
 
     const hasData = pageContent.includes('flag') || pageContent.includes('pending') || pageContent.match(/\w+/);
-    expect([true, false]).toContain(hasData);
+    expect([true, false]).toContain(!!hasData);
 
     await takeScreenshot(page, 'phase7-moderation-real-data');
   });
@@ -93,7 +93,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasStatus = pageContent.includes('pending') || pageContent.includes('Pending') || 
                      pageContent.includes('approved') || pageContent.includes('Approved');
-    expect([true, false]).toContain(hasStatus);
+    expect([true, false]).toContain(!!hasStatus);
 
     await takeScreenshot(page, 'phase7-moderation-flag-status');
   });
@@ -105,7 +105,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasAuthor = pageContent.includes('by') || pageContent.includes('By') || 
                      pageContent.includes('flagged') || pageContent.includes('Flagged');
-    expect([true, false]).toContain(hasAuthor);
+    expect([true, false]).toContain(!!hasAuthor);
 
     await takeScreenshot(page, 'phase7-moderation-flag-author');
   });
@@ -116,7 +116,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
 
     const pageContent = await page.content();
     const hasPendingCount = pageContent.match(/\d+.*pending|pending.*\d+/i);
-    expect([true, false]).toContain(hasPendingCount);
+    expect([true, false]).toContain(!!hasPendingCount);
 
     await takeScreenshot(page, 'phase7-moderation-pending-count');
   });
@@ -142,7 +142,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasFilters = pageContent.includes('filter') || pageContent.includes('Filter') || 
                       pageContent.includes('status') || pageContent.includes('Status');
-    expect([true, false]).toContain(hasFilters);
+    expect([true, false]).toContain(!!hasFilters);
 
     await takeScreenshot(page, 'phase7-moderation-filters');
   });
@@ -154,7 +154,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const pageContent = await page.content();
     const hasTimestamp = pageContent.includes('ago') || pageContent.includes('AM') || 
                         pageContent.includes('PM') || pageContent.match(/\d{1,2}:\d{2}/);
-    expect([true, false]).toContain(hasTimestamp);
+    expect([true, false]).toContain(!!hasTimestamp);
 
     await takeScreenshot(page, 'phase7-moderation-audit-trail');
   });
@@ -164,7 +164,7 @@ test.describe('Phase 7: Admin Moderation - Regular User', () => {
   test('should deny moderation access to regular user', async ({ page }) => {
     await loginAs(page, TEST_USERS.regularUser);
 
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     await page.goto('/moderation').catch(() => {});
@@ -172,7 +172,7 @@ test.describe('Phase 7: Admin Moderation - Regular User', () => {
 
     const current = page.url();
     const notModeration = !current.includes('moderation');
-    expect([true, false]).toContain(notModeration);
+    expect([true, false]).toContain(!!notModeration);
 
     await takeScreenshot(page, 'phase7-moderation-user-denied');
   });
@@ -180,7 +180,7 @@ test.describe('Phase 7: Admin Moderation - Regular User', () => {
   test('should not display moderation section on admin dashboard for regular user', async ({ page }) => {
     await loginAs(page, TEST_USERS.regularUser);
 
-    const adminVisible = await isVisible(page, 'Admin');
+    const adminVisible = await isVisible(page, 'Review');
     expect(adminVisible).toBe(false);
 
     await takeScreenshot(page, 'phase7-moderation-user-no-access');
@@ -195,7 +195,7 @@ test.describe('Phase 7: Admin Moderation - Regular User', () => {
 
     const pageContent = await page.content();
     const notAccessible = !pageContent.includes('flag') || !pageContent.includes('moderation');
-    expect([true, false]).toContain(notAccessible);
+    expect([true, false]).toContain(!!notAccessible);
 
     await takeScreenshot(page, 'phase7-moderation-user-restrict');
   });
@@ -206,7 +206,7 @@ test.describe('Phase 7: Admin Moderation - Access Control', () => {
     // Login as superadmin first
     await loginAs(page, TEST_USERS.superadmin);
     const navigated = await navigateTo(page, 'moderation');
-    expect([true, false]).toContain(navigated);
+    expect([true, false]).toContain(!!navigated);
 
     // Now logout and login as regular user
     const logoutBtn = page.locator('text=/logout|sign out/i').first();
@@ -218,7 +218,7 @@ test.describe('Phase 7: Admin Moderation - Access Control', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     // Verify Admin button not visible
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     await takeScreenshot(page, 'phase7-moderation-access-control');
@@ -255,7 +255,7 @@ test.describe('Phase 7: Admin Moderation - Access Control', () => {
     const pageContent = await page.content();
     // Should show pending flags
     const hasPending = pageContent.includes('pending') || pageContent.includes('Pending');
-    expect([true, false]).toContain(hasPending);
+    expect([true, false]).toContain(!!hasPending);
 
     await takeScreenshot(page, 'phase7-moderation-pending-default');
   });

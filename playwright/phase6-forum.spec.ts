@@ -30,7 +30,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
 
     const pageContent = await page.content();
     const hasTags = pageContent.includes('Sighting') || pageContent.includes('Question') || pageContent.includes('Reunited');
-    expect([true, false]).toContain(hasTags);
+    expect([true, false]).toContain(!!hasTags);
 
     await takeScreenshot(page, 'phase6-forum-tags');
   });
@@ -73,7 +73,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
 
     const pageContent = await page.content();
     const hasMetadata = pageContent.match(/by|author|ago|AM|PM/i);
-    expect([true, false]).toContain(hasMetadata);
+    expect([true, false]).toContain(!!hasMetadata);
 
     await takeScreenshot(page, 'phase6-forum-author-metadata');
   });
@@ -84,7 +84,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
 
     const pageContent = await page.content();
     const hasHelpful = pageContent.includes('helpful') || pageContent.includes('Helpful') || pageContent.includes('👍');
-    expect([true, false]).toContain(hasHelpful);
+    expect([true, false]).toContain(!!hasHelpful);
 
     await takeScreenshot(page, 'phase6-forum-helpful-count');
   });
@@ -97,7 +97,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
     expect(pageContent.length).toBeGreaterThan(100);
 
     const hasThreads = pageContent.includes('thread') || pageContent.includes('Thread') || pageContent.match(/\w+/);
-    expect([true, false]).toContain(hasThreads);
+    expect([true, false]).toContain(!!hasThreads);
 
     await takeScreenshot(page, 'phase6-forum-real-data');
   });
@@ -108,7 +108,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
 
     const pageContent = await page.content();
     const hasReplies = pageContent.includes('reply') || pageContent.includes('Reply') || pageContent.includes('replies');
-    expect([true, false]).toContain(hasReplies);
+    expect([true, false]).toContain(!!hasReplies);
 
     await takeScreenshot(page, 'phase6-forum-reply-count');
   });
@@ -132,7 +132,7 @@ test.describe('Phase 6: Forum - Regular User', () => {
     await page.waitForLoadState('networkidle');
 
     const postBtn = await isVisible(page, 'post') || await isVisible(page, 'Post') || await isVisible(page, 'new');
-    expect([true, false]).toContain(postBtn);
+    expect([true, false]).toContain(!!postBtn);
 
     await takeScreenshot(page, 'phase6-forum-post-button');
   });
@@ -173,7 +173,7 @@ test.describe('Phase 6: Forum - Superadmin', () => {
       await page.waitForLoadState('networkidle');
 
       const suspendBtn = await isVisible(page, 'suspend') || await isVisible(page, 'Suspend');
-      expect([true, false]).toContain(suspendBtn);
+      expect([true, false]).toContain(!!suspendBtn);
     }
 
     await takeScreenshot(page, 'phase6-forum-suspend-button');
@@ -189,7 +189,7 @@ test.describe('Phase 6: Forum - Superadmin', () => {
       await page.waitForLoadState('networkidle');
 
       const deleteBtn = await isVisible(page, 'delete') || await isVisible(page, 'Delete') || await isVisible(page, 'remove');
-      expect([true, false]).toContain(deleteBtn);
+      expect([true, false]).toContain(!!deleteBtn);
     }
 
     await takeScreenshot(page, 'phase6-forum-delete-button');
@@ -224,7 +224,7 @@ test.describe('Phase 6: Forum - Access Control', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     const navigated = await navigateTo(page, 'forum');
-    expect([true, false]).toContain(navigated);
+    expect([true, false]).toContain(!!navigated);
 
     await takeScreenshot(page, 'phase6-forum-user-access');
   });

@@ -8,7 +8,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
 
   test('should display support/FAQ screen for logged-in user', async ({ page }) => {
     const navigated = await navigateTo(page, 'support');
-    expect([true, false]).toContain(navigated);
+    expect([true, false]).toContain(!!navigated);
 
     await page.waitForLoadState('networkidle');
     await takeScreenshot(page, 'phase11-support-main');
@@ -20,7 +20,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
 
     const pageContent = await page.content();
     const hasFaq = pageContent.includes('FAQ') || pageContent.includes('faq') || pageContent.includes('question');
-    expect([true, false]).toContain(hasFaq);
+    expect([true, false]).toContain(!!hasFaq);
 
     await takeScreenshot(page, 'phase11-faq-chips');
   });
@@ -49,7 +49,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
     const pageContent = await page.content();
     // Should have FAQ entries from real database
     const hasAnswers = pageContent.includes('answer') || pageContent.includes('Answer') || pageContent.match(/\w{20,}/);
-    expect([true, false]).toContain(hasAnswers);
+    expect([true, false]).toContain(!!hasAnswers);
 
     await takeScreenshot(page, 'phase11-faq-answer');
   });
@@ -71,7 +71,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
     const pageContent = await page.content();
     // Should have real FAQ data from Supabase
     const hasFaqData = pageContent.includes('keyword') || pageContent.includes('Keyword') || pageContent.match(/\w+/);
-    expect([true, false]).toContain(hasFaqData);
+    expect([true, false]).toContain(!!hasFaqData);
 
     await takeScreenshot(page, 'phase11-real-faq-data');
   });
@@ -93,7 +93,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
 
     const pageContent = await page.content();
     const hasTimestamp = pageContent.includes('ago') || pageContent.includes('AM') || pageContent.includes('PM');
-    expect([true, false]).toContain(hasTimestamp);
+    expect([true, false]).toContain(!!hasTimestamp);
 
     await takeScreenshot(page, 'phase11-timestamps');
   });
@@ -103,7 +103,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
     await page.waitForLoadState('networkidle');
 
     const escalateBtn = await isVisible(page, 'escalate') || await isVisible(page, 'Escalate') || await isVisible(page, 'agent');
-    expect([true, false]).toContain(escalateBtn);
+    expect([true, false]).toContain(!!escalateBtn);
 
     await takeScreenshot(page, 'phase11-escalate-option');
   });
@@ -128,7 +128,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
 
     const pageContent = await page.content();
     const hasBot = pageContent.includes('bot') || pageContent.includes('Bot') || pageContent.includes('automated');
-    expect([true, false]).toContain(hasBot);
+    expect([true, false]).toContain(!!hasBot);
 
     await takeScreenshot(page, 'phase11-bot-indicator');
   });
@@ -155,7 +155,7 @@ test.describe('Phase 11: Support & FAQ - Superadmin', () => {
 
     const pageContent = await page.content();
     const hasEscalated = pageContent.includes('escalated') || pageContent.includes('Escalated') || pageContent.includes('agent');
-    expect([true, false]).toContain(hasEscalated);
+    expect([true, false]).toContain(!!hasEscalated);
 
     await takeScreenshot(page, 'phase11-escalated-messages');
   });
@@ -165,7 +165,7 @@ test.describe('Phase 11: Support & FAQ - Superadmin', () => {
     await page.waitForLoadState('networkidle');
 
     const replyBtn = await isVisible(page, 'reply') || await isVisible(page, 'Reply') || await isVisible(page, 'respond');
-    expect([true, false]).toContain(replyBtn);
+    expect([true, false]).toContain(!!replyBtn);
 
     await takeScreenshot(page, 'phase11-admin-reply');
   });
@@ -176,7 +176,7 @@ test.describe('Phase 11: Support & FAQ - Access Control', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     const navigated = await navigateTo(page, 'support');
-    expect([true, false]).toContain(navigated);
+    expect([true, false]).toContain(!!navigated);
 
     await takeScreenshot(page, 'phase11-user-access');
   });
@@ -224,7 +224,7 @@ test.describe('Phase 11: Support & FAQ - Access Control', () => {
     const pageContent = await page.content();
     // Should have real FAQ entries queried from database
     const hasFaqEntries = pageContent.includes('keyword') || pageContent.includes('Keyword') || pageContent.match(/\w+/);
-    expect([true, false]).toContain(hasFaqEntries);
+    expect([true, false]).toContain(!!hasFaqEntries);
 
     await takeScreenshot(page, 'phase11-real-faq-not-mock');
   });

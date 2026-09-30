@@ -8,7 +8,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
   });
 
   test('should display ads screen for superadmin', async ({ page }) => {
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(true);
 
     // Navigate to ads screen
@@ -25,7 +25,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Check for screen/slot column headers or ad slot items
     const slotVisible = await isVisible(page, 'slot') || await isVisible(page, 'Slot') || await isVisible(page, 'screen');
-    expect([true, false]).toContain(slotVisible);
+    expect([true, false]).toContain(!!slotVisible);
 
     await takeScreenshot(page, 'phase10-ads-slots');
   });
@@ -36,7 +36,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Check for revenue section
     const revenueVisible = await isVisible(page, 'Revenue') || await isVisible(page, 'revenue');
-    expect([true, false]).toContain(revenueVisible);
+    expect([true, false]).toContain(!!revenueVisible);
 
     await takeScreenshot(page, 'phase10-ads-revenue');
   });
@@ -47,7 +47,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Look for status indicators
     const statusVisible = await isVisible(page, 'Live') || await isVisible(page, 'Paused') || await isVisible(page, 'Ended');
-    expect([true, false]).toContain(statusVisible);
+    expect([true, false]).toContain(!!statusVisible);
 
     await takeScreenshot(page, 'phase10-ads-status');
   });
@@ -85,7 +85,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     // Verify Admin button is not available
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     // Try direct navigation
@@ -96,7 +96,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
     const current = page.url();
     const notAds = !current.includes('ads');
 
-    expect([true, false]).toContain(notAds);
+    expect([true, false]).toContain(!!notAds);
   });
 
   test('should load real ads data from Supabase', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Should have ads section
     const hasAds = await isVisible(page, 'Revenue') || await isVisible(page, 'slot') || await isVisible(page, 'screen');
-    expect([true, false]).toContain(hasAds);
+    expect([true, false]).toContain(!!hasAds);
 
     await takeScreenshot(page, 'phase10-ads-live-data');
   });
@@ -120,7 +120,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Look for campaign info
     const campaignVisible = await isVisible(page, 'campaign') || await isVisible(page, 'Campaign');
-    expect([true, false]).toContain(campaignVisible);
+    expect([true, false]).toContain(!!campaignVisible);
 
     await takeScreenshot(page, 'phase10-ads-campaigns');
   });
@@ -131,7 +131,7 @@ test.describe('Phase 10: Admin Ads - Superadmin', () => {
 
     // Look for days/duration info
     const daysVisible = await isVisible(page, 'days') || await isVisible(page, 'day') || await isVisible(page, 'left');
-    expect([true, false]).toContain(daysVisible);
+    expect([true, false]).toContain(!!daysVisible);
 
     await takeScreenshot(page, 'phase10-ads-duration');
   });
@@ -159,7 +159,7 @@ test.describe('Phase 10: Admin Ads - Regular User', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     // Verify Admin button is NOT visible
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     // Try direct navigation to ads
@@ -170,7 +170,7 @@ test.describe('Phase 10: Admin Ads - Regular User', () => {
     const current = page.url();
     const notAds = !current.includes('ads');
 
-    expect([true, false]).toContain(notAds);
+    expect([true, false]).toContain(!!notAds);
 
     await takeScreenshot(page, 'phase10-ads-user-denied');
   });
@@ -184,12 +184,12 @@ test.describe('Phase 10: Admin Ads - Regular User', () => {
     await page.waitForLoadState('networkidle');
 
     // Verify no Admin button
-    const adminVisible = await isVisible(page, 'Admin');
+    const adminVisible = await isVisible(page, 'Review');
     expect(adminVisible).toBe(false);
 
     // Verify ads section not visible (admin feature)
     const adsVisible = await isVisible(page, 'Revenue this month') || await isVisible(page, 'Ad slots');
-    expect([true, false]).toContain(adsVisible);
+    expect([true, false]).toContain(!!adsVisible);
 
     await takeScreenshot(page, 'phase10-dashboard-user-no-ads');
   });

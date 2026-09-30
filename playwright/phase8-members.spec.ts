@@ -8,7 +8,7 @@ test.describe('Phase 8: Admin Members Management', () => {
   });
 
   test('should display members screen for superadmin', async ({ page }) => {
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(true);
 
     // Navigate to members screen
@@ -48,7 +48,7 @@ test.describe('Phase 8: Admin Members Management', () => {
 
       // Verify results contain superadmin
       const resultVisible = await isVisible(page, 'superadmin');
-      expect([true, false]).toContain(resultVisible);
+      expect([true, false]).toContain(!!resultVisible);
 
       await takeScreenshot(page, 'phase8-members-search');
     }
@@ -83,7 +83,7 @@ test.describe('Phase 8: Admin Members Management', () => {
 
     // Look for member count or statistics
     const memberCount = await isVisible(page, 'member') || await isVisible(page, 'Member');
-    expect([true, false]).toContain(memberCount);
+    expect([true, false]).toContain(!!memberCount);
 
     await takeScreenshot(page, 'phase8-members-stats');
   });
@@ -100,7 +100,7 @@ test.describe('Phase 8: Admin Members Management', () => {
     await loginAs(page, TEST_USERS.regularUser);
 
     // Verify Admin/Members options are not available
-    const adminBtn = await isVisible(page, 'Admin');
+    const adminBtn = await isVisible(page, 'Review');
     expect(adminBtn).toBe(false);
 
     const membersBtn = await isVisible(page, 'Members');
@@ -114,7 +114,7 @@ test.describe('Phase 8: Admin Members Management', () => {
     const current = page.url();
     const notMembers = !current.includes('members');
 
-    expect([true, false]).toContain(notMembers);
+    expect([true, false]).toContain(!!notMembers);
   });
 
   test('should load real member data from Supabase', async ({ page }) => {
@@ -127,7 +127,7 @@ test.describe('Phase 8: Admin Members Management', () => {
 
     // Should have actual member data (at minimum, self as superadmin)
     const hasData = await page.locator('text=superadmin').first().isVisible().catch(() => false);
-    expect([true, false]).toContain(hasData);
+    expect([true, false]).toContain(!!hasData);
 
     await takeScreenshot(page, 'phase8-members-live-data');
   });

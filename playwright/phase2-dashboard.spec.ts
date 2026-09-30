@@ -36,7 +36,7 @@ test.describe('Phase 2: Dashboard with Stats', () => {
     const adminContent = await page.content();
 
     // Logout and login as regular user
-    await page.goto('http://localhost:8081');
+    await page.goto('/');
     await loginAs(page, TEST_USERS.regularUser);
     await page.waitForLoadState('networkidle');
     const userContent = await page.content();
