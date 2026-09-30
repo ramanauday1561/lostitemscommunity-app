@@ -649,7 +649,9 @@ export function buildVals(store: Store) {
     closeSheet: () => store.setState({ sheet: null }),
     sheetGuidelines: sh === 'guidelines',
     openGuidelines: () => store.setState({ sheet: 'guidelines' }),
-    acceptGuidelines: () => store.setState({ sheet: null, suTerms: true, suError: '' }),
+    acceptGuidelines: isSupabaseAuth
+      ? store.acceptGuidelinesSupabase
+      : () => store.setState({ sheet: null, suTerms: true, suError: '' }),
     guidelineRules: [
       { icon: 'public', title: 'Meet in public, in daylight', body: 'Police station lobbies, café counters and transit hubs are ideal. Never a home address, never a car park after dark.' },
       { icon: 'group_add', title: 'Bring someone with you', body: "Tell a friend where you're going and when you expect to be back. Handovers take two minutes; a companion costs nothing." },
@@ -778,8 +780,21 @@ export function buildVals(store: Store) {
     useMyLocation: () => store.setState((s) => ({ pin: { x: 50, y: 48, lat: '40.7139', lng: '-73.9960' }, rPlace: s.rPlace || 'Union Square, current location' })),
 
     meName: store.me().name,
-    meEmail: admin ? 'admin@lostitems.community' : fresh ? 'newuser@lostitems.community' : 'user@lostitems.community',
-    settings: fresh
+    meEmail: isSupabaseAuth ? (st.authEmail || '') : admin ? 'admin@lostitems.community' : fresh ? 'newuser@lostitems.community' : 'user@lostitems.community',
+    // Supabase mode shows only facts that exist in the database; the demo rows below are
+    // static copy (City/Language/etc. have no backing column).
+    settings: isSupabaseAuth
+      ? [
+          { label: 'Member since', value: st.profile ? new Date(st.profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—' },
+          ...(admin
+            ? [{ label: 'Role', value: 'Super admin' }]
+            : [
+                { label: 'Reports posted', value: String(st.myDashStats?.totalReports ?? 0) },
+                { label: 'Forum posts', value: String(st.profile?.post_count ?? 0) },
+                { label: 'Guidelines accepted', value: st.suTerms ? 'Yes' : 'Not yet' },
+              ]),
+        ]
+      : fresh
       ? [{ label: 'Member since', value: 'Today' }, { label: 'Reports posted', value: String(myPosts.length) }, { label: 'Notifications', value: 'On' }, { label: 'Guidelines accepted', value: st.suTerms ? 'Yes' : 'Not yet' }]
       : admin
       ? [{ label: 'Role', value: 'Super admin' }, { label: 'Moderation alerts', value: 'On' }, { label: 'Records reviewed', value: String(st.approved + st.removed) }, { label: 'Audit log', value: 'View' }]
@@ -798,7 +813,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
+        profile: null, authEmail: null, myDashStats: null, adminDashStats: null, dbItems: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });

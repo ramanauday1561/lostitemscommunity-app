@@ -93,3 +93,21 @@ export async function getMyProfile(): Promise<Profile | null> {
   if (error) return null;
   return data;
 }
+
+/** The signed-in user's email. It lives on auth.users, not profiles, so it comes from the auth session. */
+export async function getMyEmail(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.email ?? null;
+}
+
+/** Stamps guidelines_accepted_at on the caller's own profile (allowed by profiles_update_self). */
+export async function acceptGuidelines(userId: string): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ guidelines_accepted_at: new Date().toISOString() })
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw new AuthApiError("Couldn't save that. Please try again.");
+  return data;
+}

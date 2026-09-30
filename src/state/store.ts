@@ -4,6 +4,7 @@ import {
   ADS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS, SLIDES, SUPPORT_SEED, THREADS,
   type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Status, type Thread,
 } from '../data/constants';
+import { initials } from '../theme/tokens';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the
@@ -38,6 +39,8 @@ export interface AppState {
   authMode: AuthMode;
   /** Only populated in Supabase mode -- null in demo mode / before login. */
   profile: AuthApi.Profile | null;
+  /** auth.users email of the signed-in Supabase account (not on profiles). */
+  authEmail: string | null;
   myDashStats: MyDashboardStats | null;
   dbThreads: any[] | null;
   dbReplies: any[] | null;
@@ -90,7 +93,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
+  profile: null, authEmail: null, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null,
@@ -151,6 +154,8 @@ export class Store {
   }
 
   me() {
+    const p = this.state.authMode === 'supabase' ? this.state.profile : null;
+    if (p) return { name: p.display_name, ini: initials(p.display_name), handle: p.handle };
     const r = this.state.role;
     if (r === 'admin') return { name: 'Super Admin', ini: 'SA', handle: 'superadmin' };
     if (r === 'new') return { name: 'Nadia Iqbal', ini: 'NI', handle: 'newuser' };
@@ -265,6 +270,8 @@ export class Store {
   /** Fetches the dashboard stat tiles for whichever role just signed in. Fire-and-forget:
    *  the dashboard renders zeros until this resolves, same as a fresh/new account would show. */
   loadDashboardStats = async (p: AuthApi.Profile) => {
+    // Also the one async hook all three auth entry points share: fetch the account email for the Profile sheet.
+    import('../api/auth').then((a) => a.getMyEmail()).then((authEmail) => this.setState({ authEmail })).catch(() => {});
     const dashboard = await import('../api/dashboard');
     if (p.role === 'superadmin') {
       const adminDashStats = await dashboard.getAdminDashboardStats();
@@ -832,6 +839,20 @@ export class Store {
       this.setState({ fpBusy: false, fpStage: 'done', fpInfo: `If ${email} has an account, a reset link is on its way.` });
     } catch {
       this.setState({ fpBusy: false, fpStage: 'done', fpInfo: `If ${email} has an account, a reset link is on its way.` });
+    }
+  };
+
+  /** Phase 12.2: persists guidelines_accepted_at, then mirrors it into local state so the
+   *  dashboard checklist flips immediately. The sheet stays open if the write fails. */
+  acceptGuidelinesSupabase = async () => {
+    const p = this.state.profile;
+    if (!p) return;
+    try {
+      const authApi = await import('../api/auth');
+      const profile = await authApi.acceptGuidelines(p.id);
+      this.setState({ sheet: null, suTerms: true, suError: '', profile });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : "Couldn't save that. Please try again.");
     }
   };
 

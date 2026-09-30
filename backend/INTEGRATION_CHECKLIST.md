@@ -197,9 +197,15 @@ Screenshots: `01-testuser1-dashboard`, `02-lost-all`, `03-lost-my-posts`, `04-fo
 
 ## Phase 12 — Profile, guidelines, notifications
 
-- [ ] 12.1 Profile sheet (`meName`, `meEmail`, `settings`) → read from `profiles` + `auth.users` email, not `store.me()`'s hardcoded switch
-- [ ] 12.2 `acceptGuidelines` → `update profiles set guidelines_accepted_at = now()`
-- [ ] 12.3 (stretch) Wire `notifications` — insert a row when someone messages you, claims your item, or a moderator acts on your content; show a bell/badge somewhere reading `notifications where user_id = me and not is_read`
+- [x] 12.1 Profile sheet → in Supabase mode `meName`/initials come from `profiles.display_name` (`Store#me()` now reads `st.profile`), `meEmail` from the auth session (`authApi.getMyEmail`, stored as `st.authEmail`; email lives on `auth.users`, not `profiles`). **Decision:** the static settings rows (City, Language, Contact sharing, Notifications "On") have no backing column, so Supabase mode shows only real facts — member since, reports posted, forum posts, guidelines accepted (admins: member since + role). Demo mode keeps the original rows.
+- [x] 12.2 `acceptGuidelines` → `Store#acceptGuidelinesSupabase` → `authApi.acceptGuidelines` (`update profiles set guidelines_accepted_at`, allowed by `profiles_update_self`). On failure the sheet stays open with a toast.
+- [ ] 12.3 (stretch) Notifications — **deferred.** Needs `notifications` insert triggers (message / claim / moderation) in a new migration plus a bell + unread badge; the table and own-rows RLS already exist (0008/0010).
+
+**Security fix found while doing this (migration `0017`, applied to the live project):** `profiles_update_self` only pinned `role = 'user'`, so any signed-in user could PATCH their own row and set `is_suspended = false` (un-suspend themselves) or forge `post_count`. A `BEFORE UPDATE` guard (`guard_profile_self_update`) now rejects changes to `role`, `is_suspended`, `suspended_at`, `suspended_by` and `post_count` unless the caller is a superadmin, has no JWT, or the update comes from another trigger (`pg_trigger_depth() > 1`, which keeps `bump_post_count` working). Tested against the live DB as `testuser1` in rolled-back transactions: suspend / post_count / role updates → `42501`; guidelines update → allowed; inserting a forum thread still bumps `post_count` 0 → 1. This also covers the first half of 14.7.
+
+`0017` also makes `handle_new_user` stamp `guidelines_accepted_at` when signup metadata has `guidelines_accepted = 'true'`. The client deliberately does **not** send it: `roleFromProfile` treats `post_count = 0` + no guidelines as the `new` persona, so stamping at signup would skip the onboarding dashboard. Inert until the `new` rule changes.
+
+**Verified:** `npx tsc --noEmit` clean, `npm run oracle` 46/46, demo-mode Profile sheet unchanged in a headless browser. **Not verified live in the app:** a Supabase-mode login (no working test credentials in this sandbox), so the Profile sheet values and the accept-guidelines write are checked by code review and the DB-level tests above only.
 
 **Test:** accept guidelines as `newuser`, confirm the dashboard checklist item flips to done and persists across a re-login.
 
