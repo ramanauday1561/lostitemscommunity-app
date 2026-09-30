@@ -2,20 +2,19 @@ import { supabase } from '../lib/supabase';
 
 export interface FaqEntry {
   id: string;
-  keyword: string;
+  keywords: string[];
   question: string;
   answer: string;
-  category?: string;
+  position?: number;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface SupportMessage {
   id: string;
   user_id: string;
-  message: string;
-  type: 'user' | 'bot' | 'agent';
-  is_read: boolean;
-  escalated: boolean;
+  body: string;
+  sender: 'user' | 'bot' | 'agent';
   created_at: string;
 }
 
@@ -32,7 +31,7 @@ export async function getFaqEntries(): Promise<FaqEntry[]> {
   const { data, error } = await supabase
     .from('faq_entries')
     .select('*')
-    .order('keyword', { ascending: true });
+    .order('position', { ascending: true });
 
   if (error) {
     console.error('Failed to load FAQ entries:', error);
@@ -48,12 +47,15 @@ export async function findMatchingFaq(keyword: string): Promise<FaqEntry | null>
   const { data, error } = await supabase
     .from('faq_entries')
     .select('*')
-    .ilike('keyword', `%${keyword}%`)
     .limit(1)
     .maybeSingle();
 
   if (error || !data) return null;
-  return data;
+
+  // Check if any keyword matches
+  const searchTerm = keyword.toLowerCase();
+  const matchesKeywords = data.keywords?.some(k => k.toLowerCase().includes(searchTerm));
+  return matchesKeywords ? data : null;
 }
 
 /** Load all support messages for a user */
@@ -69,47 +71,22 @@ export async function loadSupportMessages(userId: string): Promise<SupportMessag
     return [];
   }
 
-  return (data || []).map(msg => ({
-    ...msg,
-    created_at: formatTime(msg.created_at),
-  }));
+  return data || [];
 }
 
 /** Send a new support message */
 export async function sendSupportMessage(
   userId: string,
   message: string,
-  type: 'user' | 'bot' = 'user'
+  sender: 'user' | 'bot' = 'user'
 ): Promise<void> {
   if (!message.trim()) return;
 
   const { error } = await supabase.from('support_messages').insert({
     user_id: userId,
-    message: message.trim(),
-    type,
-    is_read: false,
-    escalated: false,
+    body: message.trim(),
+    sender,
   });
-
-  if (error) throw new Error(error.message);
-}
-
-/** Mark support message as read */
-export async function markSupportMessageRead(messageId: string): Promise<void> {
-  const { error } = await supabase
-    .from('support_messages')
-    .update({ is_read: true })
-    .eq('id', messageId);
-
-  if (error) throw new Error(error.message);
-}
-
-/** Escalate a support message for human agent review */
-export async function escalateSupportMessage(messageId: string): Promise<void> {
-  const { error } = await supabase
-    .from('support_messages')
-    .update({ escalated: true })
-    .eq('id', messageId);
 
   if (error) throw new Error(error.message);
 }
@@ -118,10 +95,8 @@ export async function escalateSupportMessage(messageId: string): Promise<void> {
 export async function sendFaqResponse(userId: string, faqId: string, answer: string): Promise<void> {
   const { error } = await supabase.from('support_messages').insert({
     user_id: userId,
-    message: answer,
-    type: 'bot',
-    is_read: false,
-    escalated: false,
+    body: answer,
+    sender: 'bot',
   });
 
   if (error) throw new Error(error.message);

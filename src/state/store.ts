@@ -762,17 +762,6 @@ export class Store {
     }
   };
 
-  escalateSupportMessageSupabase = async (messageId: string) => {
-    if (this.state.authMode !== 'supabase') return;
-    try {
-      const supportApi = await import('../api/support');
-      await supportApi.escalateSupportMessage(messageId);
-      this.flash('Message escalated for agent review.');
-      await this.loadSupportMessagesSupabase();
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not escalate message.');
-    }
-  };
 
   signInSupabase = async () => {
     const identifier = this.state.username.trim();

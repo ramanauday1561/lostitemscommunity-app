@@ -22,7 +22,7 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        executablePath: '/opt/pw-browsers/chromium',
+        headless: true,
       },
     },
   ],

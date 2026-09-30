@@ -127,7 +127,7 @@ function AdInline() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 20, backgroundColor: C.fillSoft }}>
       <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={ad.icon} size={20} color={C.muted} />
+        <Icon name="marketing" size={20} color={C.muted} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: MONO[600], fontSize: 9, letterSpacing: 1.2, color: C.lighter }}>SPONSORED</Text>

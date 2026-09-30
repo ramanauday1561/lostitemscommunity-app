@@ -44,20 +44,29 @@ export async function getAdPlacements(): Promise<AdPlacementWithStatus[]> {
     .order('screen', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return (data as unknown as AdPlacementWithStatus[]) || [];
 }
 
 // Toggle ad live status
 export async function toggleAdLive(adId: string, isLive: boolean): Promise<AdPlacementWithStatus> {
-  const { data, error } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('ad_placements')
     .update({ is_live: isLive })
     .eq('id', adId)
     .select()
     .single();
 
+  if (updateError) throw updateError;
+
+  // Fetch the full record with status from the view
+  const { data, error } = await supabase
+    .from('ad_placements_with_status')
+    .select('*')
+    .eq('id', adId)
+    .single();
+
   if (error) throw error;
-  return data;
+  return data as unknown as AdPlacementWithStatus;
 }
 
 // Update ad placement (campaign, duration)
@@ -66,7 +75,7 @@ export async function updateAdPlacement(
   campaignId: string,
   durationDays: number
 ): Promise<AdPlacementWithStatus> {
-  const { data, error } = await supabase
+  const { error: updateError } = await supabase
     .from('ad_placements')
     .update({
       campaign_id: campaignId,
@@ -74,24 +83,30 @@ export async function updateAdPlacement(
       starts_at: new Date().toISOString().split('T')[0], // Today's date
       is_live: true,
     })
+    .eq('id', adId);
+
+  if (updateError) throw updateError;
+
+  // Fetch the full record with status from the view
+  const { data, error } = await supabase
+    .from('ad_placements_with_status')
+    .select('*')
     .eq('id', adId)
-    .select()
     .single();
 
   if (error) throw error;
-  return data;
+  return data as unknown as AdPlacementWithStatus;
 }
 
 // Fetch ad placement for a specific screen
-export async function getAdForScreen(screen: string): Promise<AdPlacementWithStatus | null> {
+export async function getAdForScreen(screen: 'Forum' | 'Home' | 'Registry' | 'Report success'): Promise<AdPlacementWithStatus | null> {
   const { data, error } = await supabase
     .from('ad_placements_with_status')
     .select('*')
     .eq('screen', screen)
     .eq('is_live', true)
-    .single()
-    .catch(() => ({ data: null, error: null }));
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows found"
-  return data || null;
+  if (error) throw error;
+  return (data as unknown as AdPlacementWithStatus) || null;
 }
