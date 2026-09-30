@@ -176,7 +176,7 @@ export class Store {
     const time = this.stamp();
     this.setState((s) => ({
       draft: '',
-      convos: s.convos.map((c) => c.itemId === id ? { ...c, time, msgs: [...c.msgs, { from: 'me', text: t, time }] } : c),
+      convos: s.convos.map((c) => (c.id === id || c.itemId === id) ? { ...c, time, msgs: [...c.msgs, { from: 'me', text: t, time }] } : c),
     }));
     this.scrollChat();
     clearTimeout(this.tReply);
@@ -184,10 +184,10 @@ export class Store {
       const reply = "Works for me. I'll bring it in the original box — see you there.";
       const s = this.state;
       const open = s.sheet === 'chat' && s.activeConvo === id;
-      const c = s.convos.find((x) => x.itemId === id);
+      const c = s.convos.find((x) => x.id === id || x.itemId === id);
       const now = this.stamp();
       this.setState({
-        convos: s.convos.map((x) => x.itemId === id
+        convos: s.convos.map((x) => (x.id === id || x.itemId === id)
           ? { ...x, time: now, unread: open ? 0 : (x.unread || 0) + 1, msgs: [...x.msgs, { from: 'them', text: reply, time: now }] }
           : x),
       });

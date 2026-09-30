@@ -705,7 +705,7 @@ export function buildVals(store: Store) {
       const msgs = (c as any).msgs || [];
       const last = msgs[msgs.length - 1] || ({} as { from?: string; text?: string });
       return {
-        itemId: c.id, item: c.item, icon: c.icon, with: c.with, time: c.time,
+        itemId: c.itemId, item: c.item, icon: c.icon, with: c.with, time: c.time,
         ini: initials(c.with),
         preview: (last.from === 'me' ? 'You: ' : '') + (last.text || ''),
         unread: c.unread, hasUnread: c.unread > 0,
