@@ -396,25 +396,51 @@ export function buildVals(store: Store) {
     searchMembers: (q: string) => store.searchMembersSupabase(q),
     clearMemberSearch: () => store.searchMembersSupabase(''),
 
-    adSlots: st.ads.map((a) => {
-      const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
-      const ended = a.daysLeft <= 0;
-      return {
-        ...a, pct, ended,
-        screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
-        statusLabel: a.live ? 'Live' : ended ? 'Ended' : 'Paused',
-        metrics: [
-          { value: money(a.revenue), label: 'Revenue', color: '#0F7B3D' },
-          { value: compact(a.impressions), label: 'Impressions', color: '#16181F' },
-          { value: a.ctr.toFixed(1) + '%', label: 'CTR', color: '#0B6BCB' },
-        ],
-        runLabel: ended ? `Ended · ran ${a.days} days` : `${a.daysLeft} of ${a.days} days left`,
-        runColor: ended ? '#B42318' : a.daysLeft <= 3 ? '#B4611D' : '#6B7280',
-        toggleLabel: a.live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
-        toggle: () => store.toggleAd(a.id),
-        edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaignKey, days: a.days } }),
-      };
-    }),
+    adSlots: (st.isSupabaseAuthMode && st.dbAdPlacements
+      ? st.dbAdPlacements.map((a) => {
+          const pct = a.duration_days ? Math.max(0, Math.min(100, Math.round((a.duration_days - a.days_left) / a.duration_days * 100))) : 0;
+          const ended = a.days_left <= 0;
+          return {
+            id: a.id,
+            screen: a.screen,
+            slot: a.slot,
+            campaign: a.campaign_name || 'Unknown campaign',
+            live: a.is_live,
+            pct,
+            ended,
+            screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
+            statusLabel: a.is_live ? 'Live' : ended ? 'Ended' : 'Paused',
+            metrics: [
+              { value: '$0', label: 'Revenue', color: '#0F7B3D' },
+              { value: '0', label: 'Impressions', color: '#16181F' },
+              { value: '0%', label: 'CTR', color: '#0B6BCB' },
+            ],
+            runLabel: ended ? `Ended · ran ${a.duration_days} days` : `${a.days_left} of ${a.duration_days} days left`,
+            runColor: ended ? '#B42318' : a.days_left <= 3 ? '#B4611D' : '#6B7280',
+            toggleLabel: a.is_live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
+            toggle: () => store.toggleAdSupabase(a.id, !a.is_live),
+            edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaign_id, days: a.duration_days } }),
+          };
+        })
+      : st.ads.map((a) => {
+          const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
+          const ended = a.daysLeft <= 0;
+          return {
+            ...a, pct, ended,
+            screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
+            statusLabel: a.live ? 'Live' : ended ? 'Ended' : 'Paused',
+            metrics: [
+              { value: money(a.revenue), label: 'Revenue', color: '#0F7B3D' },
+              { value: compact(a.impressions), label: 'Impressions', color: '#16181F' },
+              { value: a.ctr.toFixed(1) + '%', label: 'CTR', color: '#0B6BCB' },
+            ],
+            runLabel: ended ? `Ended · ran ${a.days} days` : `${a.daysLeft} of ${a.days} days left`,
+            runColor: ended ? '#B42318' : a.daysLeft <= 3 ? '#B4611D' : '#6B7280',
+            toggleLabel: a.live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
+            toggle: () => store.toggleAd(a.id),
+            edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaignKey, days: a.days } }),
+          };
+        })),
     adRevenue: money(st.ads.reduce((s, a) => s + a.revenue, 0)),
     adRevenueDelta: '+18% vs last month',
     adTotals: [

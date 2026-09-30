@@ -14,6 +14,7 @@ import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
 import type { MemberProfile } from '../api/members';
 import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
+import type { AdPlacementWithStatus, AdCampaign } from '../api/ads';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -72,6 +73,10 @@ export interface AppState {
   dbWeeklyReports: WeeklyReportCount[] | null;
   /** Supabase mode only: moderation keyword hits for analysis dashboard (Phase 9). */
   dbKeywords: ModerationKeyword[] | null;
+  /** Supabase mode only: ad placements with status for admin ads screen (Phase 10). */
+  dbAdPlacements: AdPlacementWithStatus[] | null;
+  /** Supabase mode only: available ad campaigns for editor (Phase 10). */
+  dbAdCampaigns: AdCampaign[] | null;
 }
 
 export const initialState: AppState = {
@@ -82,7 +87,7 @@ export const initialState: AppState = {
   authMode: 'demo',
   profile: null, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
-  dbWeeklyReports: null, dbKeywords: null,
+  dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -703,9 +708,20 @@ export class Store {
     }
   };
 
->>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
-=======
->>>>>>> origin/main
+  loadAdsSupabase = async () => {
+    if (this.state.authMode !== 'supabase') return;
+    try {
+      const adsApi = await import('../api/ads');
+      const [placements, campaigns] = await Promise.all([
+        adsApi.getAdPlacements(),
+        adsApi.getAdCampaigns(),
+      ]);
+      this.setState({ dbAdPlacements: placements, dbAdCampaigns: campaigns });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not load ads data.');
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -722,22 +738,12 @@ export class Store {
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
       this.loadForumSupabase();
-<<<<<<< HEAD
-<<<<<<< HEAD
-      if (profile.role === 'superadmin') this.loadModerationQueueSupabase();
-=======
       if (profile.role === 'superadmin') {
         this.loadModerationQueueSupabase();
         this.loadMembersSupabase();
         this.loadAnalysisSupabase();
+        this.loadAdsSupabase();
       }
->>>>>>> 5845504 (Phase 9: Admin Analysis Dashboard - Supabase Integration)
-=======
-      if (profile.role === 'superadmin') {
-        this.loadModerationQueueSupabase();
-        this.loadMembersSupabase();
-      }
->>>>>>> origin/main
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
@@ -828,6 +834,18 @@ export class Store {
       }),
     }), () => this.flash(msg));
   }
+
+  toggleAdSupabase = async (id: string, isLive: boolean) => {
+    try {
+      const adsApi = await import('../api/ads');
+      await adsApi.toggleAdLive(id, isLive);
+      // Reload ads to get updated state
+      await this.loadAdsSupabase();
+      this.flash(isLive ? `Ad set live.` : `Ad paused.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not update ad.');
+    }
+  };
 
   setStatus(id: string, status: string) {
     const swap = (list: Item[]) => list.map((i) => i.id === id ? { ...i, status: status as Item['status'] } : i);
