@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatTime } from '../lib/time';
 import type { Database } from '../lib/database.types';
 
 export interface Convo {
@@ -20,14 +21,6 @@ export interface ChatMsg {
 
 type ConversationRow = Database['public']['Tables']['conversations']['Row'];
 type MessageRow = Database['public']['Tables']['messages']['Row'];
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-}
 
 /** Load all conversations the user is part of (as reporter or claimant).
  *  Returns the conversation with the other party's name and the item title. */

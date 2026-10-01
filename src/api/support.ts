@@ -18,14 +18,6 @@ export interface SupportMessage {
   created_at: string;
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-}
-
 /** Load all FAQ entries for keyword matching */
 export async function getFaqEntries(): Promise<FaqEntry[]> {
   const { data, error } = await supabase
@@ -40,13 +32,21 @@ export async function getFaqEntries(): Promise<FaqEntry[]> {
   return data || [];
 }
 
-/** Find the first FAQ entry (in `position` order) with a keyword matching the search term. */
-export async function findMatchingFaq(keyword: string): Promise<FaqEntry | null> {
-  const searchTerm = keyword.trim().toLowerCase();
-  if (!searchTerm) return null;
+/** Shown when no FAQ entry matches. */
+export const FAQ_FALLBACK =
+  'I\'m not sure about that one yet. Tap "Talk to a human instead" and our support team will pick it up — they usually reply within minutes.';
 
-  const entries = await getFaqEntries();
-  return entries.find((e) => e.keywords?.some((k) => k.toLowerCase().includes(searchTerm))) ?? null;
+/**
+ * Picks the bot's answer for what the user typed: an exact question match first (a tapped chip),
+ * otherwise the first entry (in `position` order) with a keyword contained in the text.
+ * Same rule as the prototype's `askBot`.
+ */
+export function matchFaq(entries: FaqEntry[], text: string): FaqEntry | null {
+  const low = text.trim().toLowerCase();
+  if (!low) return null;
+  return entries.find((e) => e.question.toLowerCase() === low)
+    ?? entries.find((e) => e.keywords?.some((k) => low.includes(k.toLowerCase())))
+    ?? null;
 }
 
 /** Load all support messages for a user */
@@ -77,17 +77,6 @@ export async function sendSupportMessage(
     user_id: userId,
     body: message.trim(),
     sender,
-  });
-
-  if (error) throw new Error(error.message);
-}
-
-/** Send automated FAQ response */
-export async function sendFaqResponse(userId: string, faqId: string, answer: string): Promise<void> {
-  const { error } = await supabase.from('support_messages').insert({
-    user_id: userId,
-    body: answer,
-    sender: 'bot',
   });
 
   if (error) throw new Error(error.message);

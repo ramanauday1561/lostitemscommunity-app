@@ -16,9 +16,28 @@ so what is compared is every label, id, count, ordering and computed value.
 ```
 npm run oracle     # 46/46 cases match the prototype
 npm run typecheck
+npm test           # unit tests for the data layer and the store/selectors
 ```
 
 This runs in CI on every push (`.github/workflows/checks.yml`).
+
+## Scope after the Supabase integration (decision, checklist 13.2)
+
+Demo mode is kept on purpose (design demos, offline use, a fast way to exercise every screen), and
+the oracle is **kept, fed by the prototype's own mock data as its fixtures**. It now guards the
+*demo path only*: what the UI shows for the prototype's mock state. It says nothing about
+Supabase mode, which has no prototype to compare against.
+
+Supabase mode is covered by the unit tests instead (`tests/`, run with `npm test`, no network and
+no real project):
+
+| Suite | What it protects |
+|---|---|
+| `tests/api/*` | each `src/api/*` module's contract with the database, against a fake client (`tests/api/fakeSupabase.ts`) |
+| `tests/state/*` | store + selector behaviour in Supabase mode: load/error/empty states, paging, live chat, notifications, ads, support chat, logout hygiene |
+
+If a change makes the oracle fail, either demo-mode output really regressed (fix the code) or the
+prototype's expected output changed on purpose (update the fixtures in `tools/oracle/cases.mjs`).
 
 ## Screens (13) — all ported
 

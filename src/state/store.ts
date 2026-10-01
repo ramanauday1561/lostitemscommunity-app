@@ -234,6 +234,7 @@ export class Store {
   askBot(text: string) {
     const t = (text || '').trim();
     if (!t) return;
+    if (this.state.authMode === 'supabase') { this.askBotSupabase(t); return; }
     const time = this.stamp();
     this.setState((s) => ({
       supportMsgs: [...s.supportMsgs, { from: 'me', text: t, time }], supportDraft: '', botTyping: true,
@@ -281,6 +282,32 @@ export class Store {
       : (p.post_count === 0 && !p.guidelines_accepted_at) ? 'new' : 'user';
     return { role, suTerms: !!p.guidelines_accepted_at, profile: p };
   }
+
+  /** Support bot in Supabase mode (11.1/11.2): the question and the bot's answer are stored in
+   *  `support_messages`, and the answer comes from the real `faq_entries`. Same 900 ms typing beat as the prototype. */
+  private askBotSupabase = async (text: string) => {
+    const s = this.state;
+    if (!s.profile) return;
+    const userId = s.profile.id;
+    this.setState({ supportDraft: '', botTyping: true });
+    try {
+      const api = await import('../api/support');
+      await api.sendSupportMessage(userId, text, 'user');
+      await this.loadSupportMessagesSupabase();
+      this.scrollChat();
+      const answer = api.matchFaq(this.state.dbFaqEntries ?? [], text)?.answer ?? api.FAQ_FALLBACK;
+      await new Promise((r) => { this.tBot = setTimeout(r, 900); });
+      await api.sendSupportMessage(userId, answer, 'bot');
+      await this.loadSupportMessagesSupabase();
+    } catch (e) {
+      console.error('support bot failed:', e);
+      this.flash("Couldn't send that. Please try again.");
+      this.setState({ supportDraft: text });
+    } finally {
+      this.setState({ botTyping: false });
+      this.scrollChat();
+    }
+  };
 
   /** Fetches the dashboard stat tiles for whichever role just signed in. Fire-and-forget:
    *  the dashboard renders zeros until this resolves, same as a fresh/new account would show. */
@@ -899,23 +926,6 @@ export class Store {
       this.flash(e instanceof Error ? e.message : 'Could not load support messages.');
     }
   };
-
-  sendSupportMessageSupabase = async () => {
-    const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile || !s.supportDraft.trim()) return;
-    const text = s.supportDraft;
-    this.setState({ supportDraft: '' });
-    try {
-      const supportApi = await import('../api/support');
-      await supportApi.sendSupportMessage(s.profile.id, text, 'user');
-      // Reload messages to sync with server
-      await this.loadSupportMessagesSupabase();
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not send message.');
-      this.setState({ supportDraft: text });
-    }
-  };
-
 
   signInSupabase = async () => {
     const identifier = this.state.username.trim();

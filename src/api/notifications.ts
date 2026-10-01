@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatTime } from '../lib/time';
 import type { Database } from '../lib/database.types';
 
 type Row = Database['public']['Tables']['notifications']['Row'];
@@ -14,13 +15,6 @@ export interface AppNotification {
   conversationId: string | null;
   isRead: boolean;
   time: string;
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
 }
 
 export function toAppNotification(r: Row): AppNotification {

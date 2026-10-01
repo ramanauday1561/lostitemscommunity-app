@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { formatTime } from '../lib/time';
 
 export interface ForumThread {
   id: string;
@@ -23,14 +24,6 @@ export interface ForumReply {
   author_handle: string;
   author_display_name: string;
   created_at: string;
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
 }
 
 /** Load all forum threads, optionally filtered by tag.
