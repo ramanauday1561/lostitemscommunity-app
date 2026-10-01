@@ -40,22 +40,13 @@ export async function getFaqEntries(): Promise<FaqEntry[]> {
   return data || [];
 }
 
-/** Find FAQ entry by keyword matching */
+/** Find the first FAQ entry (in `position` order) with a keyword matching the search term. */
 export async function findMatchingFaq(keyword: string): Promise<FaqEntry | null> {
-  if (!keyword.trim()) return null;
+  const searchTerm = keyword.trim().toLowerCase();
+  if (!searchTerm) return null;
 
-  const { data, error } = await supabase
-    .from('faq_entries')
-    .select('*')
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  // Check if any keyword matches
-  const searchTerm = keyword.toLowerCase();
-  const matchesKeywords = data.keywords?.some(k => k.toLowerCase().includes(searchTerm));
-  return matchesKeywords ? data : null;
+  const entries = await getFaqEntries();
+  return entries.find((e) => e.keywords?.some((k) => k.toLowerCase().includes(searchTerm))) ?? null;
 }
 
 /** Load all support messages for a user */
