@@ -10,46 +10,83 @@ describe('auth api', () => {
   beforeEach(() => fake.reset());
 
   describe('signIn', () => {
-    test('resolves a bare username through email_for_username, then signs in with the email', async () => {
-      fake.queue({ data: 'ann@example.com' }, { data: { session: {} } });
-      await auth.signIn('  ann  ', 'pw');
-      assert.equal(fake.calls[0].kind, 'rpc');
-      assert.equal(fake.calls[0].name, 'email_for_username');
-      assert.deepEqual(fake.args('args', 0), [{ p_username: 'ann' }]);
-      assert.equal(fake.calls[1].name, 'signInWithPassword');
-      assert.deepEqual(fake.args('args', 1), [{ email: 'ann@example.com', password: 'pw' }]);
-    });
+    const fnError = (status?: number, message = 'Edge Function returned a non-2xx status code') =>
+      ({ error: { message, ...(status ? { context: { status } } : {}) } });
+    const session = { session: { access_token: 'AT', refresh_token: 'RT' }, user: { id: 'u1' } };
 
-    test('an email skips the username lookup', async () => {
-      fake.queue({ data: { session: {} } });
-      await auth.signIn('ann@example.com', 'pw');
-      assert.equal(fake.calls.length, 1);
-      assert.equal(fake.calls[0].name, 'signInWithPassword');
-    });
-
-    test('unknown username fails with the generic message and never calls Auth (no enumeration)', async () => {
-      fake.queue({ data: null });
-      await assert.rejects(auth.signIn('ghost', 'pw'), { message: GENERIC });
-      assert.equal(fake.calls.length, 1);
-    });
-
-    test('a failed lookup (e.g. network error) fails closed with the same generic message', async () => {
-      fake.queue({ error: { message: 'fetch failed' } });
-      await assert.rejects(auth.signIn('ann', 'pw'), { message: GENERIC });
-    });
-
-    for (const [raw, expected] of [
-      ['Invalid login credentials', GENERIC],
-      ['Email not confirmed', 'Confirm your email address before signing in.'],
-      ['Request rate limit reached', 'Too many attempts. Wait a moment and try again.'],
-      ['TypeError: Failed to fetch', "Can't reach the server. Check your connection and try again."],
-      ['some internal postgres detail', 'Something went wrong. Please try again.'],
-    ] as const) {
-      test(`maps Auth error "${raw}" without leaking raw text`, async () => {
-        fake.queue({ error: { message: raw } });
-        await assert.rejects(auth.signIn('ann@example.com', 'pw'), { message: expected });
+    describe('with a username (server-side login)', () => {
+      test('calls the login function with the trimmed username and password, then adopts the returned session', async () => {
+        fake.queue({ data: session }, { data: { session: {}, user: {} } });
+        await auth.signIn('  ann  ', 'pw');
+        assert.equal(fake.calls[0].kind, 'functions');
+        assert.equal(fake.calls[0].name, 'login');
+        assert.deepEqual(fake.args('args', 0), [{ body: { identifier: 'ann', password: 'pw' } }]);
+        assert.equal(fake.calls[1].name, 'setSession');
+        assert.deepEqual(fake.args('args', 1), [{ access_token: 'AT', refresh_token: 'RT' }]);
       });
-    }
+
+      test('never queries the database or an email-lookup RPC (the email is never exposed to the client)', async () => {
+        fake.queue({ data: session }, { data: {} });
+        await auth.signIn('ann', 'pw');
+        assert.ok(!fake.calls.some((c) => c.kind === 'rpc' || c.kind === 'from'));
+      });
+
+      test('401 (wrong password OR unknown username) and 400 give the one generic message, and no session is set', async () => {
+        for (const status of [401, 400]) {
+          fake.reset();
+          fake.queue(fnError(status));
+          await assert.rejects(auth.signIn('ghost', 'pw'), { message: GENERIC });
+          assert.ok(!fake.calls.some((c) => c.name === 'setSession'));
+        }
+      });
+
+      test('429 tells the user to wait; 403 asks them to confirm their email', async () => {
+        fake.queue(fnError(429));
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: 'Too many attempts. Wait a few minutes and try again.' });
+        fake.queue(fnError(403));
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: 'Confirm your email address before signing in.' });
+      });
+
+      test('a network failure (no HTTP status) is reported as a connection problem, not as bad credentials', async () => {
+        fake.queue(fnError(undefined, 'Failed to send a request to the Edge Function'));
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: "Can't reach the server. Check your connection and try again." });
+      });
+
+      test('a 200 with no session is treated as a failed login', async () => {
+        fake.queue({ data: {} });
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: GENERIC });
+        fake.queue({ data: null });
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: GENERIC });
+      });
+
+      test('if the session cannot be adopted the error is mapped, not leaked', async () => {
+        fake.queue({ data: session }, { error: { message: 'some internal detail' } });
+        await assert.rejects(auth.signIn('ann', 'pw'), { message: 'Something went wrong. Please try again.' });
+      });
+    });
+
+    describe('with an email', () => {
+      test('goes straight to Supabase Auth (no function call)', async () => {
+        fake.queue({ data: { session: {} } });
+        await auth.signIn(' ann@example.com ', 'pw');
+        assert.equal(fake.calls.length, 1);
+        assert.equal(fake.calls[0].name, 'signInWithPassword');
+        assert.deepEqual(fake.args('args', 0), [{ email: 'ann@example.com', password: 'pw' }]);
+      });
+
+      for (const [raw, expected] of [
+        ['Invalid login credentials', GENERIC],
+        ['Email not confirmed', 'Confirm your email address before signing in.'],
+        ['Request rate limit reached', 'Too many attempts. Wait a moment and try again.'],
+        ['TypeError: Failed to fetch', "Can't reach the server. Check your connection and try again."],
+        ['some internal postgres detail', 'Something went wrong. Please try again.'],
+      ] as const) {
+        test(`maps Auth error "${raw}" without leaking raw text`, async () => {
+          fake.queue({ error: { message: raw } });
+          await assert.rejects(auth.signIn('ann@example.com', 'pw'), { message: expected });
+        });
+      }
+    });
   });
 
   describe('signUp', () => {

@@ -6,7 +6,7 @@
  * success). Nothing touches the network, and no real project is ever contacted.
  */
 export interface Response { data?: unknown; error?: { message: string } | null; count?: number | null }
-export interface Call { kind: 'from' | 'rpc' | 'storage' | 'auth'; name: string; ops: [string, unknown[]][] }
+export interface Call { kind: 'from' | 'rpc' | 'storage' | 'auth' | 'functions'; name: string; ops: [string, unknown[]][] }
 
 export interface FakeChannel {
   name: string;
@@ -63,6 +63,13 @@ export class FakeSupabase {
     return api;
   };
   removeChannel = (api: { __ch: FakeChannel }) => { this.removedChannels.push(api.__ch.name); };
+  /** Edge Function stub: queue `{ data }` for a 2xx, or `{ error: { message, context: { status } } }` like FunctionsHttpError. */
+  functions = {
+    invoke: async (name: string, opts?: unknown) => {
+      this.calls.push({ kind: 'functions', name, ops: [['args', [opts]]] });
+      return this.next();
+    },
+  };
   storage = { from: (bucket: string) => this.chain({ kind: 'storage', name: bucket, ops: [] }) };
   auth: any = new Proxy({}, {
     get: (_t, method: string) => async (...args: unknown[]) => {

@@ -149,3 +149,18 @@ in `0013_forum_helpful_votes.sql`. Everything else (auth fields, item
 fields + photos, claim chat, forum posts/replies, moderation, ads, FAQ,
 notifications, support chat, audit log, profile settings, guidelines) maps
 directly onto the tables above.
+
+
+## Edge Functions
+
+`backend/functions/<name>/` holds Supabase Edge Functions (Deno). Their logic lives in a plain
+`handler.ts` that is unit tested in Node (`npm run test:functions`); `index.ts` only wires in the
+real clients.
+
+| Function | Purpose | Deploy |
+|---|---|---|
+| `login` | Username-or-email sign-in with rate limiting; keeps the username -> email lookup server-side | `supabase functions deploy login` (JWT verification on) |
+
+The function needs no secrets of its own: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` are provided by the Edge runtime. Migrations it depends on: `0023`
+(throttle table) and, once the matching client is live, `0024` (closes the public email lookup).
