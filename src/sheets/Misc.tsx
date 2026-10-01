@@ -1,6 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
+import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
@@ -10,7 +11,7 @@ import { Sheet } from './SheetHost';
 export function NewThreadSheet() {
   const v = useVals();
   return (
-    <Sheet title="Start a discussion" footer={<Cta label="Publish to the forum" on={v.publishEnabled} onPress={v.publishThread} />}>
+    <Sheet title="Start a discussion" footer={<Cta label="Publish to the forum" on={v.publishEnabled} onPress={v.publishThread} loading={v.publishLoading} />}>
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
         {v.newTopics.map((t) => <Pill key={t.name} label={t.name} on={t.on} onPress={t.pick} />)}
       </View>
@@ -21,7 +22,7 @@ export function NewThreadSheet() {
         placeholderTextColor={C.faint} multiline
         style={{
           minHeight: 120, padding: 16, marginTop: 8, borderRadius: 18, backgroundColor: C.fillSoft,
-          fontFamily: FONTS[500], fontSize: 14, lineHeight: 21, color: C.ink,
+          fontFamily: FONTS[500], fontSize: inputFont(14), lineHeight: 22, color: C.ink,
           textAlignVertical: 'top', outlineStyle: 'none',
         } as object}
       />
@@ -32,7 +33,7 @@ export function NewThreadSheet() {
 export function GuidelinesSheet() {
   const v = useVals();
   return (
-    <Sheet title="Safe meetup rules" footer={<Cta label="I understand" on onPress={v.acceptGuidelines} />}>
+    <Sheet title="Safe meetup rules" footer={<Cta label="I understand" on onPress={v.acceptGuidelines} loading={v.guidelinesLoading} />}>
       <View style={{ gap: 14 }}>
         {v.guidelineRules.map((g) => (
           <View key={g.title} style={{ flexDirection: 'row', gap: 12 }}>
@@ -98,7 +99,7 @@ export function AdSheet() {
   const v = useVals();
   const a = v.adEdit;
   return (
-    <Sheet title={`Edit ${a.id}`} footer={<Cta label="Save placement" on onPress={v.saveAd} />}>
+    <Sheet title={`Edit ${a.id}`} footer={<Cta label="Save placement" on onPress={v.saveAd} loading={v.saveAdLoading} />}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
         <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={a.screenIcon} size={21} color={C.ink} />

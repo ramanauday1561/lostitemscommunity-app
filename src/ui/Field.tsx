@@ -1,5 +1,6 @@
 import { TextInput, View, type KeyboardTypeOptions } from 'react-native';
 import { C, FONTS, SHADOW } from '../theme/tokens';
+import { inputFont } from '../theme/input';
 import { Icon } from './Icon';
 
 /** The prototype's white rounded input row: icon, then a borderless field. */
@@ -34,7 +35,7 @@ export function Field({
         autoCapitalize="none"
         style={{
           flex: 1, minWidth: 0, fontFamily: FONTS[500],
-          fontSize: compact ? 14 : 15.5, color: C.ink, outlineStyle: 'none',
+          fontSize: inputFont(compact ? 14 : 15.5), color: C.ink, outlineStyle: 'none',
         } as object}
       />
     </View>

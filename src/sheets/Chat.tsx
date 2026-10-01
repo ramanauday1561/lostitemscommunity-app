@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import { useApp, useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
+import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Avatar } from '../ui/bits';
+import { Loader } from '../ui/Loader';
 
 export function Bubble({ m }: { m: { text: string; time: string; mine: boolean } }) {
   return (
@@ -22,17 +24,19 @@ export function Bubble({ m }: { m: { text: string; time: string; mine: boolean }
   );
 }
 
-export function Composer({ value, onChange, onSend, placeholder }: {
+export function Composer({ value, onChange, onSend, placeholder, sending }: {
   value: string; onChange: (v: string) => void; onSend: () => void; placeholder: string;
+  /** A request is in flight: the send button shows the loader and ignores taps. */
+  sending?: boolean;
 }) {
-  const on = !!value.trim();
+  const on = !!value.trim() && !sending;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <View style={{ flex: 1, minHeight: 52, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.fillSoft }}>
         <TextInput
           value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.faint}
           onSubmitEditing={onSend} returnKeyType="send"
-          style={{ fontFamily: FONTS[500], fontSize: 14, color: C.ink, outlineStyle: 'none' } as object}
+          style={{ fontFamily: FONTS[500], fontSize: inputFont(14), color: C.ink, outlineStyle: 'none' } as object}
         />
       </View>
       <Press style={{
@@ -40,7 +44,7 @@ export function Composer({ value, onChange, onSend, placeholder }: {
         backgroundColor: on ? C.primary : C.fill,
         ...(on ? { boxShadow: '0 10px 22px -10px rgba(11,107,203,.85)' } : null),
       }} scale={0.94} disabled={!on} onPress={onSend}>
-        <Icon name="send" size={21} color={on ? C.white : C.lighter} />
+        {sending ? <Loader size={7} /> : <Icon name="send" size={21} color={on ? C.white : C.lighter} />}
       </Press>
     </View>
   );
@@ -106,7 +110,7 @@ export function ChatSheet() {
               ))}
             </ScrollView>
           )}
-          <Composer value={v.draft} onChange={v.onDraft} onSend={v.sendMessage} placeholder="Write a message" />
+          <Composer value={v.draft} onChange={v.onDraft} onSend={v.sendMessage} placeholder="Write a message" sending={v.chatSending} />
         </>
       }
     >
@@ -146,7 +150,7 @@ export function SupportSheet() {
               </Press>
             ))}
           </ScrollView>
-          <Composer value={v.supportDraft} onChange={v.onSupportDraft} onSend={v.sendSupport} placeholder="Ask anything" />
+          <Composer value={v.supportDraft} onChange={v.onSupportDraft} onSend={v.sendSupport} placeholder="Ask anything" sending={v.botTyping} />
           <Press style={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }} scale={0.98} onPress={v.escalate}>
             <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.primary }}>Talk to a human instead</Text>
           </Press>
@@ -195,7 +199,7 @@ export function ThreadSheet() {
               </Press>
             </View>
           ) : (
-            <Composer value={v.replyDraft} onChange={v.onReplyDraft} onSend={v.sendReply} placeholder="Write a reply" />
+            <Composer value={v.replyDraft} onChange={v.onReplyDraft} onSend={v.sendReply} placeholder="Write a reply" sending={v.replySending} />
           )}
         </>
       }
@@ -243,7 +247,7 @@ export function SupportReplySheet() {
       }
       footer={
         <>
-          <Composer value={v.supportReplyDraft} onChange={v.onSupportReplyDraft} onSend={v.sendSupportReply} placeholder="Reply to this member" />
+          <Composer value={v.supportReplyDraft} onChange={v.onSupportReplyDraft} onSend={v.sendSupportReply} placeholder="Reply to this member" sending={v.supportReplySending} />
           {who && (
             <Press style={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }} scale={0.98}
               onPress={() => (v.supportInbox as { id: string; resolve: () => void }[]).find((i) => i.id === who.requestId)?.resolve()}>

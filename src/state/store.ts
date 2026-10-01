@@ -52,6 +52,8 @@ export interface AppState {
   authEmail: string | null;
   /** True while the user arrived via a password-reset link and is choosing a new password. */
   fpRecovery: boolean;
+  /** Actions with a request in flight (keyed by name), so their buttons can show the loader and ignore repeat taps. */
+  pending: Record<string, boolean>;
   /** Per-list loading state: drives the spinner / error+retry / empty states (see LoadGate). */
   loads: Record<LoadKey, LoadState>;
   /** Bell / notifications sheet (Supabase mode only). Newest first. */
@@ -115,7 +117,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, authEmail: null, fpRecovery: false, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
+  profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null, dbSupportInbox: null, activeSupportUser: null, supportReplyDraft: '',
@@ -158,6 +160,17 @@ export class Store {
   };
 
   /** Toast auto-dismisses after 2400ms, as in the prototype. */
+  /** Runs `fn` with `pending[key]` set for its duration; a second call while the first is running is ignored. */
+  withPending = async <T,>(key: string, fn: () => Promise<T> | T): Promise<T | undefined> => {
+    if (this.state.pending[key]) return undefined;
+    this.setState((s) => ({ pending: { ...s.pending, [key]: true } }));
+    try {
+      return await fn();
+    } finally {
+      this.setState((s) => ({ pending: { ...s.pending, [key]: false } }));
+    }
+  };
+
   flash(msg: string) {
     clearTimeout(this.tToast);
     this.setState({ toast: msg });
@@ -240,7 +253,8 @@ export class Store {
   /** Bot answers from FAQ keyword matching after 900ms. */
   askBot(text: string) {
     const t = (text || '').trim();
-    if (!t) return;
+    // One question at a time: a second tap while the assistant is still answering would send the question twice.
+    if (!t || this.state.botTyping) return;
     if (this.state.authMode === 'supabase') { this.askBotSupabase(t); return; }
     const time = this.stamp();
     this.setState((s) => ({
@@ -723,6 +737,7 @@ export class Store {
       const forumApi = await import('../api/forum');
       await forumApi.createThread(s.profile.id, s.ntTitle, s.ntBody, tag);
       this.setState({ ntTitle: '', ntBody: '', ntTag: 'Question', sheet: null });
+      this.flash('Posted to the forum.');
       this.loadForumSupabase();
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not create thread.');
@@ -1100,7 +1115,9 @@ export class Store {
    *  dashboard checklist flips immediately. The sheet stays open if the write fails. */
   acceptGuidelinesSupabase = async () => {
     const p = this.state.profile;
-    if (!p) return;
+    // Opened from the sign-up form (nobody is signed in yet): there is no profile to stamp, so just close the sheet
+    // and tick the "I agree" box. This used to return silently, which is why the button seemed to do nothing.
+    if (!p) { this.setState({ sheet: null, suTerms: true, suError: '' }); return; }
     try {
       const authApi = await import('../api/auth');
       const profile = await authApi.acceptGuidelines(p.id);

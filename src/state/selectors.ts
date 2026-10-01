@@ -98,7 +98,13 @@ export function buildVals(store: Store) {
   const meHandle = isSupabaseAuth ? (st.profile?.handle ?? '') : ME;
   const openItem = (it: Item) => () => store.setState({ sel: it.id, sheet: 'detail', toast: '' });
   const go = (screen: string, extra?: Partial<AppState>) => () => {
-    store.setState({ screen, sheet: null, filter: 'All', q: '', toast: '', ...(extra || {}) });
+    // Entering the other registry tab: drop the previous tab's rows and show the loader straight away, instead of
+    // one frame of the old list before the effect starts the fetch.
+    const switching = isSupabaseAuth && (screen === 'lost' || screen === 'found') && screen !== sc;
+    store.setState({
+      screen, sheet: null, filter: 'All', q: '', toast: '', ...(extra || {}),
+      ...(switching ? { dbItems: null, registryHasMore: false, loads: { ...st.loads, registry: 'loading' as const } } : null),
+    });
     // The review queue changes while the admin is elsewhere (items get flagged), so refetch on every visit.
     if (screen === 'moderation' && isSupabaseAuth) store.loadModerationQueueSupabase();
   };
@@ -233,6 +239,7 @@ export function buildVals(store: Store) {
     suTerms: st.suTerms,
     suMatchGlyph: !st.suConfirm ? '' : (st.suConfirm === st.suPass ? 'check_circle' : 'cancel'),
     suMatchColor: st.suConfirm === st.suPass ? '#0F7B3D' : '#B42318',
+    signupLoading: st.busy,
     signupEnabled: !!(st.suUser.trim() && st.suEmail.trim() && st.suPass && st.suConfirm && st.suTerms) && !st.busy,
     submitSignup: isSupabaseAuth ? store.signUpSupabase : () => {
       if (!st.suUser.trim() || !st.suEmail.trim() || !st.suPass) { store.setState({ suError: 'Fill in username, email and password to continue.' }); return; }
@@ -263,6 +270,7 @@ export function buildVals(store: Store) {
       : fpStrength === 2 ? 'Good. Add a symbol to make it strong.' : 'Strong password',
     fpPrimaryLabel: st.fpBusy ? (fpStage === 'reset' ? 'Updating…' : 'Sending…') : fpStage === 'email' ? (isSupabaseAuth ? 'Send reset link' : 'Send reset code')
       : fpStage === 'code' ? 'Verify code' : fpStage === 'reset' ? 'Update password' : 'Back to sign in',
+    fpLoading: st.fpBusy,
     fpPrimaryEnabled: !st.fpBusy && (fpStage === 'email' ? !!st.fpEmail.trim()
       : fpStage === 'code' ? st.fpCode.length === 6
       : fpStage === 'reset' ? !!(st.fpPass && st.fpConfirm) : true),
@@ -318,6 +326,7 @@ export function buildVals(store: Store) {
     onPass: (v: string) => store.setState({ password: v, error: '' }),
     submit: isSupabaseAuth ? store.signInSupabase : store.signIn,
     signInLabel: st.busy ? 'Signing in…' : 'Sign in & continue',
+    signInLoading: st.busy,
     signInEnabled: !!(st.username && st.password) && !st.busy,
     toggleRemember: () => store.setState((s) => ({ remember: !s.remember })),
     remember: st.remember,
@@ -461,7 +470,8 @@ export function buildVals(store: Store) {
       .map((m) => ({ text: m.body, time: formatTime(m.created_at), mine: m.sender === 'agent' })),
     supportReplyDraft: st.supportReplyDraft,
     onSupportReplyDraft: (v: string) => store.setState({ supportReplyDraft: v }),
-    sendSupportReply: () => store.sendSupportReply(),
+    supportReplySending: !!st.pending.adminReply,
+    sendSupportReply: () => store.withPending('adminReply', () => store.sendSupportReply()),
     goMembers: go('members', { uq: '' }), goAds: go('ads'),
 
     // Phase 8: Members Management (real data from Supabase in admin mode)
@@ -529,7 +539,8 @@ export function buildVals(store: Store) {
       label: n + ' days', on: (st.adDraft ? st.adDraft.days : 0) === n,
       pick: () => store.setState((s) => ({ adDraft: { campaignKey: s.adDraft?.campaignKey ?? campaigns[0]?.key ?? '', days: n } })),
     })),
-    saveAd: isSupabaseAuth ? store.saveAdSupabase : () => {
+    saveAdLoading: !!st.pending.ad,
+    saveAd: isSupabaseAuth ? () => store.withPending('ad', store.saveAdSupabase) : () => {
       const d = st.adDraft!;
       const c = CAMPAIGNS.find((x) => x.key === d.campaignKey) || CAMPAIGNS[0];
       store.setState((s) => ({
@@ -633,7 +644,8 @@ export function buildVals(store: Store) {
     noReplies: isSupabaseAuth ? !st.dbReplies || st.dbReplies.length === 0 : !!thread && thread.replies.length === 0,
     replyDraft: st.replyDraft,
     onReplyDraft: (v: string) => store.setState({ replyDraft: v }),
-    sendReply: () => isSupabaseAuth ? store.replyToThreadSupabase() : store.postReply(),
+    replySending: !!st.pending.reply,
+    sendReply: () => isSupabaseAuth ? store.withPending('reply', () => store.replyToThreadSupabase()) : store.postReply(),
     // The prototype leaves the sheet open here; closing it matches how delete
     // behaves and avoids the sheet showing a now-stale action label.
     suspendThread: () => {
@@ -674,11 +686,11 @@ export function buildVals(store: Store) {
     onNtTitle: (v: string) => store.setState({ ntTitle: v }),
     onNtBody: (v: string) => store.setState({ ntBody: v }),
     publishEnabled: !!(st.ntTitle.trim() && st.ntBody.trim()),
+    publishLoading: !!st.pending.publish,
     publishThread: () => {
       if (!st.ntTitle.trim() || !st.ntBody.trim()) return;
       if (isSupabaseAuth) {
-        store.createThreadSupabase();
-        store.flash('Posted to the forum.');
+        store.withPending('publish', () => store.createThreadSupabase());
       } else {
         const t2 = {
           id: Date.now(), user: store.me().name, ini: store.me().ini, mine: true,
@@ -739,8 +751,9 @@ export function buildVals(store: Store) {
     closeSheet: () => store.setState({ sheet: null }),
     sheetGuidelines: sh === 'guidelines',
     openGuidelines: () => store.setState({ sheet: 'guidelines' }),
+    guidelinesLoading: !!st.pending.guidelines,
     acceptGuidelines: isSupabaseAuth
-      ? store.acceptGuidelinesSupabase
+      ? () => store.withPending('guidelines', store.acceptGuidelinesSupabase)
       : () => store.setState({ sheet: null, suTerms: true, suError: '' }),
     guidelineRules: [
       { icon: 'public', title: 'Meet in public, in daylight', body: 'Police station lobbies, café counters and transit hubs are ideal. Never a home address, never a car park after dark.' },
@@ -786,13 +799,15 @@ export function buildVals(store: Store) {
       store.setState((s) => ({ lost: s.lost.filter((i) => i.id !== sel.id), found: s.found.filter((i) => i.id !== sel.id), sheet: null }));
       store.flash(`${sel.id} withdrawn from the registry.`);
     },
+    handoverLoading: !!st.pending.handover,
     toggleHandover: isSupabaseAuth
-      ? () => store.setItemStatusSupabase(sel.status === 'Reunited' ? 'Active' : 'Reunited')
+      ? () => store.withPending('handover', () => store.setItemStatusSupabase(sel.status === 'Reunited' ? 'Active' : 'Reunited'))
       : () => store.setStatus(sel.id, sel.status === 'Reunited' ? 'Active' : 'Reunited'),
     // Supabase mode: creates the real conversation row (4.6) and stops there --
     // the chat sheet itself starts reading real conversations/messages in Phase 5.
     // Already claimed (this session or an earlier one)? Supabase mode opens that conversation instead of re-claiming.
-    claim: isSupabaseAuth ? (existingConvo ? () => store.openChatSupabase(existingConvo.id) : store.claimItemSupabase) : () => {
+    claimLoading: !!st.pending.claim,
+    claim: isSupabaseAuth ? (existingConvo ? () => store.openChatSupabase(existingConvo.id) : () => store.withPending('claim', store.claimItemSupabase)) : () => {
       store.setState((s) => {
         const exists = s.convos.find((c) => c.itemId === sel.id);
         const convos = exists
@@ -837,7 +852,8 @@ export function buildVals(store: Store) {
     ].map((r) => ({ ...r, send: () => store.pushMsg(r.text) })),
     draft: st.draft,
     onDraft: (v: string) => store.setState({ draft: v }),
-    sendMessage: isSupabaseAuth ? store.sendMessageSupabase : () => store.pushMsg(st.draft),
+    chatSending: !!st.pending.chat,
+    sendMessage: isSupabaseAuth ? () => store.withPending('chat', store.sendMessageSupabase) : () => store.pushMsg(st.draft),
     addPhoto: isSupabaseAuth ? store.pickPhotoSupabase : () => store.flash('Photo picker opens here.'),
     flagRecord: isSupabaseAuth ? store.flagItemSupabase : () => store.flash(`${sel.id} sent to the moderation queue.`),
     deleteRecord: isSupabaseAuth ? store.deleteItemSupabase : () => {
@@ -857,7 +873,8 @@ export function buildVals(store: Store) {
     categories: CATS.map((c) => ({ name: c, on: st.rCat === c, pick: () => store.setState({ rCat: c }) })),
     reportBtnLabel: st.step === 1 ? 'Continue' : 'Submit to registry',
     reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim(),
-    reportNext: isSupabaseAuth ? store.reportItemSupabase : () => {
+    reportBtnLoading: !!st.pending.report && st.step === 2,
+    reportNext: isSupabaseAuth ? () => store.withPending('report', store.reportItemSupabase) : () => {
       if (st.step === 1) { if (st.rTitle.trim() && st.rCat) store.setState({ step: 2 }); return; }
       if (!st.rPlace.trim()) return;
       const lost = st.rType === 'Lost';
@@ -907,10 +924,12 @@ export function buildVals(store: Store) {
     toastSupport: () => { store.setState({ sheet: 'support', supportDraft: '' }); store.scrollChat(); },
     sheetSupport: sh === 'support',
     // Supabase mode reads the stored conversation; an empty history shows the assistant's greeting (not stored).
+    // The assistant's greeting (not stored) always opens the thread, so it doesn't vanish after the first question.
     supportMessages: isSupabaseAuth
-      ? ((st.dbSupportMessages ?? []).length
-          ? st.dbSupportMessages!.map((m) => ({ text: m.body, time: formatTime(m.created_at), mine: m.sender === 'user' }))
-          : SUPPORT_SEED.map((m) => ({ text: m.text, time: '', mine: false })))
+      ? [
+          ...SUPPORT_SEED.map((m) => ({ text: m.text, time: '', mine: false })),
+          ...(st.dbSupportMessages ?? []).map((m) => ({ text: m.body, time: formatTime(m.created_at), mine: m.sender === 'user' })),
+        ]
       : st.supportMsgs.map((m) => ({ text: m.text, time: m.time, mine: m.from === 'me' })),
     botTyping: st.botTyping,
     faqChips: isSupabaseAuth
@@ -928,7 +947,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, fpRecovery: false, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
+        profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
         // Every cached server list: another account signing in on this device must not see the last user's data.
         dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
         dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,

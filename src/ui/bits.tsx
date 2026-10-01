@@ -1,7 +1,8 @@
-import { ActivityIndicator, Text, View, type ViewStyle } from 'react-native';
+import { Text, View, type ViewStyle } from 'react-native';
 import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { chip, chipText, cta, ctaText, pill, pillText, seg, segText } from '../theme/styles';
 import { Press } from './Press';
+import { Loader } from './Loader';
 
 export function Chip({ status, label, style }: { status: string; label?: string; style?: ViewStyle }) {
   return (
@@ -27,12 +28,18 @@ export function Seg({ label, on, onPress }: { label: string; on: boolean; onPres
   );
 }
 
-export function Cta({ label, on, dark, onPress, style }: {
-  label: string; on: boolean; dark?: boolean; onPress: () => void; style?: ViewStyle;
+/**
+ * The big action button. While `loading` (a request is in flight) it takes the disabled look and shows the
+ * loader in place of the label, so the person sees something is happening and can't send the same thing twice.
+ */
+export function Cta({ label, on, dark, onPress, style, loading }: {
+  label: string; on: boolean; dark?: boolean; onPress: () => void; style?: ViewStyle; loading?: boolean;
 }) {
+  const live = on && !loading;
   return (
-    <Press style={[cta(on, dark), style]} scale={0.98} disabled={!on} onPress={onPress}>
-      <Text style={ctaText(on, dark)}>{label}</Text>
+    <Press style={[cta(live, dark), style]} scale={0.98} disabled={!live} onPress={onPress}
+      accessibilityState={{ busy: !!loading, disabled: !live }}>
+      {loading ? <Loader size={11} /> : <Text style={ctaText(on, dark)}>{label}</Text>}
     </Press>
   );
 }
@@ -110,8 +117,8 @@ export function LoadGate({ status, onRetry, what }: {
 }) {
   if (status === 'loading') {
     return (
-      <View accessibilityRole="progressbar" style={{ alignItems: 'center', paddingVertical: 40, gap: 12 }}>
-        <ActivityIndicator color={C.primary} />
+      <View style={{ alignItems: 'center', paddingVertical: 24, gap: 0 }}>
+        <Loader />
         <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: C.muted }}>Loading {what}…</Text>
       </View>
     );

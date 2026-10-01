@@ -13,7 +13,7 @@ export function DetailSheet() {
     <Sheet
       footer={
         <>
-          {v.canClaim && <Cta label={v.claimLabel} on onPress={v.claim} />}
+          {v.canClaim && <Cta label={v.claimLabel} on onPress={v.claim} loading={v.claimLoading} />}
           {v.isOwner && (
             <>
               <Text style={{ fontFamily: FONTS[400], fontSize: 11.5, lineHeight: 17, color: C.subtle }}>{v.ownerHint}</Text>
@@ -27,7 +27,7 @@ export function DetailSheet() {
                   </Press>
                 ))}
               </View>
-              <Cta label={v.handoverLabel} on onPress={v.toggleHandover} />
+              <Cta label={v.handoverLabel} on onPress={v.toggleHandover} loading={v.handoverLoading} />
               <Press style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }} scale={0.98} onPress={v.withdrawPost}>
                 <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.danger }}>Withdraw this post</Text>
               </Press>

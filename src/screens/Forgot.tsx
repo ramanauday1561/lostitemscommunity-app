@@ -72,7 +72,7 @@ export function Forgot() {
           </View>
         )}
 
-        <Cta label={v.fpPrimaryLabel} on={v.fpPrimaryEnabled} onPress={v.fpPrimary} style={{ marginTop: 16 }} />
+        <Cta label={v.fpPrimaryLabel} on={v.fpPrimaryEnabled} onPress={v.fpPrimary} loading={v.fpLoading} style={{ marginTop: 16 }} />
 
         {v.fpShowSignInLink && (
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
