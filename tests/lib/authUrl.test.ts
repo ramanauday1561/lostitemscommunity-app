@@ -64,4 +64,14 @@ describe('appUrl', () => {
     delete process.env.EXPO_PUBLIC_APP_URL;
     try { assert.equal(appUrl(), NATIVE_SCHEME_URL); assert.equal(NATIVE_SCHEME_URL, 'lostitems://'); } finally { restore(); }
   });
+
+  test('on native the deep-link scheme wins even when EXPO_PUBLIC_APP_URL is baked in', () => {
+    const nav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', { value: { product: 'ReactNative' }, configurable: true });
+    process.env.EXPO_PUBLIC_APP_URL = 'https://app.example.com';
+    try { assert.equal(appUrl(), 'lostitems://'); } finally {
+      restore();
+      if (nav) Object.defineProperty(globalThis, 'navigator', nav); else delete (globalThis as any).navigator;
+    }
+  });
 });
