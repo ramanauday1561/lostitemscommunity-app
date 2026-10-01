@@ -1,6 +1,6 @@
 import {
   CAMPAIGNS, CATS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS,
-  SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Item, type Status, type Thread,
+  SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Ad, type Campaign, type Item, type Status, type Thread,
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
 import { IDLE_LOADS, type AppState, type Store, type LoadKey } from './store';
@@ -121,13 +121,32 @@ export function buildVals(store: Store) {
   const memberList = st.members.filter((m) =>
     !st.uq.trim() || (m.name + ' ' + m.handle).toLowerCase().includes(st.uq.trim().toLowerCase()));
 
+  // Ad placements and campaigns: real rows in Supabase mode, the prototype's mock list otherwise.
+  // The list, totals and editor all read this one shape, so Supabase mode never touches mock ads.
+  const campaigns: Campaign[] = isSupabaseAuth
+    ? (st.dbAdCampaigns ?? []).map((c) => ({ key: c.key, campaign: c.name, advertiser: c.advertiser, icon: c.icon, rate: c.rate_label, cpm: Number(c.cpm) }))
+    : CAMPAIGNS;
+  const adRows: (Ad & { label?: string })[] = isSupabaseAuth
+    ? (st.dbAdPlacements ?? []).map((p) => ({
+        id: p.id, label: p.display_id, screen: p.screen, slot: p.slot, format: p.format, size: p.size,
+        campaignKey: p.campaign_key, campaign: p.campaign_name, advertiser: p.advertiser, icon: p.icon,
+        days: p.duration_days, daysLeft: p.days_left, revenue: Number(p.revenue), impressions: p.impressions,
+        ctr: Number(p.ctr), live: p.is_live,
+      }))
+    : st.ads;
+  const NO_AD: Ad = {
+    id: '', screen: '', slot: '', format: '', size: '', campaignKey: '', campaign: '', advertiser: '', icon: 'campaign',
+    days: 1, daysLeft: 0, revenue: 0, impressions: 0, ctr: 0, live: false,
+  };
+  const NO_CAMPAIGN: Campaign = { key: '', campaign: '', advertiser: '', icon: 'campaign', rate: '', cpm: 0 };
+
   const adEdit = (() => {
-    const a = st.ads.find((x) => x.id === st.adEditId) || st.ads[0];
+    const a = adRows.find((x) => x.id === st.adEditId) || adRows[0] || NO_AD;
     const d = st.adDraft || { campaignKey: a.campaignKey, days: a.days };
-    const c = CAMPAIGNS.find((x) => x.key === d.campaignKey) || CAMPAIGNS[0];
+    const c = campaigns.find((x) => x.key === d.campaignKey) || campaigns[0] || NO_CAMPAIGN;
     const proj = Math.round(c.cpm * (a.impressions / a.days) * d.days / 1000);
     return {
-      ...a, ...c, projected: money(proj),
+      ...a, ...c, id: (a as { label?: string }).label ?? a.id, projected: money(proj),
       projectedNote: `over ${d.days} days at ${c.rate}`,
       screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
       metrics: [
@@ -410,74 +429,49 @@ export function buildVals(store: Store) {
     searchMembers: (q: string) => store.searchMembersSupabase(q),
     clearMemberSearch: () => store.searchMembersSupabase(''),
 
-    adSlots: (isSupabaseAuth
-      ? (st.dbAdPlacements ?? []).map((a) => {
-          const pct = a.duration_days ? Math.max(0, Math.min(100, Math.round((a.duration_days - a.days_left) / a.duration_days * 100))) : 0;
-          const ended = a.days_left <= 0;
-          return {
-            id: a.id,
-            screen: a.screen,
-            slot: a.slot,
-            campaign: a.campaign_name || 'Unknown campaign',
-            live: a.is_live,
-            pct,
-            ended,
-            screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
-            statusLabel: a.is_live ? 'Live' : ended ? 'Ended' : 'Paused',
-            metrics: [
-              { value: '$0', label: 'Revenue', color: '#0F7B3D' },
-              { value: '0', label: 'Impressions', color: '#16181F' },
-              { value: '0%', label: 'CTR', color: '#0B6BCB' },
-            ],
-            runLabel: ended ? `Ended · ran ${a.duration_days} days` : `${a.days_left} of ${a.duration_days} days left`,
-            runColor: ended ? '#B42318' : a.days_left <= 3 ? '#B4611D' : '#6B7280',
-            toggleLabel: a.is_live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
-            toggle: () => store.toggleAdSupabase(a.id, !a.is_live),
-            edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaign_id, days: a.duration_days } }),
-          };
-        })
-      : st.ads.map((a) => {
-          const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
-          const ended = a.daysLeft <= 0;
-          return {
-            ...a, pct, ended,
-            screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
-            statusLabel: a.live ? 'Live' : ended ? 'Ended' : 'Paused',
-            metrics: [
-              { value: money(a.revenue), label: 'Revenue', color: '#0F7B3D' },
-              { value: compact(a.impressions), label: 'Impressions', color: '#16181F' },
-              { value: a.ctr.toFixed(1) + '%', label: 'CTR', color: '#0B6BCB' },
-            ],
-            runLabel: ended ? `Ended · ran ${a.days} days` : `${a.daysLeft} of ${a.days} days left`,
-            runColor: ended ? '#B42318' : a.daysLeft <= 3 ? '#B4611D' : '#6B7280',
-            toggleLabel: a.live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
-            toggle: () => store.toggleAd(a.id),
-            edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaignKey, days: a.days } }),
-          };
-        })),
-    adRevenue: money(st.ads.reduce((s, a) => s + a.revenue, 0)),
-    adRevenueDelta: '+18% vs last month',
+    adSlots: adRows.map((a) => {
+      const pct = a.days ? Math.max(0, Math.min(100, Math.round((a.days - a.daysLeft) / a.days * 100))) : 0;
+      const ended = a.daysLeft <= 0;
+      return {
+        ...a, pct, ended,
+        screenIcon: SCREEN_ICON[a.screen] || 'web_asset',
+        statusLabel: a.live ? 'Live' : ended ? 'Ended' : 'Paused',
+        metrics: [
+          { value: money(Math.round(a.revenue)), label: 'Revenue', color: '#0F7B3D' }, // whole dollars, like the mock figures
+          { value: compact(a.impressions), label: 'Impressions', color: '#16181F' },
+          { value: a.ctr.toFixed(1) + '%', label: 'CTR', color: '#0B6BCB' },
+        ],
+        runLabel: ended ? `Ended · ran ${a.days} days` : `${a.daysLeft} of ${a.days} days left`,
+        runColor: ended ? '#B42318' : a.daysLeft <= 3 ? '#B4611D' : '#6B7280',
+        toggleLabel: a.live ? 'Pause on this screen' : ended ? 'Relaunch' : 'Set live',
+        toggle: isSupabaseAuth ? () => store.toggleAdSupabase(a.id, !a.live) : () => store.toggleAd(a.id),
+        edit: () => store.setState({ sheet: 'ad', adEditId: a.id, adDraft: { campaignKey: a.campaignKey, days: a.days } }),
+      };
+    }),
+    adRevenue: money(Math.round(adRows.reduce((s, a) => s + a.revenue, 0))),
+    // No historical baseline in the database yet, so no month-over-month figure in Supabase mode.
+    adRevenueDelta: isSupabaseAuth ? '' : '+18% vs last month',
     adTotals: [
-      { value: compact(st.ads.reduce((s, a) => s + a.impressions, 0)), label: 'Impressions' },
-      { value: st.ads.filter((a) => a.live).length + ' / ' + st.ads.length, label: 'Slots live' },
-      { value: (st.ads.reduce((s, a) => s + a.ctr, 0) / st.ads.length).toFixed(1) + '%', label: 'Avg CTR' },
+      { value: compact(adRows.reduce((s, a) => s + a.impressions, 0)), label: 'Impressions' },
+      { value: adRows.filter((a) => a.live).length + ' / ' + adRows.length, label: 'Slots live' },
+      { value: (adRows.length ? adRows.reduce((s, a) => s + a.ctr, 0) / adRows.length : 0).toFixed(1) + '%', label: 'Avg CTR' },
     ],
-    adLiveCount: `${st.ads.filter((a) => a.live).length} running`,
+    adLiveCount: `${adRows.filter((a) => a.live).length} running`,
     adHome: store.slotFor('Home', fresh, st),
     adFeed: store.slotFor('Registry', fresh, st),
     adForum: store.slotFor('Forum', fresh, st),
 
     sheetAd: sh === 'ad', adEdit,
-    adCampaigns: CAMPAIGNS.map((c) => ({
+    adCampaigns: campaigns.map((c) => ({
       ...c, on: (st.adDraft ? st.adDraft.campaignKey : null) === c.key,
       mark: (st.adDraft ? st.adDraft.campaignKey : null) === c.key ? 'radio_button_checked' : 'radio_button_unchecked',
       pick: () => store.setState((s) => ({ adDraft: { campaignKey: c.key, days: s.adDraft?.days ?? 30 } })),
     })),
     adDurations: [7, 14, 30, 60].map((n) => ({
       label: n + ' days', on: (st.adDraft ? st.adDraft.days : 0) === n,
-      pick: () => store.setState((s) => ({ adDraft: { campaignKey: s.adDraft?.campaignKey ?? CAMPAIGNS[0].key, days: n } })),
+      pick: () => store.setState((s) => ({ adDraft: { campaignKey: s.adDraft?.campaignKey ?? campaigns[0]?.key ?? '', days: n } })),
     })),
-    saveAd: () => {
+    saveAd: isSupabaseAuth ? store.saveAdSupabase : () => {
       const d = st.adDraft!;
       const c = CAMPAIGNS.find((x) => x.key === d.campaignKey) || CAMPAIGNS[0];
       store.setState((s) => ({

@@ -932,7 +932,7 @@ export class Store {
       this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
-      this.startChatRealtime(profile.id); this.loadNotificationsSupabase();
+      this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase();
       this.loadForumSupabase();
       this.loadFaqSupabase();
       this.loadSupportMessagesSupabase();
@@ -967,7 +967,7 @@ export class Store {
           busy: false, screen: 'dash',
           ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
         });
-        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); }
+        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase(); }
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
         this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
@@ -1023,14 +1023,20 @@ export class Store {
     this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
     this.loadDashboardStats(profile);
     this.loadConversationsSupabase();
-    this.startChatRealtime(profile.id); this.loadNotificationsSupabase();
+    this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase();
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
-    // Ads aren't wired to the backend until Phase 10 -- suppress the mock
-    // placeholders in Supabase mode rather than showing fake sponsors next
-    // to real account data.
-    if (st.authMode === 'supabase') return { live: false } as Ad & { live: boolean };
+    // Supabase mode reads the real placement for this screen (loaded at sign-in), never the mock list.
+    // Same rule as the prototype: not live, ended, or a brand-new user who hasn't accepted the guidelines -> hidden.
+    if (st.authMode === 'supabase') {
+      const p = (st.dbAdPlacements ?? []).find((x) => x.screen === screen);
+      if (!p) return { live: false } as Ad & { live: boolean };
+      return {
+        live: p.is_live && p.days_left > 0 && !(fresh && !st.suTerms),
+        campaign: p.campaign_name, advertiser: p.advertiser, icon: p.icon,
+      } as unknown as Ad & { live: boolean };
+    }
     const a = st.ads.find((x) => x.screen === screen);
     if (!a) return { live: false } as Ad & { live: boolean };
     return { ...a, live: a.live && a.daysLeft > 0 && !(fresh && !st.suTerms) };
@@ -1058,6 +1064,24 @@ export class Store {
       this.flash(isLive ? `Ad set live.` : `Ad paused.`);
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not update ad.');
+    }
+  };
+
+  /** 10.3: saves the editor sheet to the real placement (campaign, duration, starts today, live). */
+  saveAdSupabase = async () => {
+    const s = this.state;
+    const draft = s.adDraft;
+    const campaign = (s.dbAdCampaigns ?? []).find((c) => c.key === draft?.campaignKey);
+    const placement = (s.dbAdPlacements ?? []).find((p) => p.id === s.adEditId);
+    if (!draft || !campaign || !placement) { this.flash('Pick a campaign first.'); return; }
+    try {
+      const adsApi = await import('../api/ads');
+      await adsApi.updateAdPlacement(placement.id, campaign.id, draft.days);
+      await this.loadAdsSupabase();
+      this.setState({ sheet: null, adDraft: null });
+      this.flash(`${placement.display_id} updated · ${campaign.advertiser} for ${draft.days} days.`);
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not save this placement.');
     }
   };
 

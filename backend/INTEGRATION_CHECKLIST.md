@@ -175,11 +175,16 @@ Screenshots: `01-testuser1-dashboard`, `02-lost-all`, `03-lost-my-posts`, `04-fo
 
 ## Phase 10 — Admin: Ads
 
-- [ ] 10.1 `adSlots` → `select * from ad_placements_with_status`
-- [ ] 10.2 `toggleAd` → `update ad_placements set is_live = not is_live`
-- [ ] 10.3 `saveAd` (editor sheet) → `update ad_placements set campaign_id=..., duration_days=..., starts_at=current_date, is_live=true`
-- [ ] 10.4 `adCampaigns` (editor picker) → query `ad_campaigns`
-- [ ] 10.5 Live ad slots on Home/Registry/Forum/Report-success (`slotFor`) → read from `ad_placements_with_status where screen = ... and is_live`
+- [x] 10.1 `adSlots` → `ad_placements_with_status` (`api/ads.ts#getAdPlacements`, `Store#loadAdsSupabase`; built in Phase 10).
+- [x] 10.2 `toggleAd` → `Store#toggleAdSupabase` → `update ad_placements set is_live` (built in Phase 10).
+- [x] 10.3 `saveAd` → **was never wired**: in Supabase mode the editor sheet fell back to the *mock* placement `AD-01` and local campaign keys, and Save only edited local mock state. Now `Store#saveAdSupabase` → `api/ads.ts#updateAdPlacement` (campaign, duration, `starts_at = today`, `is_live = true`), then reloads; on failure the sheet stays open.
+- [x] 10.4 `adCampaigns` (editor picker) → now the real `ad_campaigns` rows (mapped to the editor's shape) instead of the hard-coded `CAMPAIGNS`. The API types were also wrong (`AdCampaign` had `name/description`; the view has no `status`) and now match the real table/view.
+- [x] 10.5 Live ad slots → **were hard-suppressed** in Supabase mode. `Store#slotFor` now reads the real placement for the screen (loaded at sign-in for every user, not just admins), with the prototype's rules: not live, expired, or a new user who hasn't accepted the guidelines → hidden. `getAdForScreen` was removed (live slots read the placements already in state).
+- [x] **Also fixed:** the admin Ads screen and the dashboard ad card computed revenue, impressions, CTR and "+18% vs last month" from the **mock** list even for a real account. They now come from the real rows (whole dollars), and the fake month-over-month line is omitted in Supabase mode.
+
+**Production data gap — needs your input:** the live project has **no campaigns and no placements** (`seed.sql` was deliberately never run here, see 0.2). Until some exist, the Ads screen is empty and no member sees an ad; the app has no UI to create campaigns or placements. `ad_placements.campaign_id` is NOT NULL, so placements can't exist without campaigns. Real campaigns need business input (advertiser, creative, CPM), so I did not invent any; options are a small admin "new campaign / new placement" UI, or an operator inserting rows.
+
+**Verified (live project, rolled-back transaction with throwaway rows):** a member can read `ad_placements_with_status` but an update by a member affects 0 rows; the editor's exact update as superadmin affects 1 row and turns an ended placement into `days_left = 30, ended = false, live`. Store/selector behaviour is covered by `tests/state/ads.test.ts` (13 tests). Not seen on screen (no data to display).
 
 **Test:** pause the Forum ad as admin, confirm it stops rendering on the Forum screen for a normal user; relaunch it with a new campaign and duration, confirm `days_left` resets.
 

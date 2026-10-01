@@ -18,8 +18,8 @@ describe('ads api', () => {
   });
 
   test('getAdPlacements reads the status view ordered by screen; errors throw', async () => {
-    fake.queue({ data: [{ id: 'p1', status: 'live' }] });
-    assert.equal((await ads.getAdPlacements())[0].status, 'live');
+    fake.queue({ data: [{ id: 'p1', display_id: 'AD-01' }] });
+    assert.equal((await ads.getAdPlacements())[0].display_id, 'AD-01');
     assert.equal(fake.calls[0].name, 'ad_placements_with_status');
     assert.ok(fake.has('order', 'screen', { ascending: true }));
     fake.queue({ error: { message: 'denied' } });
@@ -28,12 +28,12 @@ describe('ads api', () => {
 
   describe('toggleAdLive', () => {
     test('updates is_live, then returns the row re-read from the status view', async () => {
-      fake.queue({ data: { id: 'p1' } }, { data: { id: 'p1', status: 'ended', days_left: 0 } });
+      fake.queue({ data: { id: 'p1' } }, { data: { id: 'p1', ended: true, days_left: 0 } });
       const r = await ads.toggleAdLive('p1', false);
       assert.equal(fake.calls[0].name, 'ad_placements');
       assert.deepEqual(fake.args('update', 0), [{ is_live: false }]);
       assert.equal(fake.calls[1].name, 'ad_placements_with_status');
-      assert.equal(r.status, 'ended');
+      assert.equal(r.ended, true);
     });
 
     test('a failed update does not re-read', async () => {
@@ -45,7 +45,7 @@ describe('ads api', () => {
 
   describe('updateAdPlacement', () => {
     test('sets campaign + duration, starts today and goes live', async () => {
-      fake.queue({}, { data: { id: 'p1', status: 'live' } });
+      fake.queue({}, { data: { id: 'p1', is_live: true } });
       await ads.updateAdPlacement('p1', 'camp1', 14);
       const [patch] = fake.args('update', 0) as [Record<string, unknown>];
       assert.equal(patch.campaign_id, 'camp1');
@@ -60,21 +60,6 @@ describe('ads api', () => {
       fake.reset();
       fake.queue({}, { error: { message: 'gone' } });
       await assert.rejects(ads.updateAdPlacement('p1', 'c', 7));
-    });
-  });
-
-  describe('getAdForScreen', () => {
-    test('asks for the live placement of that screen', async () => {
-      fake.queue({ data: { id: 'p1', screen: 'Forum' } });
-      assert.equal((await ads.getAdForScreen('Forum'))?.id, 'p1');
-      assert.ok(fake.has('eq', 'screen', 'Forum'));
-      assert.ok(fake.has('eq', 'is_live', true));
-    });
-
-    test('no live ad gives null; errors throw', async () => {
-      assert.equal(await ads.getAdForScreen('Home'), null);
-      fake.queue({ error: { message: 'denied' } });
-      await assert.rejects(ads.getAdForScreen('Home'));
     });
   });
 });

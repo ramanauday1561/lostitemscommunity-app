@@ -146,7 +146,7 @@ export function Ads() {
       <Card>
         <Kicker>Revenue this month</Kicker>
         <Text style={{ fontFamily: FONTS[800], fontSize: 32, color: C.ink, marginTop: 6 }}>{v.adRevenue}</Text>
-        <Text style={{ fontFamily: FONTS[600], fontSize: 11.5, color: C.success, marginTop: 2 }}>{v.adRevenueDelta}</Text>
+        {!!v.adRevenueDelta && <Text style={{ fontFamily: FONTS[600], fontSize: 11.5, color: C.success, marginTop: 2 }}>{v.adRevenueDelta}</Text>}
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           {v.adTotals.map((s) => (
             <View key={s.label} style={{ flex: 1, padding: 12, borderRadius: 18, backgroundColor: C.fillSoft }}>

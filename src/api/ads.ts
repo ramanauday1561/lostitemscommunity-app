@@ -1,28 +1,42 @@
 import { supabase } from '../lib/supabase';
 
+/** A row of `ad_campaigns` (0007_ads_and_faq.sql). */
 export interface AdCampaign {
   id: string;
+  /** Stable slug the editor keys off, e.g. "keysmart". */
+  key: string;
   name: string;
-  description?: string;
+  advertiser: string;
+  icon: string;
+  /** Display copy, e.g. "$14 CPM". */
+  rate_label: string;
+  cpm: number;
   created_at?: string;
 }
 
-export interface AdPlacement {
+/** A row of the `ad_placements_with_status` view: the placement joined with its campaign. */
+export interface AdPlacementWithStatus {
   id: string;
-  screen: string;
-  slot: string;
+  display_id: string;
   campaign_id: string;
-  campaign_name?: string;
-  is_live: boolean;
+  screen: 'Home' | 'Registry' | 'Forum' | 'Report success';
+  slot: string;
+  format: string;
+  size: string;
   duration_days: number;
   starts_at: string;
-  created_at?: string;
-  display_id?: string;
-}
-
-export interface AdPlacementWithStatus extends AdPlacement {
+  is_live: boolean;
+  revenue: number;
+  impressions: number;
+  ctr: number;
   days_left: number;
-  status: 'live' | 'scheduled' | 'ended';
+  ended: boolean;
+  campaign_key: string;
+  campaign_name: string;
+  advertiser: string;
+  icon: string;
+  rate_label: string;
+  cpm: number;
 }
 
 // Fetch all ad campaigns
@@ -96,17 +110,4 @@ export async function updateAdPlacement(
 
   if (error) throw error;
   return data as unknown as AdPlacementWithStatus;
-}
-
-// Fetch ad placement for a specific screen
-export async function getAdForScreen(screen: 'Forum' | 'Home' | 'Registry' | 'Report success'): Promise<AdPlacementWithStatus | null> {
-  const { data, error } = await supabase
-    .from('ad_placements_with_status')
-    .select('*')
-    .eq('screen', screen)
-    .eq('is_live', true)
-    .maybeSingle();
-
-  if (error) throw error;
-  return (data as unknown as AdPlacementWithStatus) || null;
 }
