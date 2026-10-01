@@ -42,10 +42,9 @@ describe('items api', () => {
     test('filters by kind, newest first, capped at 50', async () => {
       fake.queue({ data: [row()] });
       const r = await items.listItems({ kind: 'lost', filter: 'All' });
-      assert.equal(r.length, 1);
+      assert.equal(r.items.length, 1);
       assert.ok(fake.has('eq', 'kind', 'lost'));
       assert.ok(fake.has('order', 'created_at', { ascending: false }));
-      assert.ok(fake.has('limit', 50));
       assert.ok(!fake.calls[0].ops.some(([m, a]) => m === 'eq' && a[0] === 'status'));
     });
 
@@ -55,7 +54,7 @@ describe('items api', () => {
       assert.ok(fake.has('eq', 'reporter_id', 'u1'));
 
       fake.reset();
-      assert.deepEqual(await items.listItems({ kind: 'lost', filter: 'My posts', userId: null }), []);
+      assert.deepEqual(await items.listItems({ kind: 'lost', filter: 'My posts', userId: null }), { items: [], hasMore: false });
     });
 
     test('a status pill becomes a lowercase status filter', async () => {
@@ -86,7 +85,48 @@ describe('items api', () => {
 
     test('null data with no error is a genuine empty list', async () => {
       fake.queue({ data: null });
-      assert.deepEqual(await items.listItems({ kind: 'lost', filter: 'All' }), []);
+      assert.deepEqual(await items.listItems({ kind: 'lost', filter: 'All' }), { items: [], hasMore: false });
+    });
+
+    describe('paging (3.4)', () => {
+      const rows = (n: number) => Array.from({ length: n }, (_, i) => row({ id: `uuid-${i}`, display_id: `LOST-${i}` }));
+
+      test('the first page asks for rows 0..pageSize (inclusive) in a stable order', async () => {
+        fake.queue({ data: [] });
+        await items.listItems({ kind: 'lost', filter: 'All' });
+        assert.deepEqual(fake.args('range'), [0, items.REGISTRY_PAGE_SIZE]);
+        assert.ok(fake.has('order', 'created_at', { ascending: false }));
+        assert.ok(fake.has('order', 'id', { ascending: true }), 'tie-break so equal timestamps cannot swap between pages');
+      });
+
+      test('a later page starts at the offset', async () => {
+        fake.queue({ data: [] });
+        await items.listItems({ kind: 'lost', filter: 'All', offset: 40, pageSize: 10 });
+        assert.deepEqual(fake.args('range'), [40, 50]);
+      });
+
+      test('pageSize + 1 rows means more exist, and only pageSize are returned', async () => {
+        fake.queue({ data: rows(4) });
+        const page = await items.listItems({ kind: 'lost', filter: 'All', pageSize: 3 });
+        assert.equal(page.items.length, 3);
+        assert.equal(page.hasMore, true);
+        assert.deepEqual(page.items.map((i) => i.id), ['LOST-0', 'LOST-1', 'LOST-2']);
+      });
+
+      test('exactly pageSize rows (or fewer) means this is the last page', async () => {
+        fake.queue({ data: rows(3) });
+        assert.equal((await items.listItems({ kind: 'lost', filter: 'All', pageSize: 3 })).hasMore, false);
+        fake.queue({ data: rows(1) });
+        assert.equal((await items.listItems({ kind: 'lost', filter: 'All', pageSize: 3 })).hasMore, false);
+      });
+
+      test('filters and search still apply to every page', async () => {
+        fake.queue({ data: [] });
+        await items.listItems({ kind: 'found', filter: 'Active', query: 'keys', offset: 20 });
+        assert.ok(fake.has('eq', 'status', 'active'));
+        assert.ok(fake.methods(0).includes('or'));
+        assert.deepEqual(fake.args('range'), [20, 40]);
+      });
     });
   });
 

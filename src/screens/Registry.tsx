@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useApp } from '../StoreProvider';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Field } from '../ui/Field';
 import { AdSlot } from '../ui/AdSlot';
 import { ItemCard } from '../ui/ItemCard';
+import { Press } from '../ui/Press';
 import { Empty, LoadGate, Pill, Seg } from '../ui/bits';
 
 export function Registry() {
@@ -45,6 +46,14 @@ export function Registry() {
             {it.adAfter ? <AdSlot ad={v.adFeed} /> : null}
           </View>
         ))}
+        {v.registryHasMore && (
+          <Press style={{ minHeight: 48, borderRadius: 24, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}
+            scale={0.97} onPress={v.loadMoreRegistry}>
+            {v.registryLoadingMore
+              ? <ActivityIndicator color={C.primary} />
+              : <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.primary }}>Load more</Text>}
+          </Press>
+        )}
         {v.myPostsEmpty && (
           <Empty icon="inbox" title="You have not posted yet"
             body="Anything you report will show up here so you can track and close it." />

@@ -4,6 +4,7 @@ import { beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Store } from '../../src/state/store';
 import { buildVals } from '../../src/state/selectors';
+import { waitFor } from './waitFor';
 
 const note = (over: Record<string, unknown> = {}) => ({
   id: 'n1', type: 'moderation', title: 'Your post was flagged for review', body: 'Blue backpack',
@@ -24,7 +25,6 @@ function appStore(over: Record<string, unknown> = {}) {
   } as any);
   return store;
 }
-const tick = () => new Promise((r) => setTimeout(r, 20));
 
 describe('notifications (12.3)', () => {
   beforeEach(() => fake.reset());
@@ -65,7 +65,7 @@ describe('notifications (12.3)', () => {
     fake.queue({ data: [dbRow({ id: 'a' }), dbRow({ id: 'b', is_read: true })] });
     store.openNotifications();
     assert.equal(store.state.sheet, 'notifications');
-    await tick();
+    await waitFor(() => store.state.loads.notifications === 'ready', 'notifications to load');
     assert.equal(store.state.loads.notifications, 'ready');
     assert.deepEqual(store.state.notifications.map((n) => n.id), ['a', 'b']);
   });
@@ -112,7 +112,7 @@ describe('notifications (12.3)', () => {
     const store = appStore({ notifications: [note({ id: 'n1', type: 'match', conversationId: 'c1' })], sheet: 'notifications' });
     fake.queue({}, { data: [] }, {});
     await store.openNotification('n1');
-    await tick();
+    await waitFor(() => store.state.sheet === 'chat' && fake.calls.some((c) => c.name === 'notifications' && c.ops.some(([m]) => m === 'update')), 'chat to open and read-mark to be sent');
     assert.equal(store.state.notifications[0].isRead, true);
     assert.equal(store.state.sheet, 'chat');
     assert.equal(store.state.activeConvo, 'c1');

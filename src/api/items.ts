@@ -42,26 +42,42 @@ export function toFrontendItem(row: ItemRow): Item {
   };
 }
 
+/** Items per registry page (3.4). */
+export const REGISTRY_PAGE_SIZE = 20;
+
+export interface ItemsPage {
+  items: Item[];
+  /** True when at least one more row exists past this page (we fetch pageSize + 1 to know). */
+  hasMore: boolean;
+}
+
 export interface ListItemsParams {
   kind: 'lost' | 'found';
   /** 'All' | 'My posts' | 'Active' | 'Resolved' | 'Reunited' | 'Flagged' -- the Pill labels, verbatim. */
   filter: string;
   query?: string;
   userId?: string | null;
+  /** Rows to skip (0 for the first page). */
+  offset?: number;
+  pageSize?: number;
 }
 
 /** Powers the Lost/Found registry. RLS already scopes flagged items to their
  *  reporter and superadmins, so this query needs no role-branching itself. */
-export async function listItems(params: ListItemsParams): Promise<Item[]> {
+export async function listItems(params: ListItemsParams): Promise<ItemsPage> {
+  const offset = params.offset ?? 0;
+  const pageSize = params.pageSize ?? REGISTRY_PAGE_SIZE;
   let q = supabase
     .from('items')
     .select('*, reporter:profiles!items_reporter_id_fkey(handle)')
     .eq('kind', params.kind)
     .order('created_at', { ascending: false })
-    .limit(50);
+    // Tie-break so rows with the same timestamp never swap places between pages.
+    .order('id', { ascending: true })
+    .range(offset, offset + pageSize); // inclusive: pageSize + 1 rows
 
   if (params.filter === 'My posts') {
-    if (!params.userId) return [];
+    if (!params.userId) return { items: [], hasMore: false };
     q = q.eq('reporter_id', params.userId);
   } else if (params.filter !== 'All') {
     q = q.eq('status', params.filter.toLowerCase() as Database['public']['Enums']['item_status']);
@@ -75,7 +91,8 @@ export async function listItems(params: ListItemsParams): Promise<Item[]> {
 
   const { data, error } = await q;
   if (error) throw new Error(error.message);
-  return ((data ?? []) as ItemRow[]).map(toFrontendItem);
+  const rows = (data ?? []) as ItemRow[];
+  return { items: rows.slice(0, pageSize).map(toFrontendItem), hasMore: rows.length > pageSize };
 }
 
 export interface CreateItemInput {

@@ -3,6 +3,7 @@ import { fake } from '../api/setup';
 import { beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Store } from '../../src/state/store';
+import { waitFor } from './waitFor';
 
 const convo = (over: Record<string, unknown> = {}) => ({
   id: 'c1', itemId: 'i1', item: 'Wallet', icon: 'wallet', with: 'them.handle', time: '09:00', unread: 0, msgs: [], ...over,
@@ -20,7 +21,6 @@ function chatStore(over: Record<string, unknown> = {}) {
   } as any);
   return store;
 }
-const tick = () => new Promise((r) => setTimeout(r, 20));
 
 describe('live chat (5.3)', () => {
   beforeEach(() => fake.reset());
@@ -45,7 +45,7 @@ describe('live chat (5.3)', () => {
     const store = chatStore({ sheet: 'chat', activeConvo: 'c1' });
     fake.queue({ data: [{ id: 'm1', sender_id: 'them', body: 'hello', created_at: '2026-09-30T10:00:00Z', read_at: null }] }, {});
     store.handleIncomingMessage(msg() as any);
-    await tick();
+    await waitFor(() => fake.calls.length >= 2 && store.state.convos[0].unread === 0 && store.state.convos[0].msgs.length === 1, 'thread reload + mark read');
     assert.deepEqual(store.state.convos[0].msgs.map((m) => [m.text, m.from]), [['hello', 'them']]);
     assert.equal(store.state.convos[0].unread, 0);
     assert.equal(store.state.toast, '');
@@ -57,7 +57,7 @@ describe('live chat (5.3)', () => {
     const store = chatStore({ convos: [] });
     fake.queue({ data: [] });
     store.handleIncomingMessage(msg({ conversation_id: 'new' }) as any);
-    await tick();
+    await waitFor(() => fake.calls.length >= 1, 'conversations reload');
     assert.equal(fake.calls[0].name, 'conversations');
   });
 
@@ -87,7 +87,7 @@ describe('live chat (5.3)', () => {
     await store.startChatRealtime('me');
     fake.queue({ data: [] });
     fake.channels[0].listeners[1].cb({ new: { id: 'c9' } });
-    await tick();
+    await waitFor(() => fake.calls.length >= 1, 'conversations reload');
     assert.equal(fake.calls[0].name, 'conversations');
     store.stopChatRealtime();
   });
