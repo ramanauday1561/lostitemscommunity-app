@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 import { useApp } from '../StoreProvider';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Field } from '../ui/Field';
@@ -7,6 +7,7 @@ import { AdSlot } from '../ui/AdSlot';
 import { ItemCard } from '../ui/ItemCard';
 import { Press } from '../ui/Press';
 import { Empty, LoadGate, Pill, Seg } from '../ui/bits';
+import { Loader } from '../ui/Loader';
 
 export function Registry() {
   const { store, vals: v } = useApp();
@@ -18,11 +19,19 @@ export function Registry() {
     store.loadRegistry();
   }, [store, st.screen, st.filter, st.authMode]);
 
+  // Debounced search. Skips the first run: the effect above already loads on mount, and a second load 300 ms
+  // later is what made the loader appear twice.
+  const firstQuery = useRef(true);
   useEffect(() => {
+    if (firstQuery.current) { firstQuery.current = false; return; }
     const id = setTimeout(() => store.loadRegistry(), 300);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [st.q]);
+
+  // While the list is (re)loading, show only the loader: the rows still in memory belong to the previous
+  // tab/filter and would sit under the spinner looking like the new results.
+  const reloading = v.isSupabaseAuthMode && v.loads.registry === 'loading';
 
   return (
     <View style={{ flex: 1 }}>
@@ -39,18 +48,17 @@ export function Registry() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 10 }}>
         <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
-        <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
-        {v.registry.map((it) => (
+        {!reloading && v.registry.map((it) => (
           <View key={it.id} style={{ gap: 10 }}>
             <ItemCard item={it} onPress={it.open} />
             {it.adAfter ? <AdSlot ad={v.adFeed} /> : null}
           </View>
         ))}
-        {v.registryHasMore && (
+        {!reloading && v.registryHasMore && (
           <Press style={{ minHeight: 48, borderRadius: 24, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}
             scale={0.97} onPress={v.loadMoreRegistry}>
             {v.registryLoadingMore
-              ? <ActivityIndicator color={C.primary} />
+              ? <Loader size={10} />
               : <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.primary }}>Load more</Text>}
           </Press>
         )}

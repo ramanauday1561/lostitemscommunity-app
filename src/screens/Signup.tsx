@@ -61,7 +61,7 @@ export function Signup() {
           </View>
         )}
 
-        <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} style={{ marginTop: 8 }} />
+        <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} loading={v.signupLoading} style={{ marginTop: 8 }} />
 
         <Divider label="Or continue with a social account" />
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>

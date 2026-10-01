@@ -1,6 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
+import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
@@ -12,7 +13,7 @@ export function ReportSheet() {
   return (
     <Sheet
       title={v.reportTitle}
-      footer={<Cta label={v.reportBtnLabel} on={v.reportBtnEnabled} onPress={v.reportNext} />}
+      footer={<Cta label={v.reportBtnLabel} on={v.reportBtnEnabled} onPress={v.reportNext} loading={v.reportBtnLoading} />}
     >
       <View style={{ flexDirection: 'row', gap: 6, marginBottom: 18 }}>
         <View style={{ flex: 1, height: 4, borderRadius: 999, backgroundColor: C.primary }} />
@@ -83,7 +84,7 @@ export function ReportSheet() {
             multiline
             style={{
               minHeight: 92, padding: 16, borderRadius: 18, backgroundColor: C.fillSoft,
-              fontFamily: FONTS[500], fontSize: 14, lineHeight: 21, color: C.ink,
+              fontFamily: FONTS[500], fontSize: inputFont(14), lineHeight: 22, color: C.ink,
               textAlignVertical: 'top', outlineStyle: 'none',
             } as object}
           />

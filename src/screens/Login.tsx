@@ -59,7 +59,7 @@ export function Login() {
             </View>
           )}
 
-          <Cta label={v.signInLabel} on={v.signInEnabled} onPress={v.submit} style={{ marginTop: 16 }} />
+          <Cta label={v.signInLabel} on={v.signInEnabled} onPress={v.submit} loading={v.signInLoading} style={{ marginTop: 16 }} />
 
           {v.isDemoAuth && (
             <>

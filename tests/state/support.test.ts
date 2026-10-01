@@ -36,13 +36,23 @@ describe('support chat in Supabase mode (11.1-11.2)', () => {
     assert.deepEqual(v.faqChips.map((c) => c.q), ['How can I claim an item?', 'How do I add a photo?']);
   });
 
-  test('the conversation is the stored one; an empty history shows the assistant greeting', () => {
+  test('the assistant greeting always opens the thread, followed by the stored conversation', () => {
     const empty = buildVals(supportStore());
     assert.equal(empty.supportMessages.length, 1);
     assert.equal(empty.supportMessages[0].mine, false);
+    assert.match(empty.supportMessages[0].text, /Community Assistant/);
 
     const v = buildVals(supportStore({ dbSupportMessages: [msg(), msg({ id: 'm2', body: 'hi back', sender: 'bot' })] }));
-    assert.deepEqual(v.supportMessages.map((m) => [m.text, m.mine]), [['hello', true], ['hi back', false]]);
+    assert.deepEqual(v.supportMessages.slice(1).map((m) => [m.text, m.mine]), [['hello', true], ['hi back', false]]);
+    assert.equal(v.supportMessages[0].mine, false, 'the greeting is still first, and is not the member\'s');
+  });
+
+  test('a second question while the assistant is still answering is ignored (no double send)', async () => {
+    const store = supportStore();
+    store.setState({ botTyping: true } as any);
+    store.askBot('how do I claim this?');
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(fake.calls.length, 0);
   });
 
   test('asking stores the question, then the matching FAQ answer as the bot, and reloads', async () => {
