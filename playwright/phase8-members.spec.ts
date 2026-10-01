@@ -23,13 +23,9 @@ test.describe('Phase 8: Admin Members Management', () => {
     await navigateTo(page, 'members');
     await page.waitForLoadState('networkidle');
 
-    // Verify members table/list elements are visible
-    const nameVisible = await isVisible(page, 'Name');
-    const emailVisible = await isVisible(page, 'Email');
-    const statusVisible = await isVisible(page, 'Status');
-
-    // At least one of these should be visible (members list header/content)
-    expect([nameVisible, emailVisible, statusVisible].some(v => v)).toBe(true);
+    // Each member is a card: name, "@handle · N posts · joined Mon YYYY", and an Active/Suspended chip.
+    await expect(page.getByText(/@[\w.]+ · \d+ posts · joined/).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/^(Active|Suspended)$/).first()).toBeVisible();
 
     await takeScreenshot(page, 'phase8-members-table');
   });
@@ -150,12 +146,8 @@ test.describe('Phase 8: Admin Members Management', () => {
     await navigateTo(page, 'members');
     await page.waitForLoadState('networkidle');
 
-    // Look for date or activity info
-    const dateVisible = await isVisible(page, '202') || await isVisible(page, 'joined');
-    const postsVisible = await isVisible(page, 'post') || await isVisible(page, 'Post');
-
-    // At least one activity indicator should be present
-    expect([dateVisible, postsVisible].some(v => v)).toBe(true);
+    // The join date and post count live in the card's meta line.
+    await expect(page.getByText(/\d+ posts · joined [A-Z][a-z]{2} \d{4}/).first()).toBeVisible({ timeout: 15000 });
 
     await takeScreenshot(page, 'phase8-member-activity');
   });

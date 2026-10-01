@@ -31,12 +31,27 @@ async function onLoginForm(page: Page) {
 }
 
 /**
- * Login through the real Supabase path: Welcome -> Sign in -> "Supabase account"
- * segment -> username/email + password -> submit. Throws if the app shows an error.
+ * Signed-in browser storage per username, captured the first time that user logs in during a run.
+ *
+ * Why: the `login` Edge Function throttles sign-ins (8 per username and 30 per IP per 10 minutes) and a CI
+ * runner is one IP, so ~120 tests each typing the password would be locked out after the first few. Every
+ * later `loginAs` for the same user restores that session instead of signing in again. If a test signs the
+ * user out (which revokes the session server-side), the restore fails and we fall back to a real login.
  */
-export async function loginAs(page: Page, user: TestUser) {
-  test.skip(!user.password, `Set E2E_${user.role === 'superadmin' ? 'SUPERADMIN' : 'USER'}_PASSWORD to run authenticated tests`);
+const savedSessions = new Map<string, [string, string][]>();
 
+const SIGNED_IN = /My dashboard|System control|Set up your account|Welcome back/;
+
+async function signedInNow(page: Page, timeout: number) {
+  try {
+    await page.getByText(SIGNED_IN).first().waitFor({ timeout });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function loginWithForm(page: Page, user: TestUser) {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
 
@@ -48,8 +63,9 @@ export async function loginAs(page: Page, user: TestUser) {
   await page.getByPlaceholder('Password').fill(user.password);
   await page.keyboard.press('Enter');
 
-  // Success = the login form goes away; failure = the app renders an error banner.
-  const failed = page.getByText(/invalid|incorrect|failed|suspended/i).first();
+  // Success = the login form goes away; failure = the app renders an error banner (including the
+  // "too many attempts" message from the sign-in throttle).
+  const failed = page.getByText(/invalid|incorrect|failed|suspended|too many/i).first();
   await Promise.race([
     page.getByPlaceholder('Password').waitFor({ state: 'detached', timeout: 20000 }),
     failed.waitFor({ state: 'visible', timeout: 20000 }).then(async () => {
@@ -57,6 +73,39 @@ export async function loginAs(page: Page, user: TestUser) {
     }),
   ]);
   await page.waitForLoadState('networkidle').catch(() => {});
+}
+
+/**
+ * Login through the real Supabase path: Welcome -> Sign in -> "Supabase account"
+ * segment -> username/email + password -> submit. Throws if the app shows an error.
+ * The first call per user signs in with the form; later calls reuse the saved session (see above).
+ */
+export async function loginAs(page: Page, user: TestUser) {
+  test.skip(!user.password, `Set E2E_${user.role === 'superadmin' ? 'SUPERADMIN' : 'USER'}_PASSWORD to run authenticated tests`);
+
+  const saved = savedSessions.get(user.username);
+  if (saved) {
+    // Seed this user's session before the app starts. The marker (per tab, per user) makes the seed run once,
+    // so a later switch to another user in the same page is not undone by this script on reload.
+    await page.addInitScript(({ entries, marker }) => {
+      if (window.sessionStorage.getItem(marker)) return;
+      window.sessionStorage.setItem(marker, '1');
+      for (const [k, v] of entries) window.localStorage.setItem(k, v);
+    }, { entries: saved, marker: `__e2e_seeded_${user.username}` });
+    await page.goto('/');
+    if (await signedInNow(page, 15000)) return;
+    // Revoked (e.g. an earlier test signed out): forget it and sign in properly.
+    savedSessions.delete(user.username);
+  }
+
+  // Real sign-in. If this page is already signed in as someone else, sign that session out of the browser first.
+  await page.goto('/');
+  await page.evaluate(() => window.localStorage.clear()).catch(() => {});
+  await page.reload();
+  await loginWithForm(page, user);
+  const entries = await page.evaluate(() =>
+    Object.entries(window.localStorage).filter(([k]) => k.startsWith('sb-')) as [string, string][]);
+  if (entries.length) savedSessions.set(user.username, entries);
 }
 
 /**

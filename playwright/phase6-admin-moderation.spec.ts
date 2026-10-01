@@ -25,12 +25,19 @@ async function goToForum(page: Page) {
   await page.waitForLoadState('networkidle');
 }
 
+/** These tests open an existing thread. The live forum can be empty, and a test must not invent data on production. */
+async function requireThread(page: Page) {
+  const threads = await page.locator('[role="button"]').filter({ hasText: /reply|replies/i }).count();
+  test.skip(threads === 0, 'The live forum has no threads yet; this test needs one to open');
+}
+
 test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
 
   test('Admin: Superadmin can see moderation buttons on thread', async ({ page }) => {
     // Login as superadmin
     await loginAs(page, SUPERADMIN_EMAIL, SUPERADMIN_PASS);
     await goToForum(page);
+    await requireThread(page);
 
     // Open first thread
     const firstThread = page.locator('[role="button"]').filter({ hasText: /reply|replies/i }).first();
@@ -57,6 +64,7 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
   test('Admin: Superadmin can suspend and restore thread', async ({ page }) => {
     await loginAs(page, SUPERADMIN_EMAIL, SUPERADMIN_PASS);
     await goToForum(page);
+    await requireThread(page);
 
     // Open first thread
     const firstThread = page.locator('[role="button"]').filter({ hasText: /reply|replies/i }).first();
@@ -88,51 +96,14 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
     }
   });
 
-  test('Admin: Superadmin can delete thread (DESTRUCTIVE)', async ({ page }) => {
-    test.skip(!process.env.E2E_ALLOW_DESTRUCTIVE, 'Deletes a real forum thread; set E2E_ALLOW_DESTRUCTIVE=1 to run');
-    await loginAs(page, SUPERADMIN_EMAIL, SUPERADMIN_PASS);
-    await goToForum(page);
-
-    // Create test thread first
-    const newThreadBtn = page.locator('text=/new|post|create.*thread/i').first();
-    if (await newThreadBtn.isVisible().catch(() => false)) {
-      await newThreadBtn.click();
-
-      const threadTitle = `DELETE TEST ${Date.now()}`;
-      const titleInput = page.locator('input[type="text"]').first();
-      const bodyInput = page.locator('textarea, input[placeholder*="text" i]').first();
-
-      await titleInput.fill(threadTitle);
-      await bodyInput.fill('This thread will be deleted by admin');
-
-      const publishBtn = page.locator('text=/publish|post/i').first();
-      await publishBtn.click();
-
-      await page.waitForLoadState('networkidle');
-
-      // Open the thread we just created
-      const threadBtn = page.locator(`text=${threadTitle}`).first();
-      if (await threadBtn.isVisible().catch(() => false)) {
-        await threadBtn.click();
-        await page.waitForLoadState('networkidle');
-
-        // Find delete button
-        const deleteBtn = page.locator('text=/delete|remove/i').first();
-        if (await deleteBtn.isVisible().catch(() => false)) {
-          console.log('✓ Delete button visible to superadmin');
-
-          // Note: We don't actually click delete to preserve test data
-          // In real testing, this would confirm the delete works
-          console.log('⚠ Delete button present but not clicked (to preserve test data)');
-        }
-      }
-    }
-  });
+  // 'Superadmin can delete a thread' is covered end to end by the multi-account test below, which creates its own
+  // thread, suspends it, checks members can't see it, and deletes it (E2E_ALLOW_DESTRUCTIVE=1).
 
   test('Admin: Regular user CANNOT see moderation buttons', async ({ page }) => {
     // Login as regular user
     await loginAs(page, TESTUSER_EMAIL, TESTUSER_PASS);
     await goToForum(page);
+    await requireThread(page);
 
     // Open first thread
     const firstThread = page.locator('[role="button"]').filter({ hasText: /reply|replies/i }).first();
@@ -155,60 +126,39 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
   });
 
   test('Admin: Multi-account with moderation (User creates, Admin suspends, User sees suspended)', async ({ browser }) => {
+    test.skip(!process.env.E2E_ALLOW_DESTRUCTIVE, 'Creates and deletes a real forum thread; set E2E_ALLOW_DESTRUCTIVE=1 to run');
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
-
     const pageUser = await context1.newPage();
     const pageAdmin = await context2.newPage();
+    const threadTitle = `E2E MODERATE TEST ${Date.now()}`;
 
     try {
-      // User: Create thread
+      // User: create a thread
       await loginAs(pageUser, TESTUSER_EMAIL, TESTUSER_PASS);
-      await goToForum(pageUser);
+      await pageUser.getByText('Forum', { exact: true }).last().click();
+      await pageUser.getByText('New post', { exact: true }).first().click();
+      await pageUser.getByPlaceholder('Give it a clear title').fill(threadTitle);
+      await pageUser.getByPlaceholder('Share what you saw, where and when.').fill('This thread will be moderated');
+      await pageUser.getByText('Publish to the forum', { exact: true }).click();
+      await expect(pageUser.getByText(threadTitle).first()).toBeVisible({ timeout: 15000 });
 
-      const newThreadBtn = pageUser.locator('text=/new|post|create.*thread/i').first();
-      await newThreadBtn.click();
-
-      const threadTitle = `MODERATE TEST ${Date.now()}`;
-      const titleInput = pageUser.locator('input[type="text"]').first();
-      const bodyInput = pageUser.locator('textarea, input[placeholder*="text" i]').first();
-
-      await titleInput.fill(threadTitle);
-      await bodyInput.fill('This thread will be moderated');
-
-      const publishBtn = pageUser.locator('text=/publish|post/i').first();
-      await publishBtn.click();
-
-      await pageUser.waitForLoadState('networkidle');
-      await expect(pageUser.locator(`text=${threadTitle}`)).toBeVisible({ timeout: 5000 });
-      console.log('✓ User created thread');
-
-      // Admin: Suspend the thread
+      // Admin: suspend it, see it as suspended, then delete it (cleanup)
       await loginAs(pageAdmin, SUPERADMIN_EMAIL, SUPERADMIN_PASS);
-      await goToForum(pageAdmin);
+      await pageAdmin.getByText('Forum', { exact: true }).last().click();
+      await expect(pageAdmin.getByText(threadTitle).first()).toBeVisible({ timeout: 15000 });
+      await pageAdmin.getByText('Suspend post', { exact: true }).first().click();
+      await expect(pageAdmin.getByText('Restore post', { exact: true }).first()).toBeVisible({ timeout: 15000 });
 
-      const threadBtn = pageAdmin.locator(`text=${threadTitle}`).first();
-      if (await threadBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await threadBtn.click();
-        await pageAdmin.waitForLoadState('networkidle');
+      // User: a suspended thread is hidden from members
+      await pageUser.reload();
+      await pageUser.getByText('Forum', { exact: true }).last().click();
+      await pageUser.waitForLoadState('networkidle');
+      await expect(pageUser.getByText(threadTitle)).toHaveCount(0);
 
-        const suspendBtn = pageAdmin.locator('text=/suspend|restore/i').first();
-        if (await suspendBtn.isVisible().catch(() => false)) {
-          await suspendBtn.click();
-          await pageAdmin.waitForLoadState('networkidle');
-          console.log('✓ Admin suspended thread');
-
-          // User: Check if thread shows as suspended
-          await pageUser.reload();
-          await pageUser.waitForLoadState('networkidle');
-
-          const suspendedIndicator = pageUser.locator(`text=${threadTitle}`).first();
-          if (await suspendedIndicator.isVisible().catch(() => false)) {
-            // Check if it shows suspended status (style, label, etc)
-            console.log('✓ User can still see suspended thread (with visual indication)');
-          }
-        }
-      }
+      // Cleanup: admin deletes the test thread
+      await pageAdmin.getByText('Delete', { exact: true }).first().click();
+      await expect(pageAdmin.getByText(threadTitle)).toHaveCount(0, { timeout: 15000 });
     } finally {
       await context1.close();
       await context2.close();
@@ -239,6 +189,7 @@ test.describe('Phase 6: Admin Moderation - Superadmin Controls', () => {
     // Login as regular user
     await loginAs(page, TESTUSER_EMAIL, TESTUSER_PASS);
     await goToForum(page);
+    await requireThread(page);
 
     // Try to access moderation (should fail or not show buttons)
     const firstThread = page.locator('[role="button"]').filter({ hasText: /reply|replies/i }).first();
