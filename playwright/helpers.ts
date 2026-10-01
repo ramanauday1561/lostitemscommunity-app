@@ -11,6 +11,7 @@ export interface TestUser {
  * Tests that need a login are skipped when the matching password is unset.
  *   E2E_SUPERADMIN_USERNAME (default: superadmin)   E2E_SUPERADMIN_PASSWORD
  *   E2E_USER_USERNAME       (default: testuser2)    E2E_USER_PASSWORD
+ *   E2E_USER2_USERNAME      (default: e2e_member2)  E2E_USER2_PASSWORD   (second member, for two-person specs)
  */
 export const TEST_USERS = {
   superadmin: {
@@ -21,6 +22,12 @@ export const TEST_USERS = {
   regularUser: {
     username: process.env.E2E_USER_USERNAME || 'testuser2',
     password: process.env.E2E_USER_PASSWORD || '',
+    role: 'user',
+  } as TestUser,
+  /** A second member, for specs where two people interact (claims, chat). E2E_USER2_USERNAME / E2E_USER2_PASSWORD. */
+  secondUser: {
+    username: process.env.E2E_USER2_USERNAME || 'e2e_member2',
+    password: process.env.E2E_USER2_PASSWORD || '',
     role: 'user',
   } as TestUser,
 };
@@ -81,7 +88,7 @@ async function loginWithForm(page: Page, user: TestUser) {
  * The first call per user signs in with the form; later calls reuse the saved session (see above).
  */
 export async function loginAs(page: Page, user: TestUser) {
-  test.skip(!user.password, `Set E2E_${user.role === 'superadmin' ? 'SUPERADMIN' : 'USER'}_PASSWORD to run authenticated tests`);
+  test.skip(!user.password, `No password set for ${user.username} (see the E2E_* variables in playwright/helpers.ts)`);
 
   const saved = savedSessions.get(user.username);
   if (saved) {

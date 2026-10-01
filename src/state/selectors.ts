@@ -785,7 +785,15 @@ export function buildVals(store: Store) {
     detailRows: ([{ k: 'Status', v: sel.status }, { k: 'Where', v: sel.location }] as { k: string; v: string }[])
       .concat(sel.coords ? [{ k: 'Map pin', v: sel.coords }] : [])
       .concat([{ k: 'When', v: sel.date }, { k: 'Submitted by', v: sel.by }]),
-    canClaim: !admin && sel.by !== meHandle,
+    // Only an open post can be claimed. Once it is reunited / resolved the button goes away (a person who already has
+    // a conversation about it can still open that chat), and a note says why. Same in demo mode.
+    canClaim: !admin && sel.by !== meHandle
+      && (sel.status === 'Active' || !!existingConvo || !!st.claimed[sel.id]),
+    claimClosedNote: !admin && sel.by !== meHandle && sel.status !== 'Active' && !existingConvo && !st.claimed[sel.id]
+      ? (sel.status === 'Reunited' ? 'This item has already been reunited with its owner.'
+        : sel.status === 'Resolved' ? 'This post has been closed by its owner.'
+        : 'This post is under review and cannot be claimed right now.')
+      : '',
     isOwner: !admin && sel.by === meHandle,
     ownerHint: sel.status === 'Reunited'
       ? 'Handed over. Members can still read the record but it no longer shows as open.'
