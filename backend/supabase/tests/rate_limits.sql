@@ -6,7 +6,6 @@
 do $$
 declare u1 uuid; u2 uuid; adm uuid; item uuid; conv uuid; i int; n int; r text := ''; blocked boolean; att int; msg text;
 
-  -- inserts `cnt` rows of `kind` as the claims user `who`; returns how many were accepted before the first rejection
 begin
   select id into u1 from profiles where username='testuser1';
   select id into u2 from profiles where username='testuser2';
