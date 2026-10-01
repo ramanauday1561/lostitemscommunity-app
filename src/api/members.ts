@@ -81,15 +81,3 @@ export async function removeMember(memberId: string): Promise<void> {
   // Note: In production, also call supabase.auth.admin.deleteUser()
   // via an Edge Function to disable login
 }
-
-// Get member details
-export async function getMember(memberId: string): Promise<MemberProfile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', memberId)
-    .single();
-
-  if (error) return null;
-  return data;
-}

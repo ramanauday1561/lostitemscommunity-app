@@ -20,33 +20,34 @@ describe('support api', () => {
     assert.deepEqual(await quiet(() => support.getFaqEntries()), []);
   });
 
-  describe('findMatchingFaq', () => {
+  describe('matchFaq (pure: no request)', () => {
     const faq = [
-      { id: 'f1', keywords: ['claim', 'owner'], question: 'q1', answer: 'a1' },
-      { id: 'f2', keywords: ['photo', 'upload'], question: 'q2', answer: 'a2' },
+      { id: 'f1', keywords: ['claim', 'owner'], question: 'How can I claim an item?', answer: 'a1' },
+      { id: 'f2', keywords: ['photo', 'upload'], question: 'How do I add a photo?', answer: 'a2' },
     ];
 
-    test('matches against EVERY entry, not just the first one', async () => {
-      fake.queue({ data: faq });
-      assert.equal((await support.findMatchingFaq('upload'))?.id, 'f2');
+    test('an exact question (a tapped chip) matches, case-insensitively', () => {
+      assert.equal(support.matchFaq(faq as any, 'how do i ADD a photo?')?.id, 'f2');
     });
 
-    test('matching is case-insensitive and substring-based', async () => {
-      fake.queue({ data: faq });
-      assert.equal((await support.findMatchingFaq('  OWN '))?.id, 'f1');
+    test('otherwise the first entry whose keyword appears in the text wins', () => {
+      assert.equal(support.matchFaq(faq as any, 'can I upload something')?.id, 'f2');
+      assert.equal(support.matchFaq(faq as any, 'I want to claim it, upload too')?.id, 'f1', 'earlier entry wins');
     });
 
-    test('no match, or a blank term, gives null (blank makes no request)', async () => {
-      fake.queue({ data: faq });
-      assert.equal(await support.findMatchingFaq('refund'), null);
-      fake.reset();
-      assert.equal(await support.findMatchingFaq('   '), null);
+    test('the keyword must be IN the text, not the other way round (the old fetch-one version had this backwards)', () => {
+      assert.equal(support.matchFaq(faq as any, 'ow'), null);
+    });
+
+    test('no match, a blank text, or entries without keywords give null', () => {
+      assert.equal(support.matchFaq(faq as any, 'refund please'), null);
+      assert.equal(support.matchFaq(faq as any, '   '), null);
+      assert.equal(support.matchFaq([{ id: 'x', keywords: null, question: 'q', answer: 'a' }] as any, 'anything'), null);
+    });
+
+    test('makes no database request', () => {
+      support.matchFaq(faq as any, 'claim');
       assert.equal(fake.calls.length, 0);
-    });
-
-    test('entries with no keywords array are skipped safely', async () => {
-      fake.queue({ data: [{ id: 'f0', keywords: null }, ...faq] });
-      assert.equal((await support.findMatchingFaq('photo'))?.id, 'f2');
     });
   });
 
@@ -73,12 +74,5 @@ describe('support api', () => {
       fake.queue({ error: { message: 'denied' } });
       await assert.rejects(support.sendSupportMessage('u1', 'x'), /denied/);
     });
-  });
-
-  test('sendFaqResponse stores the answer as a bot message', async () => {
-    await support.sendFaqResponse('u1', 'f1', 'Here is how');
-    assert.deepEqual(fake.args('insert'), [{ user_id: 'u1', body: 'Here is how', sender: 'bot' }]);
-    fake.queue({ error: { message: 'denied' } });
-    await assert.rejects(support.sendFaqResponse('u1', 'f1', 'x'), /denied/);
   });
 });

@@ -3,6 +3,7 @@ import {
   SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Ad, type Campaign, type Item, type Status, type Thread,
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
+import { formatTime } from '../lib/time';
 import { IDLE_LOADS, type AppState, type Store, type LoadKey } from './store';
 
 const ME = 'simple.user';
@@ -826,9 +827,16 @@ export function buildVals(store: Store) {
       : [{ label: 'Notifications', value: 'On' }, { label: 'City', value: 'Central' }, { label: 'Contact sharing', value: 'After match' }, { label: 'Language', value: 'English' }],
     toastSupport: () => { store.setState({ sheet: 'support', supportDraft: '' }); store.scrollChat(); },
     sheetSupport: sh === 'support',
-    supportMessages: st.supportMsgs.map((m) => ({ text: m.text, time: m.time, mine: m.from === 'me' })),
+    // Supabase mode reads the stored conversation; an empty history shows the assistant's greeting (not stored).
+    supportMessages: isSupabaseAuth
+      ? ((st.dbSupportMessages ?? []).length
+          ? st.dbSupportMessages!.map((m) => ({ text: m.body, time: formatTime(m.created_at), mine: m.sender === 'user' }))
+          : SUPPORT_SEED.map((m) => ({ text: m.text, time: '', mine: false })))
+      : st.supportMsgs.map((m) => ({ text: m.text, time: m.time, mine: m.from === 'me' })),
     botTyping: st.botTyping,
-    faqChips: FAQ.map((f) => ({ q: f.q, ask: () => store.askBot(f.q) })),
+    faqChips: isSupabaseAuth
+      ? (st.dbFaqEntries ?? []).map((f) => ({ q: f.question, ask: () => store.askBot(f.question) }))
+      : FAQ.map((f) => ({ q: f.q, ask: () => store.askBot(f.q) })),
     supportDraft: st.supportDraft,
     onSupportDraft: (v: string) => store.setState({ supportDraft: v }),
     sendSupport: () => store.askBot(st.supportDraft),
@@ -838,7 +846,11 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
+        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
+        // Every cached server list: another account signing in on this device must not see the last user's data.
+        dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
+        dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
+        dbFaqEntries: null, dbSupportMessages: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });

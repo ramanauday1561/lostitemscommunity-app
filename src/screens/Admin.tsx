@@ -87,17 +87,20 @@ export function Analysis() {
         </View>
       </Card>
 
-      <Card>
-        <Kicker>Signals</Kicker>
-        <View style={{ gap: 12, marginTop: 12 }}>
-          {v.sentimentRows.map((r) => (
-            <View key={r.k} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontFamily: FONTS[500], fontSize: 12.5, color: C.muted }}>{r.k}</Text>
-              <Text style={{ fontFamily: FONTS[700], fontSize: 12.5, color: r.color }}>{r.v}</Text>
-            </View>
-          ))}
-        </View>
-      </Card>
+      {/* Decorative sample figures (never backed by a table, see backend/README.md): demo mode only. */}
+      {!v.isSupabaseAuthMode && (
+        <Card>
+          <Kicker>Signals</Kicker>
+          <View style={{ gap: 12, marginTop: 12 }}>
+            {v.sentimentRows.map((r) => (
+              <View key={r.k} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontFamily: FONTS[500], fontSize: 12.5, color: C.muted }}>{r.k}</Text>
+                <Text style={{ fontFamily: FONTS[700], fontSize: 12.5, color: r.color }}>{r.v}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
     </ScrollView>
   );
 }

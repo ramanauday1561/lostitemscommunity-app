@@ -166,4 +166,3 @@ export const CONVOS: Convo[] = [
   ]}
 ];
 
-export const IMG_FIT: number[] = [1, 1.16, 1.04];

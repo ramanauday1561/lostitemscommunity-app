@@ -60,14 +60,4 @@ describe('analysis api', () => {
     fake.queue({ error: { message: 'boom' } });
     await assert.rejects(analysis.getModerationKeywords());
   });
-
-  test('getAnalysisData combines both, and rejects if either fails (no half-loaded screen)', async () => {
-    fake.queue({ data: [{ day: 'M', reports: 2 }] }, { data: [{ word: 'x', hits: 1 }] });
-    assert.deepEqual(await analysis.getAnalysisData(), {
-      weeklyReports: [{ day: 'M', reports: 2 }], keywords: [{ word: 'x', hits: 1 }],
-    });
-
-    fake.queue({ data: [] }, { error: { message: 'boom' } });
-    await assert.rejects(analysis.getAnalysisData());
-  });
 });

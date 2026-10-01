@@ -12,11 +12,6 @@ export interface ModerationKeyword {
   hit_count?: number;
 }
 
-export interface AnalysisData {
-  weeklyReports: WeeklyReportCount[];
-  keywords: ModerationKeyword[];
-}
-
 // Fetch reports grouped by day for the current week
 export async function getWeeklyReportCounts(): Promise<WeeklyReportCount[]> {
   const { data, error } = await supabase
@@ -37,17 +32,4 @@ export async function getModerationKeywords(): Promise<ModerationKeyword[]> {
 
   if (error) throw error;
   return data || [];
-}
-
-// Fetch complete analysis data
-export async function getAnalysisData(): Promise<AnalysisData> {
-  const [weeklyReports, keywords] = await Promise.all([
-    getWeeklyReportCounts(),
-    getModerationKeywords(),
-  ]);
-
-  return {
-    weeklyReports,
-    keywords,
-  };
 }

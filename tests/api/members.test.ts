@@ -68,11 +68,4 @@ describe('members api', () => {
       await assert.rejects(fn('u1'));
     }
   });
-
-  test('getMember returns the profile, or null on error', async () => {
-    fake.queue({ data: { id: 'u1' } });
-    assert.deepEqual(await members.getMember('u1'), { id: 'u1' });
-    fake.queue({ error: { message: 'not found' } });
-    assert.equal(await members.getMember('u1'), null);
-  });
 });

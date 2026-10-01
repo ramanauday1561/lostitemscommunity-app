@@ -245,17 +245,20 @@ export function AdminDash() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={page}>
-      <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
-        scale={0.985} onPress={v.goAds}>
-        <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="payments" size={23} color={C.success} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: FONTS[700], fontSize: 15, letterSpacing: -0.22, color: C.ink }}>Ad placements & revenue</Text>
-          <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 3 }}>{v.adRevenue} this month · {v.adLiveCount}</Text>
-        </View>
-        <Icon name="chevron_right" size={21} color={C.barIdle} />
-      </Press>
+      {/* Ads are off until real campaigns exist: no entry point to an empty screen in Supabase mode. */}
+      {(!v.isSupabaseAuthMode || v.adSlots.length > 0) && (
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+          scale={0.985} onPress={v.goAds}>
+          <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="payments" size={23} color={C.success} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontFamily: FONTS[700], fontSize: 15, letterSpacing: -0.22, color: C.ink }}>Ad placements & revenue</Text>
+            <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 3 }}>{v.adRevenue} {v.isSupabaseAuthMode ? 'total' : 'this month'} · {v.adLiveCount}</Text>
+          </View>
+          <Icon name="chevron_right" size={21} color={C.barIdle} />
+        </Press>
+      )}
 
       <View style={{ backgroundColor: '#101319', borderRadius: 28, padding: 20, boxShadow: '0 20px 40px -24px rgba(16,19,25,.8)' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
