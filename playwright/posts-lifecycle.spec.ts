@@ -12,6 +12,8 @@ import { loginAs, TEST_USERS, TestUser } from './helpers';
  */
 test.skip(!process.env.E2E_ALLOW_DESTRUCTIVE, 'Creates and removes real posts; set E2E_ALLOW_DESTRUCTIVE=1 to run');
 test.describe.configure({ mode: 'serial' });
+// A phone-sized window: the app fills it (a wider one shows the framed phone mock, and sheet backdrops move).
+test.use({ viewport: { width: 390, height: 844 } });
 
 const RUN = `PW${Date.now().toString().slice(-6)}`;
 const POSTS = {
@@ -24,13 +26,14 @@ type PostName = keyof typeof POSTS;
 
 /** A fresh, signed-in browser tab for one person. */
 async function as(browser: Browser, user: TestUser): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await loginAs(page, user);
   return page;
 }
 
 const tab = (page: Page, name: 'Lost' | 'Found') => page.getByText(name, { exact: true }).last().click();
-const closeSheet = (page: Page) => page.mouse.click(215, 18);
+/** Dismisses the open bottom sheet by tapping the dimmed area above it. */
+const closeSheet = (page: Page) => page.mouse.click(195, 18);
 
 async function openPost(page: Page, name: PostName) {
   const p = POSTS[name];
@@ -50,8 +53,14 @@ async function reportPost(page: Page, name: PostName) {
   await page.getByPlaceholder('Where? e.g. Central Station platform 3').fill(p.place);
   await page.getByPlaceholder('When? e.g. 12 Jun 2024').fill('1 Oct 2026');
   await page.getByText('Submit to registry', { exact: true }).click();
-  await expect(page.getByText('Report submitted')).toBeVisible({ timeout: 20000 });
-  await closeSheet(page);
+  // Members may report 10 posts an hour (database rate limit) and this spec reports 4, so more than two runs an hour
+  // fail here; say so instead of timing out.
+  const tooOften = page.getByText(/doing that too often/);
+  await Promise.race([
+    page.getByText('Report submitted').waitFor({ timeout: 20000 }),
+    tooOften.waitFor({ timeout: 20000 }).then(() => { throw new Error('Hit the 10-posts-per-hour limit; wait for it to reset and run again'); }),
+  ]);
+  await page.getByText('View it in the registry', { exact: true }).click();
 }
 
 test.describe('post lifecycle with three accounts', () => {
@@ -77,6 +86,7 @@ test.describe('post lifecycle with three accounts', () => {
     await expect(a.getByText('Mark as handed over')).toBeVisible();
     await a.getByText('Mark as handed over', { exact: true }).click();
     await expect(a.getByText('Reopen this post')).toBeVisible({ timeout: 15000 });
+    await expect(a.getByText(/marked as handed over/)).toBeVisible({ timeout: 15000 });
     await closeSheet(a);
     await a.getByText('Reunited', { exact: true }).first().click();   // registry filter pill
     await expect(a.getByText(POSTS.umbrella.title)).toBeVisible({ timeout: 15000 });
@@ -88,13 +98,13 @@ test.describe('post lifecycle with three accounts', () => {
     // the umbrella is Reunited: no "I have found this", and a note says why
     await openPost(b, 'umbrella');
     await expect(b.getByText('I have found this')).toHaveCount(0);
-    await expect(b.getByText(/already been reunited/)).toBeVisible();
+    await expect(b.getByText(/already been reunited/).first()).toBeVisible();
     await closeSheet(b);
     // the scarf is still open
     await openPost(b, 'scarf');
     await expect(b.getByText('I have found this', { exact: true })).toBeVisible();
     await b.getByText('I have found this', { exact: true }).click();
-    await expect(b.getByText(/Claim sent/)).toBeVisible({ timeout: 15000 });
+    await expect(b.getByText(/Claim sent/).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('member 2 chats with member 1 about the scarf, and member 1 replies', async ({ browser }) => {
@@ -103,28 +113,29 @@ test.describe('post lifecycle with three accounts', () => {
     await b.getByText(POSTS.scarf.title).first().click();
     await b.getByPlaceholder('Write a message').fill(`${RUN}: I think I found your scarf`);
     await b.keyboard.press('Enter');
-    await expect(b.getByText(/I think I found your scarf/)).toBeVisible({ timeout: 15000 });
+    await expect(b.getByText(/I think I found your scarf/).first()).toBeVisible({ timeout: 15000 });
 
     const a = await as(browser, TEST_USERS.regularUser);
     await a.getByText('notifications', { exact: true }).first().click();
     await expect(a.getByText(/claimed your item/).first()).toBeVisible({ timeout: 15000 });
     await a.getByText(/New message/).first().click();
-    await expect(a.getByText(/I think I found your scarf/)).toBeVisible({ timeout: 15000 });
+    await expect(a.getByText(/I think I found your scarf/).first()).toBeVisible({ timeout: 15000 });
     await a.getByPlaceholder('Write a message').fill(`${RUN}: yes, that is mine - thank you`);
     await a.keyboard.press('Enter');
-    await expect(a.getByText(/that is mine - thank you/)).toBeVisible({ timeout: 15000 });
+    await expect(a.getByText(/that is mine - thank you/).first()).toBeVisible({ timeout: 15000 });
 
     await b.reload();
     await b.getByText('chat', { exact: true }).first().click();
     await b.getByText(POSTS.scarf.title).first().click();
-    await expect(b.getByText(/that is mine - thank you/)).toBeVisible({ timeout: 15000 });
+    await expect(b.getByText(/that is mine - thank you/).first()).toBeVisible({ timeout: 15000 });
   });
 
   test('member 1 closes the scarf as Resolved', async ({ browser }) => {
     const a = await as(browser, TEST_USERS.regularUser);
     await openPost(a, 'scarf');
-    await a.getByText('Resolved', { exact: true }).first().click();
-    await expect(a.getByText('Resolved', { exact: true }).first()).toBeVisible();
+    // The sheet is drawn over the registry, so its status pill is the last "Resolved" on the page.
+    await a.getByText('Resolved', { exact: true }).last().click();
+    await expect(a.getByText(/ closed\./)).toBeVisible({ timeout: 15000 });   // the confirmation toast: the update has landed
     await closeSheet(a);
     await a.getByText('Resolved', { exact: true }).first().click();   // registry filter pill
     await expect(a.getByText(POSTS.scarf.title)).toBeVisible({ timeout: 15000 });

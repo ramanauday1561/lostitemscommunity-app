@@ -142,6 +142,16 @@ when the password is unset:
 |---|---|
 | `E2E_SUPERADMIN_USERNAME` / `E2E_SUPERADMIN_PASSWORD` | `superadmin` / – |
 | `E2E_USER_USERNAME` / `E2E_USER_PASSWORD` | `testuser2` / – |
-| `E2E_ALLOW_DESTRUCTIVE=1` | opt in to tests that delete real data |
+| `E2E_USER2_USERNAME` / `E2E_USER2_PASSWORD` | `e2e_member2` / – (second member, for two-person specs) |
+| `E2E_ALLOW_DESTRUCTIVE=1` | opt in to tests that create and delete real data |
+
+### `posts-lifecycle.spec.ts` (opt-in: `E2E_ALLOW_DESTRUCTIVE=1`)
+Three accounts, four tagged posts, then actions on them: member 1 reports a lost umbrella, a lost scarf, a found wallet
+and found keys; hands the umbrella over (Reunited); member 2 sees that a Reunited post offers no claim but an open one does,
+claims the scarf and chats with member 1; member 1 closes the scarf (Resolved); the superadmin sends the wallet to the
+review queue and approves it, sends the keys and deletes them; finally everything the run created is withdrawn.
+- It writes to the live project. Posts are tagged `PW<run id>` so leftovers are easy to find.
+- Members may report 10 posts an hour, and this spec reports 4: run it at most twice an hour.
+- Sign-ins are throttled (8 per account per 10 minutes) and the workflow queues runs for that reason.
 
 Local run: copy `.env.production` to `.env`, start `npm run dev`, then `npx playwright test`.

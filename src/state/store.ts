@@ -513,6 +513,9 @@ export class Store {
       this.setState((s) => ({ dbItems: (s.dbItems ?? []).map((x) => (x.id === it.id ? { ...x, status } : x)) }));
       this.flash(status === 'Reunited' ? `${it.id} marked as handed over.`
         : status === 'Resolved' ? `${it.id} closed.` : `${it.id} is active again.`);
+      // Refetch for the current filter: a list loaded while this request was still running (a quick tap on a
+      // status filter) would otherwise keep showing the old status.
+      this.loadRegistry();
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not update status.');
     }
