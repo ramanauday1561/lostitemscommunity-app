@@ -511,12 +511,13 @@ export class Store {
     if (!it?.dbId || !s.profile) return;
     try {
       const items = await import('../api/items');
-      await items.flagItem(it.dbId, 'Flagged by a superadmin from the item detail sheet.', s.profile.id);
+      const result = await items.flagItem(it.dbId, 'Flagged by a superadmin from the item detail sheet.', s.profile.id);
       this.setState((st) => ({
         sheet: null,
         dbItems: (st.dbItems ?? []).map((x) => (x.id === it.id ? { ...x, status: 'Flagged' as Status } : x)),
       }));
-      this.flash(`${it.id} sent to the moderation queue.`);
+      this.flash(result === 'already_queued' ? `${it.id} is already in the moderation queue.` : `${it.id} sent to the moderation queue.`);
+      this.loadModerationQueueSupabase();
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not flag this item.');
     }
@@ -819,14 +820,16 @@ export class Store {
   takeModActionSupabase = async (flagId: string, action: 'approve' | 'remove') => {
     const s = this.state;
     if (s.authMode !== 'supabase' || !s.profile) return;
+    const flag = (s.dbModerationQueue ?? []).find((f) => f.id === flagId);
+    const ref = flag?.target_ref || flag?.target_title || 'Item';
     try {
       const modApi = await import('../api/moderation');
       if (action === 'approve') {
-        await modApi.approveFlag(flagId, s.profile.id);
-        this.flash(`${flagId} approved and unflagged.`);
-      } else if (action === 'remove') {
-        await modApi.removeFlag(flagId, s.profile.id);
-        this.flash(`${flagId} was permanently deleted by Super Admin.`);
+        await modApi.approveFlag(flagId);
+        this.flash(`${ref} approved and unflagged.`);
+      } else {
+        await modApi.removeFlag(flagId);
+        this.flash(`${ref} was permanently deleted by Super Admin.`);
       }
       await this.loadModerationQueueSupabase();
     } catch (e) {

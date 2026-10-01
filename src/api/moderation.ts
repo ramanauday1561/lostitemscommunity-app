@@ -14,6 +14,8 @@ export interface ModerationFlag {
   target_title?: string;
   target_author?: string;
   target_date?: string;
+  /** Human-readable reference: the item's LOST-1031 style id, or 'Forum thread'. */
+  target_ref?: string;
 }
 
 interface FlagWithTarget {
@@ -36,9 +38,10 @@ export interface ModerationStats {
   removed: number;
 }
 
-/** Load the moderation queue (all pending flags with target data) */
+/** Load the moderation queue: every pending flag with its target's display id, title and author handle.
+ *  Flags point at items or threads polymorphically (no foreign key), so targets are fetched in one batched
+ *  query per kind rather than one per flag. A flag whose target is gone is dropped. */
 export async function loadModerationQueue(): Promise<ModerationFlag[]> {
-  // Query moderation_flags with joins to get target details
   const { data: flags, error: flagsError } = await supabase
     .from('moderation_flags')
     .select('*')
@@ -46,45 +49,42 @@ export async function loadModerationQueue(): Promise<ModerationFlag[]> {
     .order('created_at', { ascending: false });
 
   if (flagsError) throw new Error(flagsError.message);
-  if (!flags) return [];
+  const rows = (flags ?? []) as any[];
+  if (!rows.length) return [];
 
-  // Fetch target details for each flag
-  const enriched: ModerationFlag[] = [];
+  const itemIds = rows.filter((f) => f.target_type === 'item').map((f) => f.target_id);
+  const threadIds = rows.filter((f) => f.target_type === 'forum_thread').map((f) => f.target_id);
+  const handleOf = (p: any) => (Array.isArray(p) ? p[0] : p)?.handle;
 
-  for (const flag of flags as any[]) {
-    if (flag.target_type === 'item') {
-      const { data: item } = await supabase
-        .from('items')
-        .select('display_id, title, reporter_id, created_at')
-        .eq('id', flag.target_id)
-        .maybeSingle();
-
-      if (item) {
-        enriched.push({
-          ...flag,
-          target_title: item.title,
-          target_author: item.reporter_id,
-          target_date: item.created_at,
-        });
-      }
-    } else if (flag.target_type === 'forum_thread') {
-      const { data: thread } = await supabase
-        .from('forum_threads')
-        .select('id, title, author_id, created_at')
-        .eq('id', flag.target_id)
-        .maybeSingle();
-
-      if (thread) {
-        enriched.push({
-          ...flag,
-          target_title: thread.title,
-          target_author: thread.author_id,
-          target_date: thread.created_at,
-        });
-      }
-    }
+  const items = new Map<string, any>();
+  if (itemIds.length) {
+    const { data, error } = await supabase
+      .from('items')
+      .select('id, display_id, title, created_at, reporter:profiles!reporter_id(handle)')
+      .in('id', itemIds);
+    if (error) throw new Error(error.message);
+    for (const it of (data ?? []) as any[]) items.set(it.id, it);
+  }
+  const threads = new Map<string, any>();
+  if (threadIds.length) {
+    const { data, error } = await supabase
+      .from('forum_threads')
+      .select('id, title, created_at, author:profiles!author_id(handle)')
+      .in('id', threadIds);
+    if (error) throw new Error(error.message);
+    for (const t of (data ?? []) as any[]) threads.set(t.id, t);
   }
 
+  const enriched: ModerationFlag[] = [];
+  for (const flag of rows) {
+    if (flag.target_type === 'item') {
+      const it = items.get(flag.target_id);
+      if (it) enriched.push({ ...flag, target_title: it.title, target_author: handleOf(it.reporter), target_date: it.created_at, target_ref: it.display_id });
+    } else {
+      const t = threads.get(flag.target_id);
+      if (t) enriched.push({ ...flag, target_title: t.title, target_author: handleOf(t.author), target_date: t.created_at, target_ref: 'Forum thread' });
+    }
+  }
   return enriched;
 }
 
@@ -113,55 +113,16 @@ export async function loadModerationStats(): Promise<ModerationStats> {
   };
 }
 
-/** Approve a flag (close it, keep content) */
-export async function approveFlag(flagId: string, reviewedBy: string): Promise<void> {
-  const { error } = await supabase
-    .from('moderation_flags')
-    .update({
-      status: 'approved',
-      reviewed_by: reviewedBy,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq('id', flagId);
-
+/** Approve a flag: closes it and puts the content back (item active / thread live). Done by the
+ *  `resolve_moderation_flag` database function so the status change, the audit log entry and the
+ *  owner's notification happen together, and only for a superadmin. */
+export async function approveFlag(flagId: string): Promise<void> {
+  const { error } = await supabase.rpc('resolve_moderation_flag', { flag_id: flagId, approve: true });
   if (error) throw new Error(error.message);
 }
 
-/** Remove a flag target (hard delete item or suspend thread, update flag status) */
-export async function removeFlag(flagId: string, reviewedBy: string): Promise<void> {
-  // First, fetch the flag to know what to delete
-  const { data: flag, error: flagError } = await supabase
-    .from('moderation_flags')
-    .select('*')
-    .eq('id', flagId)
-    .maybeSingle();
-
-  if (flagError || !flag) throw new Error('Flag not found');
-
-  // Delete/suspend the target
-  if (flag.target_type === 'item') {
-    const { error: delError } = await supabase
-      .from('items')
-      .delete()
-      .eq('id', flag.target_id);
-    if (delError) throw new Error(delError.message);
-  } else if (flag.target_type === 'forum_thread') {
-    const { error: suspendError } = await supabase
-      .from('forum_threads')
-      .update({ status: 'suspended' })
-      .eq('id', flag.target_id);
-    if (suspendError) throw new Error(suspendError.message);
-  }
-
-  // Update the flag status
-  const { error } = await supabase
-    .from('moderation_flags')
-    .update({
-      status: 'removed',
-      reviewed_by: reviewedBy,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq('id', flagId);
-
+/** Remove a flag's target for good (the item or thread is deleted) and close the flag. */
+export async function removeFlag(flagId: string): Promise<void> {
+  const { error } = await supabase.rpc('resolve_moderation_flag', { flag_id: flagId, approve: false });
   if (error) throw new Error(error.message);
 }

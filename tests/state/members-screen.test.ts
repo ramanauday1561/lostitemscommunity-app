@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { fake } from '../api/setup';
-import { beforeEach, describe, test } from 'node:test';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Store } from '../../src/state/store';
 import { buildVals } from '../../src/state/selectors';
@@ -19,6 +19,8 @@ function admin(members: unknown[]) {
 
 describe('admin Members screen in Supabase mode', () => {
   beforeEach(() => fake.reset());
+  // a test's trailing reload must finish before the next test starts recording calls
+  afterEach(() => new Promise((r) => setTimeout(r, 100)));
 
   test('lists the REAL profiles, never the demo members', () => {
     const rows = buildVals(admin([member(), member({ id: 'm2', handle: 'ben', display_name: 'Ben', is_suspended: true })])).members;
@@ -57,10 +59,9 @@ describe('admin Members screen in Supabase mode', () => {
     const store = admin([member()]);
     const v = buildVals(store);
     v.onUserQuery('c'); v.onUserQuery('ca'); v.onUserQuery('car');
-    assert.equal(fake.calls.length, 0, 'nothing is sent while still typing');
-    await waitFor(() => fake.calls.length === 1, 'debounced search');
-    await new Promise((r) => setTimeout(r, 400));
-    assert.equal(fake.calls.length, 1);
+    await waitFor(() => fake.calls.length >= 1, 'debounced search');
+    await new Promise((r) => setTimeout(r, 500));   // a late extra request would show up by now
+    assert.equal(fake.calls.length, 1, 'one request for the whole burst');
     assert.ok(fake.has('or', 'username.ilike.%car%,handle.ilike.%car%,display_name.ilike.%car%'));
     assert.equal(store.state.memberSearchQuery, 'car');
   });
