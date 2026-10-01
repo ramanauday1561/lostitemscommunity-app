@@ -17,6 +17,7 @@ import type { MemberProfile } from '../api/members';
 import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 import type { AdPlacementWithStatus, AdCampaign } from '../api/ads';
 import type { FaqEntry, SupportMessage } from '../api/support';
+import type { IncomingMessage } from '../api/realtime';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -512,6 +513,48 @@ export class Store {
     }
   };
 
+  /** Live chat (5.3): called for every message row Realtime delivers to this user. */
+  handleIncomingMessage = (m: IncomingMessage) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    const convo = s.convos.find((c) => c.id === m.conversation_id);
+    if (!convo) { this.loadConversationsSupabase(); return; } // a conversation we haven't loaded yet
+
+    // The thread is open: reload it (also marks it read, and de-duplicates our own echo).
+    if (s.sheet === 'chat' && s.activeConvo === m.conversation_id) {
+      this.loadMessagesSupabase(m.conversation_id).then(() => this.scrollChat());
+      return;
+    }
+    // Not open: only others' messages count as unread; our own (e.g. sent from another device) don't.
+    if (m.sender_id === s.profile.id) return;
+    this.setState((st) => ({
+      convos: st.convos.map((c) => (c.id === m.conversation_id ? { ...c, unread: c.unread + 1, time: this.stamp() } : c)),
+    }));
+    this.flash(`New message from ${convo.with}`);
+  };
+
+  private chatUnsubscribe: (() => void) | null = null;
+
+  /** Opens the chat subscription for the signed-in user (idempotent). */
+  startChatRealtime = async (userId: string) => {
+    if (this.chatUnsubscribe) return;
+    try {
+      const rt = await import('../api/realtime');
+      if (this.chatUnsubscribe) return; // a concurrent call won the race
+      this.chatUnsubscribe = rt.subscribeToChat(userId, {
+        onMessage: this.handleIncomingMessage,
+        onConversation: () => this.loadConversationsSupabase(),
+      });
+    } catch (e) {
+      console.error('chat realtime failed to start:', e); // chat still works, just without live updates
+    }
+  };
+
+  stopChatRealtime = () => {
+    this.chatUnsubscribe?.();
+    this.chatUnsubscribe = null;
+  };
+
   openChatSupabase = (conversationId: string) => {
     this.setState({ sheet: 'chat', activeConvo: conversationId });
     // Load messages for this conversation.
@@ -797,6 +840,7 @@ export class Store {
       this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
+      this.startChatRealtime(profile.id);
       this.loadForumSupabase();
       this.loadFaqSupabase();
       this.loadSupportMessagesSupabase();
@@ -831,7 +875,7 @@ export class Store {
           busy: false, screen: 'dash',
           ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
         });
-        if (profile) this.loadDashboardStats(profile);
+        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); }
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
         this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
@@ -869,6 +913,7 @@ export class Store {
   };
 
   signOutSupabase = async () => {
+    this.stopChatRealtime();
     const authApi = await import('../api/auth');
     await authApi.signOut();
   };
@@ -886,6 +931,7 @@ export class Store {
     this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
     this.loadDashboardStats(profile);
     this.loadConversationsSupabase();
+    this.startChatRealtime(profile.id);
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
