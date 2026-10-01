@@ -21,22 +21,43 @@ function mapAuthError(message: string): string {
   return 'Something went wrong. Please try again.';
 }
 
-/** Resolves a login identifier (username or email) to the email Supabase Auth signs in with. */
-async function resolveEmail(identifier: string): Promise<string | null> {
-  const trimmed = identifier.trim();
-  if (trimmed.includes('@')) return trimmed;
-  const { data, error } = await supabase.rpc('email_for_username', { p_username: trimmed });
-  if (error) return null;
-  return data;
-}
+const RATE_LIMITED = 'Too many attempts. Wait a few minutes and try again.';
+const NETWORK_ERROR = "Can't reach the server. Check your connection and try again.";
 
+/**
+ * Sign in with an email, or with a username.
+ *
+ * An email goes straight to Supabase Auth. A username is resolved on the SERVER by the `login`
+ * Edge Function (backend/functions/login), which throttles attempts and returns only a session
+ * or one generic error. The client never learns anyone's email, and unknown usernames and wrong
+ * passwords are indistinguishable.
+ */
 export async function signIn(identifier: string, password: string) {
-  const email = await resolveEmail(identifier);
-  if (!email) throw new AuthApiError(GENERIC_LOGIN_ERROR);
+  const id = identifier.trim();
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new AuthApiError(mapAuthError(error.message));
-  return data;
+  if (id.includes('@')) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: id, password });
+    if (error) throw new AuthApiError(mapAuthError(error.message));
+    return data;
+  }
+
+  const { data, error } = await supabase.functions.invoke('login', { body: { identifier: id, password } });
+  if (error) {
+    const status = (error as { context?: { status?: number } }).context?.status;
+    if (status === 429) throw new AuthApiError(RATE_LIMITED);
+    if (status === 403) throw new AuthApiError('Confirm your email address before signing in.');
+    if (status === 400 || status === 401) throw new AuthApiError(GENERIC_LOGIN_ERROR);
+    throw new AuthApiError(NETWORK_ERROR);
+  }
+  const session = (data as { session?: { access_token: string; refresh_token: string } } | null)?.session;
+  if (!session) throw new AuthApiError(GENERIC_LOGIN_ERROR);
+
+  const { data: set, error: setError } = await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  if (setError) throw new AuthApiError(mapAuthError(setError.message));
+  return set;
 }
 
 export interface SignUpResult {
