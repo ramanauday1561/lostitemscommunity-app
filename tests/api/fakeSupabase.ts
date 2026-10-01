@@ -8,13 +8,21 @@
 export interface Response { data?: unknown; error?: { message: string } | null; count?: number | null }
 export interface Call { kind: 'from' | 'rpc' | 'storage' | 'auth'; name: string; ops: [string, unknown[]][] }
 
+export interface FakeChannel {
+  name: string;
+  listeners: { filter: Record<string, unknown>; cb: (payload: any) => void }[];
+  subscribed: boolean;
+}
+
 export class FakeSupabase {
+  channels: FakeChannel[] = [];
+  removedChannels: string[] = [];
   calls: Call[] = [];
   private responses: Response[] = [];
 
   /** Queue the response for the next awaited query / rpc / auth call. */
   queue(...rs: Response[]) { this.responses.push(...rs); return this; }
-  reset() { this.calls = []; this.responses = []; }
+  reset() { this.calls = []; this.responses = []; this.channels = []; this.removedChannels = []; }
   /** Ops recorded for the n-th call, as method names. */
   methods(n = 0) { return this.calls[n].ops.map(([m]) => m); }
   /** Args of the first `method` op recorded for the n-th call. */
@@ -43,6 +51,18 @@ export class FakeSupabase {
 
   from = (table: string) => this.chain({ kind: 'from', name: table, ops: [] });
   rpc = (fn: string, args?: unknown) => this.chain({ kind: 'rpc', name: fn, ops: [['args', [args]]] });
+  /** Realtime stub: records subscriptions; tests fire events by calling a listener's `cb`. */
+  channel = (name: string) => {
+    const ch: FakeChannel = { name, listeners: [], subscribed: false };
+    this.channels.push(ch);
+    const api: any = {
+      on: (_type: string, filter: Record<string, unknown>, cb: (p: any) => void) => { ch.listeners.push({ filter, cb }); return api; },
+      subscribe: () => { ch.subscribed = true; return api; },
+      __ch: ch,
+    };
+    return api;
+  };
+  removeChannel = (api: { __ch: FakeChannel }) => { this.removedChannels.push(api.__ch.name); };
   storage = { from: (bucket: string) => this.chain({ kind: 'storage', name: bucket, ops: [] }) };
   auth: any = new Proxy({}, {
     get: (_t, method: string) => async (...args: unknown[]) => {

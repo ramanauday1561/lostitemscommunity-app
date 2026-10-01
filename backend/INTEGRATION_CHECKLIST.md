@@ -119,11 +119,11 @@ Screenshots: `01-testuser1-dashboard`, `02-lost-all`, `03-lost-my-posts`, `04-fo
 
 ## Phase 5 — Chat
 
-- [ ] 5.1 Chat sheet (`convoMsgs`, `messages`) → fetch `messages` for the active `conversation_id`, ordered by `created_at`
-- [ ] 5.2 `sendMessage`/`pushMsg` → `insert into messages`
-- [ ] 5.3 Realtime: subscribe to `postgres_changes` on `messages` for the open conversation so the other party's replies show up live (replaces the mocked 1600ms auto-reply)
-- [ ] 5.4 Unread badge (`unreadTotal`, per-conversation `unread`) → derive from `messages where read_at is null and sender_id <> me`; mark read on opening a conversation
-- [ ] 5.5 Admin > Messages (own inbox) reuses the same conversations query, scoped to the superadmin's own `id` — no special-casing needed since RLS is participant-based
+- [x] 5.1 Chat sheet (`convoMsgs`, `messages`) → `conversations.ts#loadMessages`, oldest first (built in Phase 5; box was never ticked).
+- [x] 5.2 `sendMessage`/`pushMsg` → `insert into messages`, via `Store#sendMessageSupabase`.
+- [x] 5.3 Realtime. `0018_realtime_chat.sql` adds `messages` and `conversations` to the `supabase_realtime` publication (it was **empty**, so no subscription could ever have fired; applied to the live project). `api/realtime.ts#subscribeToChat` listens for INSERTs on both; `Store#handleIncomingMessage` handles them: open thread → reload it (marks it read, de-duplicates our own echo); closed thread → unread +1 and a "New message from …" toast, ignoring our own messages sent from another device; unknown conversation → reload the list. A new `conversations` row (someone claims your item) also reloads the list. Started on sign-in / signup / session restore, stopped on sign-out; idempotent. Realtime applies RLS per subscriber, so a user only receives threads they participate in. **Verified live against the real project:** two signed-in sessions (testuser1 subscribed, testuser2 inserted) → the message arrived on the subscription (the very first attempt right after the migration raced the publication reload; later ones were immediate). **Not verified in a browser:** this sandbox's Chromium drops the realtime WebSocket (TLS), so the toast/badge were covered by unit tests (`tests/state/chat-realtime.test.ts`, `tests/api/realtime.test.ts`) rather than visually. Also not tested live: that a non-participant (e.g. the superadmin) is *denied* — that follows from the existing RLS but wasn't exercised.
+- [x] 5.4 Unread badge → derived from `messages where read_at is null and sender_id <> me` (`loadConversations`), cleared on opening a thread (`markConversationRead`), and now incremented live.
+- [x] 5.5 Admin > Messages reuses the same conversations query (participant-scoped RLS, no special-casing).
 
 **Test:** two accounts, one claims the other's item, both send messages and see them arrive without refreshing; unread count decrements on opening the thread.
 
