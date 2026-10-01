@@ -48,9 +48,9 @@ export async function loadConversations(userId: string): Promise<Convo[]> {
     .or(`reporter_id.eq.${userId},claimant_id.eq.${userId}`)
     .order('created_at', { ascending: false });
 
-  if (error || !data) return [];
+  if (error) throw new Error(error.message);
 
-  return (data as any[]).map((c) => {
+  return ((data ?? []) as any[]).map((c) => {
     const isReporter = c.reporter_id === userId;
     const item = Array.isArray(c.items) ? c.items[0] : c.items;
     const otherProfile = isReporter ? c.claimant : c.reporter;

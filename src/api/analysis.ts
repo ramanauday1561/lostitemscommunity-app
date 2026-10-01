@@ -24,10 +24,7 @@ export async function getWeeklyReportCounts(): Promise<WeeklyReportCount[]> {
     .select('*')
     .order('day', { ascending: true });
 
-  if (error) {
-    console.error('Failed to fetch weekly report counts:', error);
-    return [];
-  }
+  if (error) throw error;
   return data || [];
 }
 
@@ -38,10 +35,7 @@ export async function getModerationKeywords(): Promise<ModerationKeyword[]> {
     .select('*')
     .order('hits', { ascending: false });
 
-  if (error) {
-    console.error('Failed to fetch moderation keywords:', error);
-    return [];
-  }
+  if (error) throw error;
   return data || [];
 }
 

@@ -79,8 +79,13 @@ describe('items api', () => {
       assert.equal(expr.split(',').length, 3);
     });
 
-    test('a query error yields an empty list rather than throwing', async () => {
+    test('a query error throws (so the UI can show an error + retry, not a fake empty list)', async () => {
       fake.queue({ error: { message: 'boom' } });
+      await assert.rejects(items.listItems({ kind: 'lost', filter: 'All' }), /boom/);
+    });
+
+    test('null data with no error is a genuine empty list', async () => {
+      fake.queue({ data: null });
       assert.deepEqual(await items.listItems({ kind: 'lost', filter: 'All' }), []);
     });
   });

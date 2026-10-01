@@ -42,9 +42,9 @@ describe('forum api', () => {
       assert.ok(!fake.calls[0].ops.some(([m, a]) => m === 'eq' && a[0] === 'tag'));
     });
 
-    test('returns [] on error', async () => {
+    test('throws on error so the UI can show an error + retry', async () => {
       fake.queue({ error: { message: 'boom' } });
-      assert.deepEqual(await forum.loadThreads('me'), []);
+      await assert.rejects(forum.loadThreads('me'), /boom/);
     });
   });
 

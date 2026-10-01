@@ -45,7 +45,8 @@ export async function loadModerationQueue(): Promise<ModerationFlag[]> {
     .eq('status', 'pending')
     .order('created_at', { ascending: false });
 
-  if (flagsError || !flags) return [];
+  if (flagsError) throw new Error(flagsError.message);
+  if (!flags) return [];
 
   // Fetch target details for each flag
   const enriched: ModerationFlag[] = [];

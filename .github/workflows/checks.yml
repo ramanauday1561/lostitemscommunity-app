@@ -21,7 +21,7 @@ jobs:
         # Runs the prototype's own renderVals() and this app's buildVals() over
         # the same state matrix and diffs the data. Fails on any mismatch.
         run: npm run oracle
-      - name: API layer unit tests
-        # src/api/* against a fake Supabase client (tests/api/fakeSupabase.ts).
-        # No network, no real project.
-        run: npm run test:api
+      - name: Unit tests (API layer + store/selectors)
+        # src/api/* against a fake Supabase client (tests/api/fakeSupabase.ts),
+        # plus the list load-state logic. No network, no real project.
+        run: npm test

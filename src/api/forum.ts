@@ -60,9 +60,9 @@ export async function loadThreads(userId: string, tag?: string): Promise<ForumTh
 
   const { data, error } = await query;
 
-  if (error || !data) return [];
+  if (error) throw new Error(error.message);
 
-  return (data as any[]).map((t) => {
+  return ((data ?? []) as any[]).map((t) => {
     const author = Array.isArray(t.author) ? t.author[0] : t.author;
     const replies = t.replies || [];
     const votes = t.thread_votes || [];

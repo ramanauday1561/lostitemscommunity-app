@@ -5,7 +5,7 @@ import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Field } from '../ui/Field';
 import { AdSlot } from '../ui/AdSlot';
 import { ItemCard } from '../ui/ItemCard';
-import { Empty, Pill, Seg } from '../ui/bits';
+import { Empty, LoadGate, Pill, Seg } from '../ui/bits';
 
 export function Registry() {
   const { store, vals: v } = useApp();
@@ -37,6 +37,8 @@ export function Registry() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 10 }}>
+        <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
+        <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
         {v.registry.map((it) => (
           <View key={it.id} style={{ gap: 10 }}>
             <ItemCard item={it} onPress={it.open} />

@@ -50,6 +50,8 @@
     "export:web": "expo export -p web --output-dir dist",
     "oracle": "tsx tools/oracle/check.ts",
     "test:api": "tsx --test tests/api/*.test.ts",
+    "test": "npm run test:api && npm run test:state",
+    "test:state": "tsx --test tests/state/*.test.ts",
     "typecheck": "tsc --noEmit",
     "gen:types": "supabase gen types typescript --project-id tqkmpirusmdckccqfxyd > src/lib/database.types.ts",
     "test:e2e": "playwright test",

@@ -42,36 +42,32 @@ describe('dashboard api', () => {
 describe('analysis api', () => {
   beforeEach(() => fake.reset());
 
-  test('weekly counts are ordered by day ascending; errors give []', async () => {
+  test('weekly counts are ordered by day ascending; errors throw', async () => {
     fake.queue({ data: [{ day: 'M', reports: 2 }] });
     assert.deepEqual(await analysis.getWeeklyReportCounts(), [{ day: 'M', reports: 2 }]);
     assert.equal(fake.calls[0].name, 'weekly_report_counts');
     assert.ok(fake.has('order', 'day', { ascending: true }));
 
-    const orig = console.error; console.error = () => {};
-    try {
-      fake.queue({ error: { message: 'boom' } });
-      assert.deepEqual(await analysis.getWeeklyReportCounts(), []);
-    } finally { console.error = orig; }
+    fake.queue({ error: { message: 'boom' } });
+    await assert.rejects(analysis.getWeeklyReportCounts());
   });
 
-  test('keywords are ordered by hits descending; errors give []', async () => {
+  test('keywords are ordered by hits descending; errors throw', async () => {
     fake.queue({ data: [{ word: 'send deposit', hits: 4 }] });
     assert.equal((await analysis.getModerationKeywords()).length, 1);
     assert.ok(fake.has('order', 'hits', { ascending: false }));
 
-    const orig = console.error; console.error = () => {};
-    try {
-      fake.queue({ error: { message: 'boom' } });
-      assert.deepEqual(await analysis.getModerationKeywords(), []);
-    } finally { console.error = orig; }
+    fake.queue({ error: { message: 'boom' } });
+    await assert.rejects(analysis.getModerationKeywords());
   });
 
-  test('getAnalysisData combines both, one failing does not lose the other', async () => {
-    const orig = console.error; console.error = () => {};
-    try {
-      fake.queue({ data: [{ day: 'M', reports: 2 }] }, { error: { message: 'boom' } });
-      assert.deepEqual(await analysis.getAnalysisData(), { weeklyReports: [{ day: 'M', reports: 2 }], keywords: [] });
-    } finally { console.error = orig; }
+  test('getAnalysisData combines both, and rejects if either fails (no half-loaded screen)', async () => {
+    fake.queue({ data: [{ day: 'M', reports: 2 }] }, { data: [{ word: 'x', hits: 1 }] });
+    assert.deepEqual(await analysis.getAnalysisData(), {
+      weeklyReports: [{ day: 'M', reports: 2 }], keywords: [{ word: 'x', hits: 1 }],
+    });
+
+    fake.queue({ data: [] }, { error: { message: 'boom' } });
+    await assert.rejects(analysis.getAnalysisData());
   });
 });
