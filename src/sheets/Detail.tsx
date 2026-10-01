@@ -13,6 +13,12 @@ export function DetailSheet() {
     <Sheet
       footer={
         <>
+          {!!v.claimClosedNote && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, backgroundColor: C.fillSoft }}>
+              <Icon name="check_circle" size={19} color={C.success} />
+              <Text style={{ flex: 1, fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.muted }}>{v.claimClosedNote}</Text>
+            </View>
+          )}
           {v.canClaim && <Cta label={v.claimLabel} on onPress={v.claim} loading={v.claimLoading} />}
           {v.isOwner && (
             <>

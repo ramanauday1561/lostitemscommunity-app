@@ -79,6 +79,7 @@ FAB visibility, inbox visibility, ad gating and profile settings.
 | `getBoundingClientRect()` / `e.clientX` | `nativeEvent.locationX/Y` | Same |
 | CSS `style-active` | `Press` component | Reproduces the scale-down and background shift on every button |
 | CSS shadows | RN `boxShadow` | Same values, supported on both targets |
+| "This is mine" / "I have found this" shown on every post | Only on open (Active) posts; a Reunited/Resolved post shows a note instead (people with an existing chat can still open it) | Offering to claim an item that has already been handed over is wrong. `canClaim` and `claimClosedNote` are the two values the oracle is told to ignore (`INTENTIONAL_DEVIATIONS` in `tools/oracle/check.ts`) |
 
 ## Verified interactively
 

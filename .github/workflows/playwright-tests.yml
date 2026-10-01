@@ -1,11 +1,20 @@
 name: Playwright E2E Tests - Live App
 
+# Runs on pull requests, on main, and by hand. It deliberately does NOT also run on every push to a claude/**
+# branch: a pull request would then start two runs of the same code at once.
 on:
   push:
-    branches: [main, claude/**]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+# All runs sign in as the same few test accounts against the one live project, and the login function throttles
+# sign-ins per account (8 per 10 minutes). Two runs at the same time lock each other out, so they queue instead
+# of overlapping. (A waiting run is replaced by a newer one; the one already running is never cancelled.)
+concurrency:
+  group: playwright-live-app
+  cancel-in-progress: false
 
 env:
   E2E_SUPERADMIN_USERNAME: ${{ secrets.E2E_SUPERADMIN_USERNAME }}

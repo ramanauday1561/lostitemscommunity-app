@@ -13,17 +13,30 @@ import { buildVals } from '../../src/state/selectors';
 
 const Component: any = makeComponent();
 
+/**
+ * Values that deliberately differ from the prototype (each is a fix, listed in docs/PARITY.md). They are removed from
+ * both sides so the rest of the screen still has to match exactly.
+ *  - canClaim, claimClosedNote: the prototype offers "This is mine" on posts that are already Reunited/Resolved;
+ *    the app only offers it on open posts.
+ */
+const INTENTIONAL_DEVIATIONS = ['canClaim', 'claimClosedNote'];
+const withoutDeviations = <T extends Record<string, unknown>>(vals: T): T => {
+  const copy: Record<string, unknown> = { ...vals };
+  for (const k of INTENTIONAL_DEVIATIONS) delete copy[k];
+  return copy as T;
+};
+
 const protoVals = (patch: Record<string, unknown>) => {
   const c = new Component();
   c.props = {};
   c.state = { ...c.state, ...patch };
-  return normalise(c.renderVals());
+  return normalise(withoutDeviations(c.renderVals()));
 };
 
 const portVals = (patch: Record<string, unknown>) => {
   const s = new Store();
   s.state = { ...initialState, ...(patch as object) } as typeof initialState;
-  return normalise(buildVals(s));
+  return normalise(withoutDeviations(buildVals(s) as Record<string, unknown>));
 };
 
 let failed = 0;
