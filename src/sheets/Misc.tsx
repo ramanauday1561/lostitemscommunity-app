@@ -4,7 +4,7 @@ import { C, FONTS, MONO } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Avatar, Cta, Kicker, Pill } from '../ui/bits';
+import { Avatar, Cta, Empty, Kicker, LoadGate, Pill } from '../ui/bits';
 import { Sheet } from './SheetHost';
 
 export function NewThreadSheet() {
@@ -151,6 +151,39 @@ export function AdSheet() {
           ))}
         </View>
       </View>
+    </Sheet>
+  );
+}
+
+export function NotificationsSheet() {
+  const v = useVals();
+  return (
+    <Sheet
+      title="Notifications"
+      footer={v.hasUnreadNotifs ? <Cta label="Mark all as read" on onPress={v.markAllRead} /> : undefined}
+    >
+      <LoadGate status={v.loads.notifications} onRetry={v.retry.notifications} what="notifications" />
+      <View style={{ gap: 8 }}>
+        {v.notificationList.map((n) => (
+          <Press key={n.id} onPress={n.open}
+            style={{ flexDirection: 'row', gap: 12, padding: 14, borderRadius: 20, backgroundColor: n.unread ? 'rgba(11,107,203,.07)' : C.fillSoft }}
+            scale={0.98}>
+            <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={n.icon} size={19} color={C.primary} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontFamily: n.unread ? FONTS[700] : FONTS[600], fontSize: 13.5, color: C.ink }}>{n.title}</Text>
+              {!!n.body && <Text numberOfLines={2} style={{ fontFamily: FONTS[400], fontSize: 12.5, lineHeight: 19, color: C.muted, marginTop: 3 }}>{n.body}</Text>}
+              <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.lighter, marginTop: 5 }}>{n.time}</Text>
+            </View>
+            {n.unread && <View style={{ width: 9, height: 9, borderRadius: 999, backgroundColor: C.primary, marginTop: 6 }} />}
+          </Press>
+        ))}
+      </View>
+      {v.noNotifications && (
+        <Empty icon="notifications_off" title="You're all caught up"
+          body="You'll be notified here when someone messages you, claims your item, or a moderator reviews your post." />
+      )}
     </Sheet>
   );
 }

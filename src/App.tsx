@@ -13,7 +13,7 @@ import { Ads, Analysis, Members, Messages, Moderation } from './screens/Admin';
 import { DetailSheet } from './sheets/Detail';
 import { ReportSheet, SentSheet } from './sheets/Report';
 import { ChatSheet, SupportSheet, ThreadSheet } from './sheets/Chat';
-import { AdSheet, GuidelinesSheet, NewThreadSheet, ProfileSheet } from './sheets/Misc';
+import { AdSheet, GuidelinesSheet, NewThreadSheet, NotificationsSheet, ProfileSheet } from './sheets/Misc';
 
 function Screen() {
   const v = useVals();
@@ -44,6 +44,7 @@ function Sheets() {
   if (v.sheetNewThread) return <NewThreadSheet />;
   if (v.sheetSupport) return <SupportSheet />;
   if (v.sheetProfile) return <ProfileSheet />;
+  if (v.sheetNotifications) return <NotificationsSheet />;
   if (v.sheetGuidelines) return <GuidelinesSheet />;
   if (v.sheetAd) return <AdSheet />;
   return null;

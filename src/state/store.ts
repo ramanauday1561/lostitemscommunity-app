@@ -17,7 +17,8 @@ import type { MemberProfile } from '../api/members';
 import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 import type { AdPlacementWithStatus, AdCampaign } from '../api/ads';
 import type { FaqEntry, SupportMessage } from '../api/support';
-import type { IncomingMessage } from '../api/realtime';
+import type { IncomingMessage, IncomingNotification } from '../api/realtime';
+import type { AppNotification } from '../api/notifications';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 /** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
@@ -25,16 +26,16 @@ export type Role = 'admin' | 'user' | 'new' | null;
 export type AuthMode = 'demo' | 'supabase';
 export type Sheet =
   | 'detail' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
-  | 'newthread' | 'support' | 'guidelines' | 'ad' | null;
+  | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | null;
 
 export interface Pin { x: number; y: number; lat: string; lng: string }
 
 /** Mirrors `state` in the prototype's Component class (line 1404). */
 /** Lists that load from Supabase. Demo mode never touches these (they stay 'idle'). */
-export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads';
+export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 export const IDLE_LOADS: Record<LoadKey, LoadState> = {
-  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle',
+  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle', notifications: 'idle',
 };
 
 export interface AppState {
@@ -51,6 +52,8 @@ export interface AppState {
   authEmail: string | null;
   /** Per-list loading state: drives the spinner / error+retry / empty states (see LoadGate). */
   loads: Record<LoadKey, LoadState>;
+  /** Bell / notifications sheet (Supabase mode only). Newest first. */
+  notifications: AppNotification[];
   myDashStats: MyDashboardStats | null;
   dbThreads: any[] | null;
   dbReplies: any[] | null;
@@ -103,7 +106,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, authEmail: null, loads: IDLE_LOADS, myDashStats: null, adminDashStats: null, dbItems: null,
+  profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null,
@@ -533,6 +536,59 @@ export class Store {
     this.flash(`New message from ${convo.with}`);
   };
 
+  // ============= Phase 12.3: Notifications =============
+
+  loadNotificationsSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    const profile = s.profile;
+    await this.track('notifications', async () => {
+      const api = await import('../api/notifications');
+      this.setState({ notifications: await api.loadNotifications(profile.id) });
+    });
+  };
+
+  /** Realtime delivered a new notification row. Message notifications don't toast: the chat
+   *  handler already does, and the unread chat badge covers them. */
+  handleIncomingNotification = async (row: IncomingNotification) => {
+    if (this.state.authMode !== 'supabase') return;
+    const api = await import('../api/notifications');
+    const n = api.toAppNotification(row);
+    if (!this.state.notifications.some((x) => x.id === n.id)) this.setState({ notifications: [n, ...this.state.notifications] });
+    if (n.type !== 'message') this.flash(n.title);
+  };
+
+  openNotifications = () => {
+    this.setState({ sheet: 'notifications' });
+    this.loadNotificationsSupabase();
+  };
+
+  markAllNotificationsRead = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile || !s.notifications.some((n) => !n.isRead)) return;
+    const before = s.notifications;
+    this.setState({ notifications: before.map((n) => ({ ...n, isRead: true })) });
+    try {
+      const api = await import('../api/notifications');
+      await api.markAllNotificationsRead(s.profile.id);
+    } catch (e) {
+      this.setState({ notifications: before });
+      this.flash(e instanceof Error ? e.message : 'Could not update notifications.');
+    }
+  };
+
+  /** Marks one read, then opens what it's about when that's a conversation. */
+  openNotification = async (id: string) => {
+    const n = this.state.notifications.find((x) => x.id === id);
+    if (!n) return;
+    if (!n.isRead) {
+      this.setState((st) => ({ notifications: st.notifications.map((x) => (x.id === id ? { ...x, isRead: true } : x)) }));
+      import('../api/notifications').then((api) => api.markNotificationRead(id)).catch((e) => console.error('markRead failed:', e));
+    }
+    if (n.conversationId && this.state.convos.some((c) => c.id === n.conversationId)) this.openChatSupabase(n.conversationId);
+    else this.setState({ sheet: null });
+  };
+
   private chatUnsubscribe: (() => void) | null = null;
 
   /** Opens the chat subscription for the signed-in user (idempotent). */
@@ -544,6 +600,7 @@ export class Store {
       this.chatUnsubscribe = rt.subscribeToChat(userId, {
         onMessage: this.handleIncomingMessage,
         onConversation: () => this.loadConversationsSupabase(),
+        onNotification: this.handleIncomingNotification,
       });
     } catch (e) {
       console.error('chat realtime failed to start:', e); // chat still works, just without live updates
@@ -840,7 +897,7 @@ export class Store {
       this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
       this.loadDashboardStats(profile);
       this.loadConversationsSupabase();
-      this.startChatRealtime(profile.id);
+      this.startChatRealtime(profile.id); this.loadNotificationsSupabase();
       this.loadForumSupabase();
       this.loadFaqSupabase();
       this.loadSupportMessagesSupabase();
@@ -875,7 +932,7 @@ export class Store {
           busy: false, screen: 'dash',
           ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
         });
-        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); }
+        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); }
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
         this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
@@ -931,7 +988,7 @@ export class Store {
     this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
     this.loadDashboardStats(profile);
     this.loadConversationsSupabase();
-    this.startChatRealtime(profile.id);
+    this.startChatRealtime(profile.id); this.loadNotificationsSupabase();
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {

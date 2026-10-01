@@ -283,6 +283,7 @@ export function buildVals(store: Store) {
       members: () => store.searchMembersSupabase(st.memberSearchQuery || ''),
       analysis: () => store.loadAnalysisSupabase(),
       ads: () => store.loadAdsSupabase(),
+      notifications: () => store.loadNotificationsSupabase(),
     },
     authModeOptions: [
       { key: 'demo', label: 'Demo data', on: !isSupabaseAuth, pick: () => store.setAuthMode('demo') },
@@ -675,6 +676,20 @@ export function buildVals(store: Store) {
     ],
     sheetDetail: sh === 'detail', sheetReport: sh === 'report',
     sheetSent: sh === 'sent', sheetProfile: sh === 'profile',
+
+    // Notifications (12.3): Supabase mode only -- demo mode has no backend to notify from.
+    showBell: isSupabaseAuth,
+    sheetNotifications: sh === 'notifications',
+    unreadNotifs: st.notifications.filter((n) => !n.isRead).length,
+    hasUnreadNotifs: st.notifications.some((n) => !n.isRead),
+    notificationList: st.notifications.map((n) => ({
+      id: n.id, title: n.title, body: n.body, time: n.time, unread: !n.isRead,
+      icon: ({ message: 'chat', match: 'person_search', moderation: 'flag', system: 'info' } as const)[n.type] ?? 'notifications',
+      open: () => store.openNotification(n.id),
+    })),
+    noNotifications: settled('notifications') && st.notifications.length === 0,
+    openNotifications: store.openNotifications,
+    markAllRead: store.markAllNotificationsRead,
     sheetOpen: !!sh,
 
     detail: sel,
@@ -826,7 +841,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, loads: IDLE_LOADS, myDashStats: null, adminDashStats: null, dbItems: null,
+        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
