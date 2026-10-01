@@ -29,11 +29,16 @@ export async function searchMembers(query: string): Promise<MemberProfile[]> {
     return loadMembers();
   }
 
+  // The term is spliced into a PostgREST filter string, so strip the characters that
+  // would let it add or end filters ( , ( ) ) and the ilike wildcard (%).
+  const term = query.trim().replace(/[%,()]/g, '');
+  if (!term) return loadMembers();
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .or(
-      `username.ilike.%${query}%,handle.ilike.%${query}%,display_name.ilike.%${query}%`
+      `username.ilike.%${term}%,handle.ilike.%${term}%,display_name.ilike.%${term}%`
     )
     .order('created_at', { ascending: false });
 
