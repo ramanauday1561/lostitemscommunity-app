@@ -45,6 +45,8 @@ export function buildVals(store: Store) {
     ? ({
         email: ['Forgot password', 'Reset your password', "Enter the email on your account and we'll send you a reset link."],
         done: ['Check your inbox', 'Reset link sent', st.fpInfo || "If that email has an account, we've sent a reset link to it."],
+        reset: ['Choose a new password', 'Set a new password', "Pick something you haven't used here before, then confirm it."],
+        changed: ['All set', 'Password changed', 'Sign in with your new password.'],
       } as Record<string, string[]>)[fpStage] || ['', '', '']
     : ({
         email: ['Step 1 of 3', 'Reset your password', "Enter the email on your account and we'll send a 6-digit code to confirm it's you."],
@@ -53,7 +55,7 @@ export function buildVals(store: Store) {
         done: ['All set', "You're back in", 'Your password has been changed.'],
       } as Record<string, string[]>)[fpStage];
   const fpOrder = ['email', 'code', 'reset', 'done'];
-  const fpIdx = fpOrder.indexOf(fpStage);
+  const fpIdx = fpStage === 'changed' ? 3 : fpOrder.indexOf(fpStage);
 
   const threadList = isSupabaseAuth ? (st.dbThreads ?? []) : st.threads;
   const visibleThreads = threadList
@@ -219,8 +221,8 @@ export function buildVals(store: Store) {
     goForgot: () => store.setState({ screen: 'forgot', fpStage: 'email', fpEmail: st.username.includes('@') ? st.username : '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpInfo: '', error: '' }),
     fpKicker: fpCopy[0], fpTitle: fpCopy[1], fpBody: fpCopy[2], fpIdx,
     fpIsEmail: fpStage === 'email', fpIsCode: fpStage === 'code',
-    fpIsReset: fpStage === 'reset', fpIsDone: fpStage === 'done',
-    fpShowSignInLink: fpStage !== 'done',
+    fpIsReset: fpStage === 'reset', fpIsDone: fpStage === 'done' || fpStage === 'changed',
+    fpShowSignInLink: fpStage !== 'done' && fpStage !== 'changed' && !st.fpRecovery,
     fpEmail: st.fpEmail, fpCode: st.fpCode, fpPass: st.fpPass, fpConfirm: st.fpConfirm, fpError: st.fpError, fpInfo: st.fpInfo,
     onFpEmail: (v: string) => store.setState({ fpEmail: v, fpError: '' }),
     onFpCode: (v: string) => store.setState({ fpCode: v.replace(/\D/g, '').slice(0, 6), fpError: '' }),
@@ -232,13 +234,14 @@ export function buildVals(store: Store) {
     fpStrengthLabel: fpStrength === 0 ? 'Use 8+ characters with a number and a symbol'
       : fpStrength === 1 ? 'Too short — 8 characters minimum'
       : fpStrength === 2 ? 'Good. Add a symbol to make it strong.' : 'Strong password',
-    fpPrimaryLabel: st.fpBusy ? 'Sending…' : fpStage === 'email' ? (isSupabaseAuth ? 'Send reset link' : 'Send reset code')
+    fpPrimaryLabel: st.fpBusy ? (fpStage === 'reset' ? 'Updating…' : 'Sending…') : fpStage === 'email' ? (isSupabaseAuth ? 'Send reset link' : 'Send reset code')
       : fpStage === 'code' ? 'Verify code' : fpStage === 'reset' ? 'Update password' : 'Back to sign in',
     fpPrimaryEnabled: !st.fpBusy && (fpStage === 'email' ? !!st.fpEmail.trim()
       : fpStage === 'code' ? st.fpCode.length === 6
       : fpStage === 'reset' ? !!(st.fpPass && st.fpConfirm) : true),
     fpPrimary: isSupabaseAuth ? () => {
       if (fpStage === 'email') { store.requestResetSupabase(); return; }
+      if (fpStage === 'reset') { store.finishPasswordResetSupabase(); return; }
       store.setState({ screen: 'login', fpStage: 'email', fpPass: '', fpConfirm: '', fpCode: '', fpInfo: '', error: '', password: '' });
     } : () => {
       if (fpStage === 'email') {
@@ -262,6 +265,7 @@ export function buildVals(store: Store) {
     },
     fpResend: () => { store.setState({ fpCode: '', fpError: '' }); store.flash(`New code sent to ${st.fpEmail}.`); },
     fpBack: () => {
+      if (st.fpRecovery) { store.abandonRecovery(); return; }
       if (fpStage === 'code') store.setState({ fpStage: 'email', fpError: '' });
       else if (fpStage === 'reset') store.setState({ fpStage: 'code', fpError: '' });
       else store.setState({ screen: 'login', fpStage: 'email', fpError: '' });
@@ -846,7 +850,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
+        profile: null, authEmail: null, fpRecovery: false, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
         // Every cached server list: another account signing in on this device must not see the last user's data.
         dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
         dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,

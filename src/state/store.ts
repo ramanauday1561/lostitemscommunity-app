@@ -50,6 +50,8 @@ export interface AppState {
   profile: AuthApi.Profile | null;
   /** auth.users email of the signed-in Supabase account (not on profiles). */
   authEmail: string | null;
+  /** True while the user arrived via a password-reset link and is choosing a new password. */
+  fpRecovery: boolean;
   /** Per-list loading state: drives the spinner / error+retry / empty states (see LoadGate). */
   loads: Record<LoadKey, LoadState>;
   /** Bell / notifications sheet (Supabase mode only). Newest first. */
@@ -108,7 +110,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
+  profile: null, authEmail: null, fpRecovery: false, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null,
@@ -1021,10 +1023,74 @@ export class Store {
     await authApi.signOut();
   };
 
+  // ============= Phase 14: password-reset link =============
+
+  /** Set as soon as a reset link is recognised, so restoreSession() can't route to the dashboard. */
+  private recovering = false;
+
+  /**
+   * Handles a URL the app was opened with (web address, or a deep link on native). Returns true when
+   * it was a password-reset link (success or failure), so the caller skips restoring a normal session.
+   * Success -> the "choose a new password" form; failure (expired/used link) -> the email form with an
+   * explanation. The one-time tokens are scrubbed from the address bar either way.
+   */
+  handleAuthUrl = async (url: string | null | undefined): Promise<boolean> => {
+    const { parseAuthUrl } = await import('../lib/authUrl');
+    const parsed = parseAuthUrl(url);
+    if (!parsed) return false;
+    const { scrubAuthUrl } = await import('../lib/appUrl');
+    scrubAuthUrl();
+
+    const showError = (message: string) => {
+      this.recovering = false;
+      this.setState({ authMode: 'supabase', screen: 'forgot', fpStage: 'email', fpRecovery: false, fpError: message, fpInfo: '' });
+    };
+    if (parsed.kind === 'error') { showError(parsed.message); return true; }
+
+    this.recovering = true;
+    try {
+      const authApi = await import('../api/auth');
+      await authApi.startRecovery(parsed.accessToken, parsed.refreshToken);
+      this.setState({
+        authMode: 'supabase', screen: 'forgot', fpStage: 'reset', fpRecovery: true,
+        fpPass: '', fpConfirm: '', fpError: '', fpInfo: '', role: null, profile: null,
+      });
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'That reset link has expired. Request a new one.');
+    }
+    return true;
+  };
+
+  /** Saves the new password, then signs the recovery session out so the user signs in with it. */
+  finishPasswordResetSupabase = async () => {
+    const s = this.state;
+    if (s.fpPass.length < 8) { this.setState({ fpError: 'Use at least 8 characters for your new password.' }); return; }
+    if (s.fpPass !== s.fpConfirm) { this.setState({ fpError: "Passwords don't match. Check both fields." }); return; }
+    this.setState({ fpBusy: true, fpError: '' });
+    try {
+      const authApi = await import('../api/auth');
+      await authApi.updatePassword(s.fpPass);
+      await authApi.signOut();
+      this.recovering = false;
+      this.setState({ fpBusy: false, fpStage: 'changed', fpRecovery: false, fpPass: '', fpConfirm: '', fpError: '' });
+    } catch (e) {
+      this.setState({ fpBusy: false, fpError: e instanceof Error ? e.message : 'Could not update your password. Try again.' });
+    }
+  };
+
+  /** Leaving the reset form without finishing: end the recovery session instead of leaving it signed in. */
+  abandonRecovery = async () => {
+    this.recovering = false;
+    this.setState({ screen: 'login', fpStage: 'email', fpRecovery: false, fpPass: '', fpConfirm: '', fpError: '' });
+    try { const authApi = await import('../api/auth'); await authApi.signOut(); } catch { /* nothing to end */ }
+  };
+
   /** Restores a previous Supabase session on app launch, so a killed/reopened
    *  app doesn't drop back to Welcome. No-ops if there is no session, or if
    *  navigation has already moved past the welcome/login screens. */
   restoreSession = async () => {
+    // A password-reset link creates a session too; it must not be mistaken for "already signed in".
+    if (this.recovering) return;
     const authApi = await import('../api/auth');
     const session = await authApi.getSession();
     if (!session) return;

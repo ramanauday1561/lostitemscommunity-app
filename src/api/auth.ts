@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { appUrl } from '../lib/appUrl';
+import { LINK_EXPIRED } from '../lib/authUrl';
 import type { Database } from '../lib/database.types';
 
 export class AuthApiError extends Error {}
@@ -14,6 +16,8 @@ function mapAuthError(message: string): string {
   if (m.includes('email not confirmed')) return 'Confirm your email address before signing in.';
   if (m.includes('user already registered')) return 'That email is already registered. Try signing in instead.';
   if (m.includes('password should be at least')) return 'Use at least 8 characters for your password.';
+  if (m.includes('different from the old password')) return 'Choose a password you haven\'t used before.';
+  if (m.includes('session') && (m.includes('missing') || m.includes('expired') || m.includes('not found'))) return LINK_EXPIRED;
   if (m.includes('rate limit')) return 'Too many attempts. Wait a moment and try again.';
   if (m.includes('network') || m.includes('failed to fetch') || m.includes('fetch failed')) {
     return "Can't reach the server. Check your connection and try again.";
@@ -90,7 +94,13 @@ export async function requestPasswordReset(email: string) {
   // Always resolves the same way whether or not the email exists, so the UI
   // can show one "check your email" state without leaking which emails are
   // registered.
-  await supabase.auth.resetPasswordForEmail(email.trim());
+  await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: appUrl() });
+}
+
+/** Adopts the short-lived session from a password-reset link so `updatePassword` is allowed. */
+export async function startRecovery(accessToken: string, refreshToken: string) {
+  const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  if (error) throw new AuthApiError(LINK_EXPIRED);
 }
 
 export async function updatePassword(newPassword: string) {
