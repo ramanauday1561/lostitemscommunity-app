@@ -151,6 +151,24 @@ export type Database = {
           },
         ]
       }
+      auth_throttle: {
+        Row: {
+          attempts: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          attempts?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          attempts?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           claimant_id: string
@@ -798,8 +816,16 @@ export type Database = {
       }
     }
     Functions: {
+      auth_throttle_hit: {
+        Args: { p_key: string; p_limit: number; p_window_seconds: number }
+        Returns: boolean
+      }
       current_profile_id: { Args: never; Returns: string }
       email_for_username: { Args: { p_username: string }; Returns: string }
+      flag_target_owner: {
+        Args: { p_id: string; p_type: string }
+        Returns: Record<string, unknown>
+      }
       is_superadmin: { Args: never; Returns: boolean }
       resolve_moderation_flag: {
         Args: { approve: boolean; flag_id: string }
