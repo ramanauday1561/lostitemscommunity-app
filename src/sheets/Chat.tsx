@@ -6,7 +6,7 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Avatar } from '../ui/bits';
 
-function Bubble({ m }: { m: { text: string; time: string; mine: boolean } }) {
+export function Bubble({ m }: { m: { text: string; time: string; mine: boolean } }) {
   return (
     <View style={{ alignItems: m.mine ? 'flex-end' : 'flex-start', gap: 4 }}>
       <View style={{
@@ -22,7 +22,7 @@ function Bubble({ m }: { m: { text: string; time: string; mine: boolean } }) {
   );
 }
 
-function Composer({ value, onChange, onSend, placeholder }: {
+export function Composer({ value, onChange, onSend, placeholder }: {
   value: string; onChange: (v: string) => void; onSend: () => void; placeholder: string;
 }) {
   const on = !!value.trim();
@@ -47,7 +47,7 @@ function Composer({ value, onChange, onSend, placeholder }: {
 }
 
 /** Shared sheet frame for the three conversation-style sheets. */
-function ChatFrame({ header, children, footer }: {
+export function ChatFrame({ header, children, footer }: {
   header: React.ReactNode; children: React.ReactNode; footer: React.ReactNode;
 }) {
   const { store } = useApp();
@@ -218,6 +218,42 @@ export function ThreadSheet() {
       {v.noReplies && (
         <Text style={{ fontFamily: FONTS[400], fontSize: 12.5, color: C.subtle }}>No replies yet — be the first.</Text>
       )}
+    </ChatFrame>
+  );
+}
+
+/** Superadmin: the thread of one member's support request, with a reply box and "Mark resolved" (11.3). */
+export function SupportReplySheet() {
+  const v = useVals();
+  const who = v.supportReplyWho as { name: string; handle: string; requestId: string } | null;
+  return (
+    <ChatFrame
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+          <Avatar text={(who?.name || '?').slice(0, 1).toUpperCase()} size={40} bg={C.bg} color={C.ink} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ fontFamily: FONTS[700], fontSize: 14.5, color: C.ink }}>{who?.name ?? 'Member'}</Text>
+            <Text style={{ fontFamily: FONTS[400], fontSize: 11.5, color: C.subtle, marginTop: 2 }}>@{who?.handle ?? ''} · support request</Text>
+          </View>
+          <Press style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+            scale={0.92} activeBg={C.fill} onPress={v.closeSheet}>
+            <Icon name="close" size={22} color={C.ink} />
+          </Press>
+        </View>
+      }
+      footer={
+        <>
+          <Composer value={v.supportReplyDraft} onChange={v.onSupportReplyDraft} onSend={v.sendSupportReply} placeholder="Reply to this member" />
+          {who && (
+            <Press style={{ minHeight: 40, alignItems: 'center', justifyContent: 'center' }} scale={0.98}
+              onPress={() => (v.supportInbox as { id: string; resolve: () => void }[]).find((i) => i.id === who.requestId)?.resolve()}>
+              <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.success }}>Mark resolved</Text>
+            </Press>
+          )}
+        </>
+      }
+    >
+      {v.supportReplyMessages.map((m: { text: string; time: string; mine: boolean }, i: number) => <Bubble key={i} m={m} />)}
     </ChatFrame>
   );
 }

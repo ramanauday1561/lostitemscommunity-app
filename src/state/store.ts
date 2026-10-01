@@ -16,7 +16,7 @@ import type { ModerationFlag } from '../api/moderation';
 import type { MemberProfile } from '../api/members';
 import type { WeeklyReportCount, ModerationKeyword } from '../api/analysis';
 import type { AdPlacementWithStatus, AdCampaign } from '../api/ads';
-import type { FaqEntry, SupportMessage } from '../api/support';
+import type { FaqEntry, SupportInboxItem, SupportMessage } from '../api/support';
 import type { IncomingMessage, IncomingNotification } from '../api/realtime';
 import type { AppNotification } from '../api/notifications';
 
@@ -26,16 +26,16 @@ export type Role = 'admin' | 'user' | 'new' | null;
 export type AuthMode = 'demo' | 'supabase';
 export type Sheet =
   | 'detail' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
-  | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | null;
+  | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | 'supportReply' | null;
 
 export interface Pin { x: number; y: number; lat: string; lng: string }
 
 /** Mirrors `state` in the prototype's Component class (line 1404). */
 /** Lists that load from Supabase. Demo mode never touches these (they stay 'idle'). */
-export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications';
+export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications' | 'support';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 export const IDLE_LOADS: Record<LoadKey, LoadState> = {
-  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle', notifications: 'idle',
+  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle', notifications: 'idle', support: 'idle',
 };
 
 export interface AppState {
@@ -102,6 +102,11 @@ export interface AppState {
   dbFaqEntries: FaqEntry[] | null;
   /** Supabase mode only: support messages for current user (Phase 11). */
   dbSupportMessages: SupportMessage[] | null;
+  /** Superadmin, Supabase mode: open "talk to a human" requests with their threads (11.3). */
+  dbSupportInbox: SupportInboxItem[] | null;
+  /** The member whose thread the reply sheet is showing, and the reply being typed. */
+  activeSupportUser: string | null;
+  supportReplyDraft: string;
 }
 
 export const initialState: AppState = {
@@ -113,7 +118,7 @@ export const initialState: AppState = {
   profile: null, authEmail: null, fpRecovery: false, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
-  dbFaqEntries: null, dbSupportMessages: null,
+  dbFaqEntries: null, dbSupportMessages: null, dbSupportInbox: null, activeSupportUser: null, supportReplyDraft: '',
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
   fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
@@ -621,6 +626,8 @@ export class Store {
     const n = api.toAppNotification(row);
     if (!this.state.notifications.some((x) => x.id === n.id)) this.setState({ notifications: [n, ...this.state.notifications] });
     if (n.type !== 'message') this.flash(n.title);
+    // A staff reply: pull it into the thread so it is there if the support sheet is (or gets) opened.
+    if (n.type === 'system') this.loadSupportMessagesSupabase();
   };
 
   openNotifications = () => {
@@ -651,6 +658,7 @@ export class Store {
       import('../api/notifications').then((api) => api.markNotificationRead(id)).catch((e) => console.error('markRead failed:', e));
     }
     if (n.conversationId && this.state.convos.some((c) => c.id === n.conversationId)) this.openChatSupabase(n.conversationId);
+    else if (n.type === 'system' && n.title === 'Support replied') { this.setState({ sheet: 'support', supportDraft: '' }); this.loadSupportMessagesSupabase(); this.scrollChat(); }
     else this.setState({ sheet: null });
   };
 
@@ -930,6 +938,71 @@ export class Store {
     }
   };
 
+  /** "Talk to a human instead": opens (or finds) the member's request and tells them so in the thread. */
+  escalateSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    const userId = s.profile.id;
+    try {
+      const api = await import('../api/support');
+      const result = await api.openSupportRequest(userId);
+      if (result === 'opened') await api.sendSupportMessage(userId, api.HANDOFF_NOTICE, 'bot');
+      await this.loadSupportMessagesSupabase();
+      this.scrollChat();
+      this.flash(result === 'opened' ? 'Passed to our support team. You will be notified when they reply.' : 'Your request is already with our support team. You will be notified when they reply.');
+    } catch (e) {
+      console.error('escalate failed:', e);
+      this.flash(e instanceof Error && /too often/i.test(e.message) ? e.message : "Couldn't reach the support team. Please try again.");
+    }
+  };
+
+  // ============= Phase 11.3: support inbox (superadmin) =============
+
+  loadSupportInboxSupabase = async () => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile || s.profile.role !== 'superadmin') return;
+    await this.track('support', async () => {
+      const api = await import('../api/support');
+      this.setState({ dbSupportInbox: await api.loadSupportInbox() });
+    });
+  };
+
+  openSupportReply = (userId: string) => {
+    this.setState({ sheet: 'supportReply', activeSupportUser: userId, supportReplyDraft: '' });
+    this.scrollChat();
+  };
+
+  sendSupportReply = async () => {
+    const s = this.state;
+    const text = s.supportReplyDraft.trim();
+    if (s.authMode !== 'supabase' || !s.profile || !s.activeSupportUser || !text) return;
+    const userId = s.activeSupportUser;
+    this.setState({ supportReplyDraft: '' });
+    try {
+      const api = await import('../api/support');
+      await api.replyToSupport(userId, text);
+      await this.loadSupportInboxSupabase();
+      this.scrollChat();
+    } catch (e) {
+      this.setState({ supportReplyDraft: text });
+      this.flash(e instanceof Error ? e.message : "Couldn't send that reply.");
+    }
+  };
+
+  resolveSupportRequest = async (requestId: string) => {
+    const s = this.state;
+    if (s.authMode !== 'supabase' || !s.profile) return;
+    try {
+      const api = await import('../api/support');
+      await api.closeSupportRequest(requestId, s.profile.id);
+      this.setState({ sheet: s.sheet === 'supportReply' ? null : s.sheet, activeSupportUser: null });
+      await this.loadSupportInboxSupabase();
+      this.flash('Request resolved.');
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : "Couldn't resolve that request.");
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -951,6 +1024,7 @@ export class Store {
       this.loadSupportMessagesSupabase();
       if (profile.role === 'superadmin') {
         this.loadModerationQueueSupabase();
+        this.loadSupportInboxSupabase();
         this.loadMembersSupabase();
         this.loadAnalysisSupabase();
         this.loadAdsSupabase();
