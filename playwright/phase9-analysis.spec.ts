@@ -49,18 +49,14 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     await takeScreenshot(page, 'phase9-analysis-keywords');
   });
 
-  test('should display signals section', async ({ page }) => {
+  test('shows only real figures: the prototype "Signals" card is hidden for a real admin', async ({ page }) => {
     await navigateTo(page, 'analysis');
     await page.waitForLoadState('networkidle');
 
-    // Verify Signals section exists
-    const signalsTitle = await isVisible(page, 'Signals');
-    expect(signalsTitle).toBe(true);
-
-    // Should have metrics displayed
-    const pageContent = await page.content();
-    const hasContent = pageContent.length > 100;
-    expect(hasContent).toBe(true);
+    // Decision 13.1: the decorative Signals card (invented response times, "scouts online") is demo-mode only.
+    await expect(page.getByText('Reports this week')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Flagged keywords')).toBeVisible();
+    expect(await isVisible(page, 'Signals')).toBe(false);
 
     await takeScreenshot(page, 'phase9-analysis-signals');
   });
