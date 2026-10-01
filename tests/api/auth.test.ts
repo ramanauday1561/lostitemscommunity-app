@@ -122,10 +122,32 @@ describe('auth api', () => {
     });
   });
 
-  test('requestPasswordReset trims the email and never throws (same UI whether or not it exists)', async () => {
-    fake.queue({ error: { message: 'User not found' } });
-    await auth.requestPasswordReset('  a@b.co ');
-    assert.deepEqual(fake.args('args', 0), ['a@b.co']);
+  test('requestPasswordReset trims the email, asks Supabase to send the link back to the app, and never throws', async () => {
+    const prev = process.env.EXPO_PUBLIC_APP_URL;
+    process.env.EXPO_PUBLIC_APP_URL = 'https://app.example.com';
+    try {
+      fake.queue({ error: { message: 'User not found' } });
+      await auth.requestPasswordReset('  a@b.co ');
+      assert.deepEqual(fake.args('args', 0), ['a@b.co', { redirectTo: 'https://app.example.com' }]);
+    } finally { if (prev === undefined) delete process.env.EXPO_PUBLIC_APP_URL; else process.env.EXPO_PUBLIC_APP_URL = prev; }
+  });
+
+  describe('startRecovery', () => {
+    test('adopts the session from the reset link', async () => {
+      await auth.startRecovery('AT', 'RT');
+      assert.equal(fake.calls[0].name, 'setSession');
+      assert.deepEqual(fake.args('args', 0), [{ access_token: 'AT', refresh_token: 'RT' }]);
+    });
+
+    test('a rejected session (expired/used link) becomes the friendly "link expired" message', async () => {
+      fake.queue({ error: { message: 'Invalid Refresh Token: Already Used' } });
+      await assert.rejects(auth.startRecovery('AT', 'RT'), { message: 'That reset link has expired or was already used. Request a new one.' });
+    });
+  });
+
+  test('updatePassword: reusing the old password gets a friendly message', async () => {
+    fake.queue({ error: { message: 'New password should be different from the old password.' } });
+    await assert.rejects(auth.updatePassword('same-as-before'), { message: "Choose a password you haven't used before." });
   });
 
   test('updatePassword maps errors', async () => {
