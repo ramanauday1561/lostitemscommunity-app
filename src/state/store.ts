@@ -62,6 +62,8 @@ export interface AppState {
   /** Real registry results (Supabase mode only), refetched by the Registry screen
    *  when screen/filter/q change -- see src/screens/Registry.tsx. */
   dbItems: Item[] | null;
+  /** Registry paging (3.4): more rows exist on the server / a next page is in flight. */
+  registryHasMore: boolean; registryLoadingMore: boolean;
   suUser: string; suEmail: string; suPass: string; suConfirm: string;
   suTerms: boolean; suError: string; suInfo: string;
   fpStage: string; fpEmail: string; fpCode: string; fpPass: string;
@@ -106,7 +108,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null,
+  profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null,
@@ -297,14 +299,14 @@ export class Store {
 
   /** Runs a list loader and records loading -> ready | error for `key`, so screens can show a
    *  spinner, an error with retry, or the genuine empty state instead of an ambiguous blank list. */
-  private track = async (key: LoadKey, fn: () => Promise<void>) => {
+  private track = async (key: LoadKey, fn: () => Promise<void>, isCurrent: () => boolean = () => true) => {
     this.setState((s) => ({ loads: { ...s.loads, [key]: 'loading' } }));
     try {
       await fn();
-      this.setState((s) => ({ loads: { ...s.loads, [key]: 'ready' } }));
+      if (isCurrent()) this.setState((s) => ({ loads: { ...s.loads, [key]: 'ready' } }));
     } catch (e) {
       console.error(`${key} failed to load:`, e);
-      this.setState((s) => ({ loads: { ...s.loads, [key]: 'error' } }));
+      if (isCurrent()) this.setState((s) => ({ loads: { ...s.loads, [key]: 'error' } }));
     }
   };
 
@@ -316,13 +318,46 @@ export class Store {
     if (st.authMode !== 'supabase') return;
     const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
     if (!kind) return;
+    // Only the newest query may write: typing fast or switching filters can return responses out of order.
+    const req = ++this.registryReq;
     await this.track('registry', async () => {
       const items = await import('../api/items');
-      const results = await items.listItems({
+      const page = await items.listItems({
         kind, filter: st.filter, query: st.q, userId: st.profile?.id,
       });
-      this.setState({ dbItems: results });
-    });
+      if (req !== this.registryReq) return;
+      this.setState({ dbItems: page.items, registryHasMore: page.hasMore, registryLoadingMore: false });
+    }, () => req === this.registryReq);
+  };
+
+  private registryReq = 0;
+
+  /** Appends the next page (3.4). No-op unless the server said more exists and nothing is in flight. */
+  loadMoreRegistry = async () => {
+    const st = this.state;
+    if (st.authMode !== 'supabase' || !st.registryHasMore || st.registryLoadingMore || st.loads.registry === 'loading') return;
+    const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
+    if (!kind) return;
+    const req = this.registryReq;
+    this.setState({ registryLoadingMore: true });
+    try {
+      const items = await import('../api/items');
+      const page = await items.listItems({
+        kind, filter: st.filter, query: st.q, userId: st.profile?.id, offset: (st.dbItems ?? []).length,
+      });
+      if (req !== this.registryReq) return; // filter/search changed meanwhile; the new load owns the list
+      this.setState((s) => {
+        const seen = new Set((s.dbItems ?? []).map((i) => i.id));
+        return {
+          dbItems: [...(s.dbItems ?? []), ...page.items.filter((i) => !seen.has(i.id))],
+          registryHasMore: page.hasMore, registryLoadingMore: false,
+        };
+      });
+    } catch (e) {
+      console.error('loadMoreRegistry failed:', e);
+      if (req === this.registryReq) this.setState({ registryLoadingMore: false });
+      this.flash("Couldn't load more items. Try again.");
+    }
   };
 
   /** Registry items keep their display_id (e.g. "LOST-1031") as `Item.id`, but

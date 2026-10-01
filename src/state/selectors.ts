@@ -497,6 +497,9 @@ export function buildVals(store: Store) {
       ...i, open: openItem(i),
       adAfter: !admin && ix === 3 && registry.length > 4 && store.slotFor('Registry', fresh, st).live,
     })),
+    registryHasMore: isSupabaseAuth && st.registryHasMore,
+    registryLoadingMore: st.registryLoadingMore,
+    loadMoreRegistry: store.loadMoreRegistry,
     myPostsEmpty: settled('registry') && st.filter === 'My posts' && registry.length === 0,
     registryEmpty: settled('registry') && registry.length === 0 && st.filter !== 'My posts',
 
@@ -841,7 +844,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null,
+        profile: null, authEmail: null, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
