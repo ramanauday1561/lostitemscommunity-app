@@ -74,8 +74,8 @@ export async function listItems(params: ListItemsParams): Promise<Item[]> {
   }
 
   const { data, error } = await q;
-  if (error || !data) return [];
-  return (data as ItemRow[]).map(toFrontendItem);
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as ItemRow[]).map(toFrontendItem);
 }
 
 export interface CreateItemInput {

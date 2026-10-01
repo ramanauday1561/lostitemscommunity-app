@@ -29,6 +29,13 @@ export type Sheet =
 export interface Pin { x: number; y: number; lat: string; lng: string }
 
 /** Mirrors `state` in the prototype's Component class (line 1404). */
+/** Lists that load from Supabase. Demo mode never touches these (they stay 'idle'). */
+export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads';
+export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
+export const IDLE_LOADS: Record<LoadKey, LoadState> = {
+  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle',
+};
+
 export interface AppState {
   screen: string; slide: number; convos: Convo[]; activeConvo: string | null;
   draft: string; role: Role;
@@ -41,6 +48,8 @@ export interface AppState {
   profile: AuthApi.Profile | null;
   /** auth.users email of the signed-in Supabase account (not on profiles). */
   authEmail: string | null;
+  /** Per-list loading state: drives the spinner / error+retry / empty states (see LoadGate). */
+  loads: Record<LoadKey, LoadState>;
   myDashStats: MyDashboardStats | null;
   dbThreads: any[] | null;
   dbReplies: any[] | null;
@@ -93,7 +102,7 @@ export const initialState: AppState = {
   threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
   authMode: 'demo',
-  profile: null, authEmail: null, myDashStats: null, adminDashStats: null, dbItems: null,
+  profile: null, authEmail: null, loads: IDLE_LOADS, myDashStats: null, adminDashStats: null, dbItems: null,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null,
@@ -282,6 +291,19 @@ export class Store {
     }
   };
 
+  /** Runs a list loader and records loading -> ready | error for `key`, so screens can show a
+   *  spinner, an error with retry, or the genuine empty state instead of an ambiguous blank list. */
+  private track = async (key: LoadKey, fn: () => Promise<void>) => {
+    this.setState((s) => ({ loads: { ...s.loads, [key]: 'loading' } }));
+    try {
+      await fn();
+      this.setState((s) => ({ loads: { ...s.loads, [key]: 'ready' } }));
+    } catch (e) {
+      console.error(`${key} failed to load:`, e);
+      this.setState((s) => ({ loads: { ...s.loads, [key]: 'error' } }));
+    }
+  };
+
   /** Refetches the registry for the current screen/filter/search. No-ops outside
    *  Supabase mode or off the lost/found screens; called from a useEffect in
    *  Registry.tsx rather than from every place filter/q/screen can change. */
@@ -290,11 +312,13 @@ export class Store {
     if (st.authMode !== 'supabase') return;
     const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
     if (!kind) return;
-    const items = await import('../api/items');
-    const results = await items.listItems({
-      kind, filter: st.filter, query: st.q, userId: st.profile?.id,
+    await this.track('registry', async () => {
+      const items = await import('../api/items');
+      const results = await items.listItems({
+        kind, filter: st.filter, query: st.q, userId: st.profile?.id,
+      });
+      this.setState({ dbItems: results });
     });
-    this.setState({ dbItems: results });
   };
 
   /** Registry items keep their display_id (e.g. "LOST-1031") as `Item.id`, but
@@ -443,13 +467,12 @@ export class Store {
   loadConversationsSupabase = async () => {
     const s = this.state;
     if (s.authMode !== 'supabase' || !s.profile) return;
-    try {
+    const profile = s.profile;
+    await this.track('conversations', async () => {
       const convApi = await import('../api/conversations');
-      const convos = await convApi.loadConversations(s.profile.id);
+      const convos = await convApi.loadConversations(profile.id);
       this.setState({ convos });
-    } catch (e) {
-      console.error('loadConversations failed:', e);
-    }
+    });
   };
 
   loadMessagesSupabase = async (conversationId: string) => {
@@ -498,13 +521,12 @@ export class Store {
   loadForumSupabase = async () => {
     const s = this.state;
     if (s.authMode !== 'supabase' || !s.profile) return;
-    try {
+    const profile = s.profile;
+    await this.track('forum', async () => {
       const forumApi = await import('../api/forum');
-      const threads = await forumApi.loadThreads(s.profile.id, s.forumTag || undefined);
+      const threads = await forumApi.loadThreads(profile.id, s.forumTag || undefined);
       this.setState({ dbThreads: threads });
-    } catch (e) {
-      console.error('loadThreads failed:', e);
-    }
+    });
   };
 
   loadRepliesSupabase = async (threadId: string) => {
@@ -613,14 +635,12 @@ export class Store {
   loadModerationQueueSupabase = async () => {
     const s = this.state;
     if (s.authMode !== 'supabase' || !s.profile) return;
-    try {
+    await this.track('moderation', async () => {
       const modApi = await import('../api/moderation');
       const queue = await modApi.loadModerationQueue();
       const stats = await modApi.loadModerationStats();
       this.setState({ dbModerationQueue: queue, dbModerationStats: stats });
-    } catch (e) {
-      console.error('loadModerationQueue failed:', e);
-    }
+    });
   };
 
   takeModActionSupabase = async (flagId: string, action: 'approve' | 'remove') => {
@@ -644,25 +664,21 @@ export class Store {
   // Phase 8: Members Management
   loadMembersSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
-    try {
+    await this.track('members', async () => {
       const membersApi = await import('../api/members');
       const members = await membersApi.loadMembers();
       this.setState({ dbMembers: members });
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not load members.');
-    }
+    });
   };
 
   searchMembersSupabase = async (query: string) => {
     if (this.state.authMode !== 'supabase') return;
     this.setState({ memberSearchQuery: query });
-    try {
+    await this.track('members', async () => {
       const membersApi = await import('../api/members');
       const members = await membersApi.searchMembers(query);
       this.setState({ dbMembers: members });
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not search members.');
-    }
+    });
   };
 
   suspendMemberSupabase = async (memberId: string) => {
@@ -703,30 +719,26 @@ export class Store {
 
   loadAnalysisSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
-    try {
+    await this.track('analysis', async () => {
       const analysisApi = await import('../api/analysis');
       const [reports, keywords] = await Promise.all([
         analysisApi.getWeeklyReportCounts(),
         analysisApi.getModerationKeywords(),
       ]);
       this.setState({ dbWeeklyReports: reports, dbKeywords: keywords });
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not load analysis data.');
-    }
+    });
   };
 
   loadAdsSupabase = async () => {
     if (this.state.authMode !== 'supabase') return;
-    try {
+    await this.track('ads', async () => {
       const adsApi = await import('../api/ads');
       const [placements, campaigns] = await Promise.all([
         adsApi.getAdPlacements(),
         adsApi.getAdCampaigns(),
       ]);
       this.setState({ dbAdPlacements: placements, dbAdCampaigns: campaigns });
-    } catch (e) {
-      this.flash(e instanceof Error ? e.message : 'Could not load ads data.');
-    }
+    });
   };
 
   // Phase 11: Support Chat & FAQ

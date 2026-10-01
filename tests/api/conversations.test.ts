@@ -51,9 +51,9 @@ describe('conversations api', () => {
       assert.equal((await conv.loadConversations('me'))[0].item, 'Keys');
     });
 
-    test('returns [] on error', async () => {
+    test('throws on error so the UI can show an error + retry', async () => {
       fake.queue({ error: { message: 'boom' } });
-      assert.deepEqual(await conv.loadConversations('me'), []);
+      await assert.rejects(conv.loadConversations('me'), /boom/);
     });
   });
 

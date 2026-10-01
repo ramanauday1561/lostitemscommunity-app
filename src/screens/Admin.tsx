@@ -4,7 +4,7 @@ import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Avatar, Card, Chip, Empty, Kicker } from '../ui/bits';
+import { Avatar, Card, Chip, Empty, Kicker, LoadGate } from '../ui/bits';
 
 const pad = { padding: 20, paddingTop: 6, paddingBottom: 28, gap: 12 };
 
@@ -21,6 +21,7 @@ export function Moderation() {
         ))}
       </View>
 
+      <LoadGate status={v.loads.moderation} onRetry={v.retry.moderation} what="the review queue" />
       {v.flagged.map((f) => (
         <Card key={f.id}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -49,7 +50,7 @@ export function Moderation() {
           </View>
         </Card>
       ))}
-      {v.flaggedEmpty && <Empty icon="task_alt" title="Queue is clear" body="Nothing is waiting for review right now." />}
+      {v.flaggedEmpty && (!v.isSupabaseAuthMode || v.loads.moderation === 'ready') && <Empty icon="task_alt" title="Queue is clear" body="Nothing is waiting for review right now." />}
     </ScrollView>
   );
 }
@@ -58,6 +59,7 @@ export function Analysis() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
+      <LoadGate status={v.loads.analysis} onRetry={v.retry.analysis} what="analysis" />
       <Card>
         <Kicker>Reports this week</Kicker>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 110, marginTop: 16, gap: 6 }}>
@@ -108,6 +110,7 @@ export function Members() {
         <Field icon="search" value={v.uq} onChange={v.onUserQuery} placeholder="Search members" compact />
       </View>
       <ScrollView contentContainerStyle={{ ...pad, paddingTop: 14 }}>
+        <LoadGate status={v.loads.members} onRetry={v.retry.members} what="members" />
         {v.members.map((m) => (
           <Card key={m.name}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
@@ -154,6 +157,7 @@ export function Ads() {
         </View>
       </Card>
 
+      <LoadGate status={v.loads.ads} onRetry={v.retry.ads} what="ad placements" />
       {v.adSlots.map((a) => (
         <Card key={a.id}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
@@ -211,6 +215,7 @@ export function Messages() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
+      <LoadGate status={v.loads.conversations} onRetry={v.retry.conversations} what="conversations" />
       {v.conversations.map((c) => (
         <Press key={c.itemId} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
           scale={0.98} onPress={c.open}>

@@ -1,4 +1,4 @@
-import { Text, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Text, View, type ViewStyle } from 'react-native';
 import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { chip, chipText, cta, ctaText, pill, pillText, seg, segText } from '../theme/styles';
 import { Press } from './Press';
@@ -98,4 +98,37 @@ export function Empty({ icon, title, body }: { icon: string; title: string; body
       </Text>
     </View>
   );
+}
+
+/**
+ * Loading / error state for a Supabase-backed list. Renders nothing when idle or ready, so
+ * demo mode and loaded lists are untouched; the genuine empty state is each screen's own
+ * <Empty>, which the selectors only show once the list is 'ready'.
+ */
+export function LoadGate({ status, onRetry, what }: {
+  status: 'idle' | 'loading' | 'ready' | 'error'; onRetry: () => void; what: string;
+}) {
+  if (status === 'loading') {
+    return (
+      <View accessibilityRole="progressbar" style={{ alignItems: 'center', paddingVertical: 40, gap: 12 }}>
+        <ActivityIndicator color={C.primary} />
+        <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: C.muted }}>Loading {what}…</Text>
+      </View>
+    );
+  }
+  if (status === 'error') {
+    return (
+      <View style={{ alignItems: 'center', paddingVertical: 40, paddingHorizontal: 24 }}>
+        <Text style={{ fontFamily: FONTS[700], fontSize: 15, color: C.ink }}>Couldn't load {what}</Text>
+        <Text style={{ fontFamily: FONTS[400], fontSize: 13, lineHeight: 20, color: C.muted, textAlign: 'center', marginTop: 6 }}>
+          Check your connection and try again.
+        </Text>
+        <Press style={{ marginTop: 16, minHeight: 44, paddingHorizontal: 24, borderRadius: 22, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}
+          scale={0.96} onPress={onRetry}>
+          <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white }}>Try again</Text>
+        </Press>
+      </View>
+    );
+  }
+  return null;
 }

@@ -3,7 +3,7 @@ import {
   SCOUTS, SCREEN_ICON, SLIDES, SUPPORT_SEED, THREADS, type Item, type Status, type Thread,
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
-import type { AppState, Store } from './store';
+import { IDLE_LOADS, type AppState, type Store, type LoadKey } from './store';
 
 const ME = 'simple.user';
 
@@ -18,6 +18,8 @@ export function buildVals(store: Store) {
   const fresh = st.role === 'new';
   const sh = st.sheet;
   const isSupabaseAuth = st.authMode === 'supabase';
+  /** Empty states only make sense once a Supabase list has really loaded (never while loading or after an error). */
+  const settled = (k: LoadKey) => !isSupabaseAuth || st.loads[k] === 'ready';
 
   const slide = SLIDES[st.slide];
   // Demo mode keys activeConvo by item id; Supabase mode keys it by the conversation's own id.
@@ -112,8 +114,8 @@ export function buildVals(store: Store) {
   });
 
   // Build bars from weekly report data (Supabase mode) or use mock data (demo mode)
-  const barsData = isSupabaseAuth && st.dbWeeklyReports
-    ? st.dbWeeklyReports.map((r) => [r.day || '', (r.reports ?? 0) as number] as [string, number])
+  const barsData = isSupabaseAuth
+    ? (st.dbWeeklyReports ?? []).map((r) => [r.day || '', (r.reports ?? 0) as number] as [string, number])
     : [['M', 9], ['T', 13], ['W', 11], ['T', 18], ['F', 14], ['S', 8], ['S', 12]] as [string, number][];
 
   const memberList = st.members.filter((m) =>
@@ -271,6 +273,17 @@ export function buildVals(store: Store) {
     // Temporary Phase-1 scaffolding -- see backend/INTEGRATION_CHECKLIST.md.
     // Removed once every screen is wired to Supabase and the demo path is dropped.
     authMode: st.authMode, isDemoAuth: !isSupabaseAuth, isSupabaseAuthMode: isSupabaseAuth,
+    // Per-list load state for LoadGate (always 'idle' in demo mode) and the matching retry handlers.
+    loads: st.loads,
+    retry: {
+      registry: () => store.loadRegistry(),
+      forum: () => store.loadForumSupabase(),
+      conversations: () => store.loadConversationsSupabase(),
+      moderation: () => store.loadModerationQueueSupabase(),
+      members: () => store.searchMembersSupabase(st.memberSearchQuery || ''),
+      analysis: () => store.loadAnalysisSupabase(),
+      ads: () => store.loadAdsSupabase(),
+    },
     authModeOptions: [
       { key: 'demo', label: 'Demo data', on: !isSupabaseAuth, pick: () => store.setAuthMode('demo') },
       { key: 'supabase', label: 'Supabase account', on: isSupabaseAuth, pick: () => store.setAuthMode('supabase') },
@@ -396,8 +409,8 @@ export function buildVals(store: Store) {
     searchMembers: (q: string) => store.searchMembersSupabase(q),
     clearMemberSearch: () => store.searchMembersSupabase(''),
 
-    adSlots: (isSupabaseAuth && st.dbAdPlacements
-      ? st.dbAdPlacements.map((a) => {
+    adSlots: (isSupabaseAuth
+      ? (st.dbAdPlacements ?? []).map((a) => {
           const pct = a.duration_days ? Math.max(0, Math.min(100, Math.round((a.duration_days - a.days_left) / a.duration_days * 100))) : 0;
           const ended = a.days_left <= 0;
           return {
@@ -483,8 +496,8 @@ export function buildVals(store: Store) {
       ...i, open: openItem(i),
       adAfter: !admin && ix === 3 && registry.length > 4 && store.slotFor('Registry', fresh, st).live,
     })),
-    myPostsEmpty: st.filter === 'My posts' && registry.length === 0,
-    registryEmpty: registry.length === 0 && st.filter !== 'My posts',
+    myPostsEmpty: settled('registry') && st.filter === 'My posts' && registry.length === 0,
+    registryEmpty: settled('registry') && registry.length === 0 && st.filter !== 'My posts',
 
     topics: ['All', 'Sighting', 'Reunited', 'Question'].map((name) => {
       const currentTag = isSupabaseAuth ? st.forumTag : st.topic;
@@ -496,7 +509,7 @@ export function buildVals(store: Store) {
       };
     }),
     canPost: !admin,
-    threadsEmpty: visibleThreads.length === 0,
+    threadsEmpty: settled('forum') && visibleThreads.length === 0,
     threads: visibleThreads.map((x) => {
       const supabaseThread = isSupabaseAuth ? x : null;
       return {
@@ -622,7 +635,7 @@ export function buildVals(store: Store) {
     },
 
     uq: st.uq, onUserQuery: (v: string) => store.setState({ uq: v }),
-    membersEmpty: memberList.length === 0,
+    membersEmpty: settled('members') && memberList.length === 0,
     members: memberList.map((m) => ({
       ini: m.ini, name: m.name, meta: `@${m.handle} · ${m.posts} posts · joined ${m.joined}`,
       status: m.suspended ? 'Suspended' : 'Active', chipKey: m.suspended ? 'Flagged' : 'Active',
@@ -717,7 +730,7 @@ export function buildVals(store: Store) {
         },
       };
     }),
-    noConversations: st.convos.length === 0,
+    noConversations: settled('conversations') && st.convos.length === 0,
 
     sheetChat: sh === 'chat',
     chatWith: convoWith, chatItem: convo ? convo.item : sel.title,
@@ -813,15 +826,15 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: CONVOS, activeConvo: null, draft: '',
-        profile: null, authEmail: null, myDashStats: null, adminDashStats: null, dbItems: null,
+        profile: null, authEmail: null, loads: IDLE_LOADS, myDashStats: null, adminDashStats: null, dbItems: null,
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
     },
 
     bars: barsData.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
-    keywords: (isSupabaseAuth && st.dbKeywords
-      ? st.dbKeywords.map((k) => ({ word: k.word, hits: `${k.hits} ${k.hits === 1 ? 'hit' : 'hits'}` }))
+    keywords: (isSupabaseAuth
+      ? (st.dbKeywords ?? []).map((k) => ({ word: k.word, hits: `${k.hits} ${k.hits === 1 ? 'hit' : 'hits'}` }))
       : [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }]),
   };
 }

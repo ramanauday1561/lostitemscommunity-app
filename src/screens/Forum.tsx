@@ -5,7 +5,7 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { AdSlot } from '../ui/AdSlot';
 import { Avatar, Chip, Empty } from '../ui/bits';
-import { Pill } from '../ui/bits';
+import { LoadGate, Pill } from '../ui/bits';
 
 export function Forum() {
   const v = useVals();
@@ -19,6 +19,7 @@ export function Forum() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 12 }}>
         <AdSlot ad={v.adForum} />
+        <LoadGate status={v.loads.forum} onRetry={v.retry.forum} what="threads" />
         {v.threads.map((t) => (
           <View key={t.id} style={[{
             backgroundColor: C.white, borderRadius: 26, padding: 18,

@@ -30,9 +30,9 @@ describe('moderation api', () => {
       assert.deepEqual(await mod.loadModerationQueue(), []);
     });
 
-    test('returns [] if the flags query fails', async () => {
+    test('throws if the flags query fails (not an empty "queue is clear")', async () => {
       fake.queue({ error: { message: 'denied' } });
-      assert.deepEqual(await mod.loadModerationQueue(), []);
+      await assert.rejects(mod.loadModerationQueue(), /denied/);
     });
   });
 
