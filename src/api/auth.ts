@@ -16,6 +16,8 @@ function mapAuthError(message: string): string {
   if (m.includes('email not confirmed')) return 'Confirm your email address before signing in.';
   if (m.includes('user already registered')) return 'That email is already registered. Try signing in instead.';
   if (m.includes('password should be at least')) return 'Use at least 8 characters for your password.';
+  if (m.includes('email address') && m.includes('invalid')) return 'That email address doesn\'t look valid. Check it and try again.';
+  if (m.includes('weak') || m.includes('pwned') || m.includes('compromised') || m.includes('easy to guess')) return 'That password is too easy to guess. Choose a different one.';
   if (m.includes('different from the old password')) return 'Choose a password you haven\'t used before.';
   if (m.includes('session') && (m.includes('missing') || m.includes('expired') || m.includes('not found'))) return LINK_EXPIRED;
   if (m.includes('rate limit')) return 'Too many attempts. Wait a moment and try again.';

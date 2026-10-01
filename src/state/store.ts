@@ -844,14 +844,25 @@ export class Store {
     });
   };
 
+  private memberSearchSeq = 0;
+  private tMemberSearch: ReturnType<typeof setTimeout> | undefined;
+
+  /** Typing in the members search box: waits for a pause, then asks the server (one request per word, not per key). */
+  queueMemberSearch = (query: string) => {
+    clearTimeout(this.tMemberSearch);
+    this.tMemberSearch = setTimeout(() => this.searchMembersSupabase(query), 250);
+  };
+
   searchMembersSupabase = async (query: string) => {
     if (this.state.authMode !== 'supabase') return;
     this.setState({ memberSearchQuery: query });
+    const seq = ++this.memberSearchSeq;
+    // A slower, older search must not overwrite the result of a newer one.
     await this.track('members', async () => {
       const membersApi = await import('../api/members');
       const members = await membersApi.searchMembers(query);
-      this.setState({ dbMembers: members });
-    });
+      if (seq === this.memberSearchSeq) this.setState({ dbMembers: members });
+    }, () => seq === this.memberSearchSeq);
   };
 
   suspendMemberSupabase = async (memberId: string) => {
@@ -860,7 +871,7 @@ export class Store {
       const membersApi = await import('../api/members');
       await membersApi.suspendMember(memberId);
       this.flash('Member suspended.');
-      await this.loadMembersSupabase();
+      await this.searchMembersSupabase(this.state.memberSearchQuery);
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not suspend member.');
     }
@@ -872,7 +883,7 @@ export class Store {
       const membersApi = await import('../api/members');
       await membersApi.restoreMember(memberId);
       this.flash('Member restored.');
-      await this.loadMembersSupabase();
+      await this.searchMembersSupabase(this.state.memberSearchQuery);
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not restore member.');
     }
@@ -1003,6 +1014,23 @@ export class Store {
     }
   };
 
+  /** Everything a signed-in session needs, shared by sign-in, sign-up and "returning with a stored session"
+   *  so the three can't drift apart (restoring a session used to skip the FAQ, support thread, forum and admin lists). */
+  private bootstrapSession = (profile: AuthApi.Profile) => {
+    this.loadDashboardStats(profile);
+    this.loadConversationsSupabase();
+    this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase();
+    this.loadForumSupabase();
+    this.loadFaqSupabase();
+    this.loadSupportMessagesSupabase();
+    if (profile.role === 'superadmin') {
+      this.loadModerationQueueSupabase();
+      this.loadSupportInboxSupabase();
+      this.loadMembersSupabase();
+      this.loadAnalysisSupabase();
+    }
+  };
+
   signInSupabase = async () => {
     const identifier = this.state.username.trim();
     if (!identifier || !this.state.password) {
@@ -1016,19 +1044,7 @@ export class Store {
       const profile = await authApi.getMyProfile();
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
       this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
-      this.loadDashboardStats(profile);
-      this.loadConversationsSupabase();
-      this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase();
-      this.loadForumSupabase();
-      this.loadFaqSupabase();
-      this.loadSupportMessagesSupabase();
-      if (profile.role === 'superadmin') {
-        this.loadModerationQueueSupabase();
-        this.loadSupportInboxSupabase();
-        this.loadMembersSupabase();
-        this.loadAnalysisSupabase();
-        this.loadAdsSupabase();
-      }
+      this.bootstrapSession(profile);
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
     }
@@ -1054,7 +1070,7 @@ export class Store {
           busy: false, screen: 'dash',
           ...(profile ? this.roleFromProfile(profile) : { role: 'new' as Role }),
         });
-        if (profile) { this.loadDashboardStats(profile); this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase(); }
+        if (profile) this.bootstrapSession(profile);
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
         this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
@@ -1172,9 +1188,7 @@ export class Store {
     const profile = await authApi.getMyProfile();
     if (!profile) return;
     this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
-    this.loadDashboardStats(profile);
-    this.loadConversationsSupabase();
-    this.startChatRealtime(profile.id); this.loadNotificationsSupabase(); this.loadAdsSupabase();
+    this.bootstrapSession(profile);
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {

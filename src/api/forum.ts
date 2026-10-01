@@ -26,7 +26,9 @@ export interface ForumReply {
   created_at: string;
 }
 
-/** Load all forum threads, optionally filtered by tag.
+/** Load all forum threads, optionally filtered by tag. Row-level security decides what the caller may see
+ *  (live threads, their own, and everything for a superadmin) so a suspended thread stays reachable for the
+ *  admin who has to restore it; the screen hides suspended threads from members.
  *  Returns threads with author profiles, reply counts, and helpful vote tracking. */
 export async function loadThreads(userId: string, tag?: string): Promise<ForumThread[]> {
   let query = supabase
@@ -44,7 +46,6 @@ export async function loadThreads(userId: string, tag?: string): Promise<ForumTh
       replies:forum_replies(id),
       thread_votes:forum_thread_votes!left(user_id)
     `)
-    .eq('status', 'live')
     .order('created_at', { ascending: false });
 
   if (tag && (tag === 'Sighting' || tag === 'Question' || tag === 'Reunited')) {
