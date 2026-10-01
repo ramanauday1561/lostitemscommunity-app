@@ -106,11 +106,13 @@ export function Analysis() {
               <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.lighter }}>{b.label}</Text>
             </View>
           ))}
+          {v.barsEmpty && <Text style={{ flex: 1, textAlign: 'center', alignSelf: 'center', fontFamily: FONTS[500], fontSize: 12.5, color: C.subtle }}>No reports in the last 7 days.</Text>}
         </View>
       </Card>
 
       <Card>
         <Kicker>Flagged keywords</Kicker>
+        {v.keywordsEmpty && <Text style={{ fontFamily: FONTS[500], fontSize: 12.5, color: C.subtle, marginTop: 12 }}>No keywords flagged yet.</Text>}
         <View style={{ gap: 10, marginTop: 12 }}>
           {v.keywords.map((k) => (
             <View key={k.word} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -152,7 +154,7 @@ export function Members() {
       <ScrollView contentContainerStyle={{ ...pad, paddingTop: 14 }}>
         <LoadGate status={v.loads.members} onRetry={v.retry.members} what="members" />
         {v.members.map((m) => (
-          <Card key={m.name}>
+          <Card key={m.key}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
               <Avatar text={m.ini} size={40} bg={C.bg} color={C.ink} />
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -161,16 +163,20 @@ export function Members() {
               </View>
               <Chip status={m.chipKey} label={m.status} />
             </View>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-              <Press style={{ flex: 1, minHeight: 44, borderRadius: 16, backgroundColor: C.fillSoft, alignItems: 'center', justifyContent: 'center' }}
-                scale={0.97} onPress={m.toggle}>
-                <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.ink }}>{m.toggleLabel}</Text>
-              </Press>
-              <Press style={{ flex: 1, minHeight: 44, borderRadius: 16, backgroundColor: 'rgba(180,35,24,.1)', alignItems: 'center', justifyContent: 'center' }}
-                scale={0.97} onPress={m.remove}>
-                <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.danger }}>Remove</Text>
-              </Press>
-            </View>
+            {m.canAct && (
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                <Press style={{ flex: 1, minHeight: 44, borderRadius: 16, backgroundColor: C.fillSoft, alignItems: 'center', justifyContent: 'center' }}
+                  scale={0.97} onPress={m.toggle}>
+                  <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.ink }}>{m.toggleLabel}</Text>
+                </Press>
+                {m.canRemove && (
+                  <Press style={{ flex: 1, minHeight: 44, borderRadius: 16, backgroundColor: 'rgba(180,35,24,.1)', alignItems: 'center', justifyContent: 'center' }}
+                    scale={0.97} onPress={m.remove}>
+                    <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.danger }}>Remove</Text>
+                  </Press>
+                )}
+              </View>
+            )}
           </Card>
         ))}
         {v.membersEmpty && <Empty icon="person_off" title="No members match" body="Try a different name or handle." />}

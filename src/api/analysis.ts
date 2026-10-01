@@ -5,11 +5,11 @@ export interface WeeklyReportCount {
   reports: number | null;
 }
 
+/** A flagged keyword and how often it was hit. The table's columns are `keyword` / `hit_count`;
+ *  this is the shape the screen reads. */
 export interface ModerationKeyword {
-  keyword?: string;
-  word?: string;
-  hits?: number;
-  hit_count?: number;
+  word: string;
+  hits: number;
 }
 
 // Fetch reports grouped by day for the current week
@@ -28,8 +28,8 @@ export async function getModerationKeywords(): Promise<ModerationKeyword[]> {
   const { data, error } = await supabase
     .from('moderation_keywords')
     .select('*')
-    .order('hits', { ascending: false });
+    .order('hit_count', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map((r) => ({ word: r.keyword, hits: r.hit_count }));
 }

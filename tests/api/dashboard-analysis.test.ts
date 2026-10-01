@@ -52,10 +52,10 @@ describe('analysis api', () => {
     await assert.rejects(analysis.getWeeklyReportCounts());
   });
 
-  test('keywords are ordered by hits descending; errors throw', async () => {
-    fake.queue({ data: [{ word: 'send deposit', hits: 4 }] });
-    assert.equal((await analysis.getModerationKeywords()).length, 1);
-    assert.ok(fake.has('order', 'hits', { ascending: false }));
+  test('keywords are read from the real columns (keyword, hit_count), ordered by hits descending; errors throw', async () => {
+    fake.queue({ data: [{ id: 'k1', keyword: 'send deposit', hit_count: 4, created_at: '2026-01-01T00:00:00Z' }] });
+    assert.deepEqual(await analysis.getModerationKeywords(), [{ word: 'send deposit', hits: 4 }]);
+    assert.ok(fake.has('order', 'hit_count', { ascending: false }), 'the table has no `hits` column; ordering by it is a 400');
 
     fake.queue({ error: { message: 'boom' } });
     await assert.rejects(analysis.getModerationKeywords());

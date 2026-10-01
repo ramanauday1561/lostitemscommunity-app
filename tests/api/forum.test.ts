@@ -15,10 +15,10 @@ describe('forum api', () => {
   beforeEach(() => fake.reset());
 
   describe('loadThreads', () => {
-    test('only live threads, newest first', async () => {
+    test('newest first, and NOT filtered to live (RLS decides; an admin must still see suspended threads to restore them)', async () => {
       fake.queue({ data: [] });
       await forum.loadThreads('me');
-      assert.ok(fake.has('eq', 'status', 'live'));
+      assert.ok(!fake.calls[0].ops.some(([m, a]) => m === 'eq' && a[0] === 'status'));
       assert.ok(fake.has('order', 'created_at', { ascending: false }));
     });
 

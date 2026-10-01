@@ -79,6 +79,8 @@ describe('auth api', () => {
         ['Email not confirmed', 'Confirm your email address before signing in.'],
         ['Request rate limit reached', 'Too many attempts. Wait a moment and try again.'],
         ['TypeError: Failed to fetch', "Can't reach the server. Check your connection and try again."],
+        ['Email address "x@example.com" is invalid', "That email address doesn't look valid. Check it and try again."],
+        ['Password is known to be weak and easy to guess, please choose a different one.', 'That password is too easy to guess. Choose a different one.'],
         ['some internal postgres detail', 'Something went wrong. Please try again.'],
       ] as const) {
         test(`maps Auth error "${raw}" without leaking raw text`, async () => {

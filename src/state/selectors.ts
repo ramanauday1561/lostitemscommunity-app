@@ -12,6 +12,19 @@ const ME = 'simple.user';
  * Port of the prototype's renderVals() (lines 1540-2171). Key names are kept
  * identical so the golden-master oracle can diff this against the original.
  */
+/** 'Mar 2024' from an ISO timestamp ('' when missing). */
+function joinedLabel(iso: string | null): string {
+  const d = iso ? new Date(iso) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
+}
+
+/** 'M','T',... for a 'YYYY-MM-DD' day (UTC, as the view groups by date); '' when missing. */
+function weekdayLetter(day: string | null): string {
+  if (!day) return '';
+  const d = new Date(`${day}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? '' : 'SMTWTFS'[d.getUTCDay()];
+}
+
 export function buildVals(store: Store) {
   const st: AppState = store.state;
   const sc = st.screen;
@@ -28,7 +41,16 @@ export function buildVals(store: Store) {
   const convoMsgs = convo ? convo.msgs : [];
   const convoWith = convo ? convo.with : '';
   const unread = st.convos.reduce((n, c) => n + (c.unread || 0), 0);
-  const thread = st.threads.find((x) => x.id === st.activeThread) || null;
+  // Supabase mode opens a real thread (st.dbThreads, not the mock list), shaped like the prototype's Thread so
+  // the sheet can render it: without this the thread sheet opened blank (no title, author or body).
+  const dbThread = st.authMode === 'supabase' ? (st.dbThreads ?? []).find((x) => x.id === st.activeThread) : undefined;
+  const thread = (st.authMode === 'supabase'
+    ? (dbThread ? {
+        id: dbThread.id, title: dbThread.title, text: dbThread.body, tag: dbThread.tag, status: dbThread.status,
+        user: dbThread.author_handle, ini: initials(dbThread.author_handle),
+        meta: `${dbThread.created_at} · ${dbThread.author_display_name}`, mine: dbThread.author_id === st.profile?.id, replies: [],
+      } as unknown as Thread : null)
+    : st.threads.find((x) => x.id === st.activeThread)) || null;
 
   const pw = st.suPass || '';
   const strength = pw.length === 0 ? 0 : pw.length < 8 ? 1 : (/[^a-z0-9]/i.test(pw) && /\d/.test(pw) ? 3 : 2);
@@ -118,7 +140,7 @@ export function buildVals(store: Store) {
 
   // Build bars from weekly report data (Supabase mode) or use mock data (demo mode)
   const barsData = isSupabaseAuth
-    ? (st.dbWeeklyReports ?? []).map((r) => [r.day || '', (r.reports ?? 0) as number] as [string, number])
+    ? (st.dbWeeklyReports ?? []).map((r) => [weekdayLetter(r.day), (r.reports ?? 0) as number] as [string, number])
     : [['M', 9], ['T', 13], ['W', 11], ['T', 18], ['F', 14], ['S', 8], ['S', 12]] as [string, number][];
 
   const memberList = st.members.filter((m) =>
@@ -563,7 +585,7 @@ export function buildVals(store: Store) {
         suspendLabel: x.status === 'suspended' ? 'Restore post' : 'Suspend post',
         suspend: () => {
           if (isSupabaseAuth) {
-            store.flash('Admin moderation not yet implemented for Supabase mode.');
+            if (x.status === 'suspended') store.restoreThreadSupabase(String(x.id)); else store.suspendThreadSupabase(String(x.id));
           } else {
             store.setState((s) => ({ threads: s.threads.map((v) => v.id === x.id ? { ...v, status: v.status === 'suspended' ? 'live' : 'suspended' } : v) }));
             store.flash(x.status === 'suspended' ? 'Post restored to the forum.' : 'Post suspended — hidden from members.');
@@ -571,7 +593,7 @@ export function buildVals(store: Store) {
         },
         remove: () => {
           if (isSupabaseAuth) {
-            store.flash('Admin moderation not yet implemented for Supabase mode.');
+            store.deleteThreadSupabase(String(x.id));
           } else {
             store.setState((s) => ({ threads: s.threads.filter((v) => v.id !== x.id) }));
             store.flash('Post permanently deleted by Super Admin.');
@@ -661,21 +683,42 @@ export function buildVals(store: Store) {
       }
     },
 
-    uq: st.uq, onUserQuery: (v: string) => store.setState({ uq: v }),
-    membersEmpty: settled('members') && memberList.length === 0,
-    members: memberList.map((m) => ({
-      ini: m.ini, name: m.name, meta: `@${m.handle} · ${m.posts} posts · joined ${m.joined}`,
-      status: m.suspended ? 'Suspended' : 'Active', chipKey: m.suspended ? 'Flagged' : 'Active',
-      toggleLabel: m.suspended ? 'Restore' : 'Suspend',
-      toggle: () => {
-        store.setState((s) => ({ members: s.members.map((x) => x.id === m.id ? { ...x, suspended: !x.suspended } : x) }));
-        store.flash(m.suspended ? `${m.name} restored.` : `${m.name} suspended by Super Admin.`);
-      },
-      remove: () => {
-        store.setState((s) => ({ members: s.members.filter((x) => x.id !== m.id) }));
-        store.flash(`${m.name} was permanently deleted by Super Admin.`);
-      },
-    })),
+    uq: st.uq,
+    onUserQuery: (v: string) => { store.setState({ uq: v }); if (isSupabaseAuth) store.queueMemberSearch(v); },
+    // Supabase mode lists the real profiles (the server does the searching); demo mode keeps the mock list.
+    membersEmpty: settled('members') && (isSupabaseAuth ? (st.dbMembers ?? []).length === 0 : memberList.length === 0),
+    members: isSupabaseAuth
+      ? (st.dbMembers ?? []).map((m) => {
+          const name = m.display_name || m.handle;
+          const isSuper = m.role === 'superadmin';
+          return {
+            ini: initials(name), name, key: m.id,
+            meta: `@${m.handle} · ${m.post_count} posts · joined ${joinedLabel(m.created_at)}${isSuper ? ' · Super Admin' : ''}`,
+            status: m.is_suspended ? 'Suspended' : 'Active', chipKey: m.is_suspended ? 'Flagged' : 'Active',
+            toggleLabel: m.is_suspended ? 'Restore' : 'Suspend',
+            // Staff accounts can't be suspended from here (it would lock an admin out), and there is no
+            // permanent-delete yet (see 8.3 in the checklist), so Supabase rows have no Remove action.
+            canAct: !isSuper,
+            canRemove: false,
+            toggle: m.is_suspended ? () => store.restoreMemberSupabase(m.id) : () => store.suspendMemberSupabase(m.id),
+            remove: () => {},
+          };
+        })
+      : memberList.map((m) => ({
+          ini: m.ini, name: m.name, key: m.name,
+          meta: `@${m.handle} · ${m.posts} posts · joined ${m.joined}`,
+          status: m.suspended ? 'Suspended' : 'Active', chipKey: m.suspended ? 'Flagged' : 'Active',
+          toggleLabel: m.suspended ? 'Restore' : 'Suspend',
+          canAct: true, canRemove: true,
+          toggle: () => {
+            store.setState((s) => ({ members: s.members.map((x) => x.id === m.id ? { ...x, suspended: !x.suspended } : x) }));
+            store.flash(m.suspended ? `${m.name} restored.` : `${m.name} suspended by Super Admin.`);
+          },
+          remove: () => {
+            store.setState((s) => ({ members: s.members.filter((x) => x.id !== m.id) }));
+            store.flash(`${m.name} was permanently deleted by Super Admin.`);
+          },
+        })),
 
     showFab: !admin,
     navLeft: admin
@@ -887,7 +930,14 @@ export function buildVals(store: Store) {
       });
     },
 
-    bars: barsData.map(([label, v]) => ({ label, value: v, height: Math.round(v / 18 * 96), on: v === 18 })),
+    // Demo bars are on the prototype's fixed 0-18 scale; real counts scale to the busiest day (a 3-report day
+    // must not draw as a sliver, nor a 40-report day overflow the card) and the busiest day is highlighted.
+    bars: (() => {
+      const top = isSupabaseAuth ? Math.max(1, ...barsData.map(([, v]) => v)) : 18;
+      return barsData.map(([label, v]) => ({ label, value: v, height: isSupabaseAuth && v > 0 ? Math.max(6, Math.round(v / top * 96)) : Math.round(v / top * 96), on: v === top }));
+    })(),
+    barsEmpty: isSupabaseAuth && barsData.length === 0,
+    keywordsEmpty: isSupabaseAuth && (st.dbKeywords ?? []).length === 0,
     keywords: (isSupabaseAuth
       ? (st.dbKeywords ?? []).map((k) => ({ word: k.word, hits: `${k.hits} ${k.hits === 1 ? 'hit' : 'hits'}` }))
       : [{ word: 'payment upfront', hits: '7 hits' }, { word: 'send deposit', hits: '4 hits' }, { word: 'meet alone', hits: '2 hits' }]),
