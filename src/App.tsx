@@ -9,10 +9,10 @@ import { Forgot } from './screens/Forgot';
 import { AdminDash, FreshDash, UserDash } from './screens/Dashboards';
 import { Registry } from './screens/Registry';
 import { Forum } from './screens/Forum';
-import { Ads, Analysis, Members, Messages, Moderation } from './screens/Admin';
+import { Ads, Analysis, Members, Messages, Moderation, SupportInbox } from './screens/Admin';
 import { DetailSheet } from './sheets/Detail';
 import { ReportSheet, SentSheet } from './sheets/Report';
-import { ChatSheet, SupportSheet, ThreadSheet } from './sheets/Chat';
+import { ChatSheet, SupportReplySheet, SupportSheet, ThreadSheet } from './sheets/Chat';
 import { AdSheet, GuidelinesSheet, NewThreadSheet, NotificationsSheet, ProfileSheet } from './sheets/Misc';
 
 function Screen() {
@@ -27,6 +27,7 @@ function Screen() {
   if (v.isRegistry) return <Registry />;
   if (v.isForum) return <Forum />;
   if (v.isModeration) return <Moderation />;
+  if (v.isSupportInbox) return <SupportInbox />;
   if (v.isAnalysis) return <Analysis />;
   if (v.isMembers) return <Members />;
   if (v.isAds) return <Ads />;
@@ -43,6 +44,7 @@ function Sheets() {
   if (v.sheetThread) return <ThreadSheet />;
   if (v.sheetNewThread) return <NewThreadSheet />;
   if (v.sheetSupport) return <SupportSheet />;
+  if (v.sheetSupportReply) return <SupportReplySheet />;
   if (v.sheetProfile) return <ProfileSheet />;
   if (v.sheetNotifications) return <NotificationsSheet />;
   if (v.sheetGuidelines) return <GuidelinesSheet />;

@@ -277,6 +277,20 @@ export function AdminDash() {
         </View>
       </View>
 
+      {v.isSupabaseAuthMode && (
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+          scale={0.985} onPress={v.goSupportInbox}>
+          <Icon name="support_agent" size={22} color={C.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: FONTS[700], fontSize: 14, color: C.ink }}>Support inbox</Text>
+            <Text style={{ fontFamily: FONTS[400], fontSize: 12, color: C.subtle, marginTop: 2 }}>
+              {v.supportOpenCount ? `${v.supportOpenCount} waiting on a person` : 'Nobody is waiting'}
+            </Text>
+          </View>
+          <Icon name="chevron_right" size={21} color={C.barIdle} />
+        </Press>
+      )}
+
       <ScrollView
         horizontal showsHorizontalScrollIndicator={false}
         style={{ marginHorizontal: -20 }}

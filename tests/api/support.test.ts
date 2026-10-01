@@ -76,3 +76,75 @@ describe('support api', () => {
     });
   });
 });
+
+describe('support inbox api (11.3)', () => {
+  beforeEach(() => fake.reset());
+
+  test('openSupportRequest inserts a request for the member', async () => {
+    assert.equal(await support.openSupportRequest('u1'), 'opened');
+    assert.equal(fake.calls[0].name, 'support_requests');
+    assert.deepEqual(fake.args('insert', 0), [{ user_id: 'u1' }]);
+  });
+
+  test('a second open request is not an error: it reports already_open (unique violation 23505)', async () => {
+    fake.queue({ error: { message: 'duplicate key value', code: '23505' } as any });
+    assert.equal(await support.openSupportRequest('u1'), 'already_open');
+  });
+
+  test('any other failure (e.g. rate limit) is thrown with its message', async () => {
+    fake.queue({ error: { message: 'You are doing that too often. Please wait a few minutes and try again.' } });
+    await assert.rejects(support.openSupportRequest('u1'), /too often/);
+  });
+
+  test('loadSupportInbox: open requests oldest first, each with that member\'s thread only', async () => {
+    fake.queue(
+      { data: [
+        { id: 'r1', user_id: 'u1', created_at: '2026-10-01T09:00:00Z', profiles: { handle: 'ann', display_name: 'Ann' } },
+        { id: 'r2', user_id: 'u2', created_at: '2026-10-01T10:00:00Z', profiles: null },
+      ] },
+      { data: [
+        { id: 'm1', user_id: 'u1', body: 'help', sender: 'user', created_at: '2026-10-01T09:00:00Z' },
+        { id: 'm2', user_id: 'u2', body: 'hi', sender: 'user', created_at: '2026-10-01T10:00:00Z' },
+        { id: 'm3', user_id: 'u1', body: 'sure', sender: 'agent', created_at: '2026-10-01T09:05:00Z' },
+      ] },
+    );
+    const inbox = await support.loadSupportInbox();
+    assert.ok(fake.has('eq', 'status', 'open'));
+    assert.ok(fake.has('order', 'created_at', { ascending: true }));
+    assert.deepEqual(fake.args('in', 1), ['user_id', ['u1', 'u2']]);
+    assert.equal(inbox.length, 2);
+    assert.deepEqual(inbox[0].messages.map((m) => m.id), ['m1', 'm3']);
+    assert.equal(inbox[0].handle, 'ann');
+    assert.equal(inbox[0].displayName, 'Ann');
+    assert.deepEqual(inbox[1].messages.map((m) => m.id), ['m2']);
+    assert.equal(inbox[1].handle, 'member', 'a request whose profile is hidden still renders');
+  });
+
+  test('an empty inbox does not run the second query', async () => {
+    fake.queue({ data: [] });
+    assert.deepEqual(await support.loadSupportInbox(), []);
+    assert.equal(fake.calls.length, 1);
+  });
+
+  test('loadSupportInbox throws on error (so the screen shows retry, not a fake empty inbox)', async () => {
+    fake.queue({ error: { message: 'permission denied' } });
+    await assert.rejects(support.loadSupportInbox(), /permission denied/);
+  });
+
+  test('replyToSupport stores a trimmed staff message for the member; blank is ignored', async () => {
+    await support.replyToSupport('u1', '  On it!  ');
+    assert.deepEqual(fake.args('insert', 0), [{ user_id: 'u1', body: 'On it!', sender: 'agent' }]);
+    fake.reset();
+    await support.replyToSupport('u1', '   ');
+    assert.equal(fake.calls.length, 0);
+  });
+
+  test('closeSupportRequest marks it closed with who/when', async () => {
+    await support.closeSupportRequest('r1', 'adm');
+    const patch = fake.args('update', 0)![0] as Record<string, unknown>;
+    assert.equal(patch.status, 'closed');
+    assert.equal(patch.closed_by, 'adm');
+    assert.ok(typeof patch.closed_at === 'string' && !Number.isNaN(Date.parse(patch.closed_at as string)));
+    assert.ok(fake.has('eq', 'id', 'r1'));
+  });
+});

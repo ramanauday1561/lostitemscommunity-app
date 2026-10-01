@@ -55,6 +55,43 @@ export function Moderation() {
   );
 }
 
+export function SupportInbox() {
+  const v = useVals();
+  return (
+    <ScrollView contentContainerStyle={pad}>
+      <LoadGate status={v.loads.support} onRetry={v.retry.support} what="the support inbox" />
+      {v.supportInbox.map((i) => (
+        <Card key={i.id}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Avatar text={i.ini} size={38} bg={C.bg} color={C.ink} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ fontFamily: FONTS[700], fontSize: 14, color: C.ink }}>{i.name}</Text>
+              <Text style={{ fontFamily: FONTS[400], fontSize: 11, color: C.subtle, marginTop: 2 }}>@{i.handle} · asked {i.since}</Text>
+            </View>
+            <Chip status={i.needsReply ? 'Flagged' : 'Resolved'} label={i.status} />
+          </View>
+          {!!i.preview && (
+            <View style={{ marginTop: 12, padding: 12, borderRadius: 16, backgroundColor: C.fillSoft }}>
+              <Text numberOfLines={3} style={{ fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 18, color: C.muted }}>{i.preview}</Text>
+            </View>
+          )}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+            <Press style={{ flex: 1, minHeight: 46, borderRadius: 16, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}
+              scale={0.97} onPress={i.open}>
+              <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.white }}>Open &amp; reply</Text>
+            </Press>
+            <Press style={{ flex: 1, minHeight: 46, borderRadius: 16, backgroundColor: C.fillSoft, alignItems: 'center', justifyContent: 'center' }}
+              scale={0.97} onPress={i.resolve}>
+              <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.success }}>Mark resolved</Text>
+            </Press>
+          </View>
+        </Card>
+      ))}
+      {!v.supportInbox.length && v.loads.support === 'ready' && <Empty icon="inbox" title="Inbox is clear" body="Nobody is waiting on a person right now." />}
+    </ScrollView>
+  );
+}
+
 export function Analysis() {
   const v = useVals();
   return (

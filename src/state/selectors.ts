@@ -104,7 +104,7 @@ export function buildVals(store: Store) {
   const titles: Record<string, string[]> = {
     dash: admin ? ['Super admin', 'System control'] : ['Community member', 'My dashboard'],
     lost: ['Registry', 'Lost items'], found: ['Registry', 'Found items'], forum: ['Community', 'Forum'],
-    moderation: ['Super admin', 'Moderation'], analysis: ['Super admin', 'Analysis'],
+    moderation: ['Super admin', 'Moderation'], supportInbox: ['Super admin', 'Support inbox'], analysis: ['Super admin', 'Analysis'],
     members: ['Super admin', 'Members'], messages: ['Inbox', 'Messages'], ads: ['Monetization', 'Ad placements'],
   };
   const t = titles[sc] || ['', ''];
@@ -275,12 +275,12 @@ export function buildVals(store: Store) {
     isUserDash: sc === 'dash' && !admin && !fresh, isFreshDash: sc === 'dash' && fresh,
     isAdminDash: sc === 'dash' && admin,
     isRegistry: sc === 'lost' || sc === 'found', isForum: sc === 'forum',
-    isModeration: sc === 'moderation', isAnalysis: sc === 'analysis',
+    isModeration: sc === 'moderation', isSupportInbox: sc === 'supportInbox' && admin, isAnalysis: sc === 'analysis',
     isMembers: sc === 'members', isAds: sc === 'ads' && admin,
     isAdmin: admin, isSimple: !admin && sc !== 'login',
     showHeader: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
     showNav: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
-    showBack: ['moderation', 'analysis', 'members', 'messages'].includes(sc),
+    showBack: ['moderation', 'supportInbox', 'analysis', 'members', 'messages'].includes(sc),
     showInbox: !admin,
     back: go('dash'),
     headerKicker: t[0], headerTitle: t[1], toast: st.toast,
@@ -308,6 +308,7 @@ export function buildVals(store: Store) {
       analysis: () => store.loadAnalysisSupabase(),
       ads: () => store.loadAdsSupabase(),
       notifications: () => store.loadNotificationsSupabase(),
+      support: () => store.loadSupportInboxSupabase(),
     },
     authModeOptions: [
       { key: 'demo', label: 'Demo data', on: !isSupabaseAuth, pick: () => store.setAuthMode('demo') },
@@ -409,6 +410,29 @@ export function buildVals(store: Store) {
         ],
     scouts: SCOUTS,
     goModeration: go('moderation'), goAnalysis: go('analysis'),
+    goSupportInbox: () => { store.setState({ screen: 'supportInbox', sheet: null, toast: '' }); store.loadSupportInboxSupabase(); },
+    supportOpenCount: (st.dbSupportInbox ?? []).length,
+    supportInbox: (st.dbSupportInbox ?? []).map((i) => {
+      const msgs = i.messages ?? [];
+      const last = msgs[msgs.length - 1];
+      const answered = !!last && last.sender === 'agent';
+      return {
+        id: i.requestId, name: i.displayName, handle: i.handle, ini: (i.displayName || i.handle || '?').slice(0, 1).toUpperCase(),
+        since: formatTime(i.openedAt),
+        preview: last ? last.body : '',
+        status: answered ? 'Replied, waiting on member' : 'Needs a reply',
+        needsReply: !answered,
+        open: () => store.openSupportReply(i.userId),
+        resolve: () => store.resolveSupportRequest(i.requestId),
+      };
+    }),
+    sheetSupportReply: sh === 'supportReply',
+    supportReplyWho: (() => { const i = (st.dbSupportInbox ?? []).find((x) => x.userId === st.activeSupportUser); return i ? { name: i.displayName, handle: i.handle, requestId: i.requestId } : null; })(),
+    supportReplyMessages: ((st.dbSupportInbox ?? []).find((x) => x.userId === st.activeSupportUser)?.messages ?? [])
+      .map((m) => ({ text: m.body, time: formatTime(m.created_at), mine: m.sender === 'agent' })),
+    supportReplyDraft: st.supportReplyDraft,
+    onSupportReplyDraft: (v: string) => store.setState({ supportReplyDraft: v }),
+    sendSupportReply: () => store.sendSupportReply(),
     goMembers: go('members', { uq: '' }), goAds: go('ads'),
 
     // Phase 8: Members Management (real data from Supabase in admin mode)
@@ -844,7 +868,10 @@ export function buildVals(store: Store) {
     supportDraft: st.supportDraft,
     onSupportDraft: (v: string) => store.setState({ supportDraft: v }),
     sendSupport: () => store.askBot(st.supportDraft),
-    escalate: () => { store.setState({ sheet: null }); store.flash("Handed to the support team — they'll reply in your inbox."); },
+    escalate: () => {
+      if (isSupabaseAuth) { store.escalateSupabase(); return; }
+      store.setState({ sheet: null }); store.flash("Handed to the support team — they'll reply in your inbox.");
+    },
     logout: () => {
       if (isSupabaseAuth) store.signOutSupabase();
       store.setState({
@@ -854,7 +881,7 @@ export function buildVals(store: Store) {
         // Every cached server list: another account signing in on this device must not see the last user's data.
         dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
         dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
-        dbFaqEntries: null, dbSupportMessages: null,
+        dbFaqEntries: null, dbSupportMessages: null, dbSupportInbox: null, activeSupportUser: null, supportReplyDraft: '',
         suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
         fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
       });
