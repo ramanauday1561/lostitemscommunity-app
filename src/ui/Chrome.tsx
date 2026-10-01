@@ -39,6 +39,22 @@ export function Header() {
         </Press>
       )}
 
+      {v.showBell && (
+        <Press style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
+          scale={0.94} onPress={v.openNotifications}>
+          <Icon name="notifications" size={22} color={C.ink} />
+          {v.hasUnreadNotifs && (
+            <View style={{
+              position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, paddingHorizontal: 5,
+              borderRadius: 999, backgroundColor: C.danger, alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 0 3px #F2F2F0',
+            }}>
+              <Text style={{ fontFamily: FONTS[700], fontSize: 10, color: C.white }}>{v.unreadNotifs > 9 ? '9+' : v.unreadNotifs}</Text>
+            </View>
+          )}
+        </Press>
+      )}
+
       <Press style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
         scale={0.94} onPress={v.openProfile}>
         <Text style={{ fontFamily: FONTS[700], fontSize: 12, color: C.primary }}>{v.initials}</Text>
