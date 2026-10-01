@@ -86,6 +86,7 @@ test.describe('post lifecycle with three accounts', () => {
     await expect(a.getByText('Mark as handed over')).toBeVisible();
     await a.getByText('Mark as handed over', { exact: true }).click();
     await expect(a.getByText('Reopen this post')).toBeVisible({ timeout: 15000 });
+    await expect(a.getByText(/marked as handed over/)).toBeVisible({ timeout: 15000 });
     await closeSheet(a);
     await a.getByText('Reunited', { exact: true }).first().click();   // registry filter pill
     await expect(a.getByText(POSTS.umbrella.title)).toBeVisible({ timeout: 15000 });
@@ -134,7 +135,7 @@ test.describe('post lifecycle with three accounts', () => {
     await openPost(a, 'scarf');
     // The sheet is drawn over the registry, so its status pill is the last "Resolved" on the page.
     await a.getByText('Resolved', { exact: true }).last().click();
-    await expect(a.getByText(/closed|Resolved/).last()).toBeVisible();
+    await expect(a.getByText(/ closed\./)).toBeVisible({ timeout: 15000 });   // the confirmation toast: the update has landed
     await closeSheet(a);
     await a.getByText('Resolved', { exact: true }).first().click();   // registry filter pill
     await expect(a.getByText(POSTS.scarf.title)).toBeVisible({ timeout: 15000 });
