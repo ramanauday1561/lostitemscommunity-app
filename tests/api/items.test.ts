@@ -182,11 +182,17 @@ describe('items api', () => {
 
   describe('flagItem', () => {
     test('records the flag, then marks the item flagged', async () => {
-      await items.flagItem('item1', 'spam', 'admin1');
+      assert.equal(await items.flagItem('item1', 'spam', 'admin1'), 'queued');
       assert.equal(fake.calls[0].name, 'moderation_flags');
       assert.deepEqual(fake.args('insert', 0), [{ target_type: 'item', target_id: 'item1', reason: 'spam', flagged_by: 'admin1' }]);
       assert.equal(fake.calls[1].name, 'items');
       assert.deepEqual(fake.args('update', 1), [{ status: 'flagged' }]);
+    });
+
+    test('sending an already-flagged item again is not an error (one pending flag per target)', async () => {
+      fake.queue({ error: { message: 'duplicate key value', code: '23505' } as any });
+      assert.equal(await items.flagItem('item1', 'spam', 'admin1'), 'already_queued');
+      assert.equal(fake.calls.length, 1, 'nothing else is changed');
     });
 
     test('does not touch the item if recording the flag failed', async () => {

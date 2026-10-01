@@ -163,12 +163,15 @@ export async function claimItem(itemDbId: string, reporterId: string, claimantId
 /** Admin-only (see Detail.tsx's `v.isAdmin` gate). Records the flag and marks
  *  the item `flagged` so it drops out of the public registry until a
  *  superadmin resolves it via `resolve_moderation_flag` (Phase 7). */
-export async function flagItem(itemDbId: string, reason: string, flaggedBy: string): Promise<void> {
+export async function flagItem(itemDbId: string, reason: string, flaggedBy: string): Promise<'queued' | 'already_queued'> {
   const { error: flagError } = await supabase
     .from('moderation_flags')
     .insert({ target_type: 'item', target_id: itemDbId, reason, flagged_by: flaggedBy });
+  // One pending flag per target (unique index): a second send is not an error, the item is already in the queue.
+  if (flagError && (flagError as { code?: string }).code === '23505') return 'already_queued';
   if (flagError) throw new Error(flagError.message);
   await updateItemStatus(itemDbId, 'Flagged');
+  return 'queued';
 }
 
 /** Uploads to the `item-photos` bucket under `<uploader>/<item>/<n>.<ext>` (matches

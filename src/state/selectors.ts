@@ -93,10 +93,15 @@ export function buildVals(store: Store) {
   // st.lost/st.found arrays -- look there first so Detail opens the right record.
   const sel = (isSupabaseAuth ? (st.dbItems ?? []).find((i) => i.id === st.sel) : undefined)
     || all.find((i) => i.id === st.sel) || all[0];
+  const existingConvo = isSupabaseAuth && sel && (sel as { dbId?: string }).dbId
+    ? st.convos.find((c) => c.itemId === (sel as { dbId?: string }).dbId) : undefined;
   const meHandle = isSupabaseAuth ? (st.profile?.handle ?? '') : ME;
   const openItem = (it: Item) => () => store.setState({ sel: it.id, sheet: 'detail', toast: '' });
-  const go = (screen: string, extra?: Partial<AppState>) => () =>
+  const go = (screen: string, extra?: Partial<AppState>) => () => {
     store.setState({ screen, sheet: null, filter: 'All', q: '', toast: '', ...(extra || {}) });
+    // The review queue changes while the admin is elsewhere (items get flagged), so refetch on every visit.
+    if (screen === 'moderation' && isSupabaseAuth) store.loadModerationQueueSupabase();
+  };
 
   const source = sc === 'lost' ? st.lost : st.found;
   const myPosts = [...st.lost, ...st.found].filter((i) => i.by === ME);
@@ -394,17 +399,19 @@ export function buildVals(store: Store) {
     flaggedEmpty: isSupabaseAuth ? ((st.dbModerationStats?.pending ?? 0) === 0) : st.flagged.length === 0,
     flagged: isSupabaseAuth
       ? (st.dbModerationQueue ?? []).map((f) => ({
-          id: f.id,
+          // Display id (LOST-1031) rather than the flag's uuid; the real flag id drives the actions.
+          key: f.id,
+          id: f.target_ref || f.id,
           title: f.target_title || '(Unknown)',
           author: f.target_author || '(Unknown)',
           category: f.target_type === 'item' ? 'Item' : 'Forum Thread',
           reason: f.reason,
           date: f.created_at,
-          sub: `${f.target_author || 'Unknown'} · ${f.target_date || f.created_at}`,
-          approve: decide(f.id, true),
-          remove: decide(f.id, false),
+          sub: `${f.target_author ? '@' + f.target_author : 'Unknown member'} · ${formatTime(f.target_date || f.created_at)}`,
+          approve: () => store.takeModActionSupabase(f.id, 'approve'),
+          remove: () => store.takeModActionSupabase(f.id, 'remove'),
         }))
-      : st.flagged.map((f) => ({ ...f, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
+      : st.flagged.map((f) => ({ ...f, key: f.id, sub: `${f.author} · ${f.date}`, approve: decide(f.id, true), remove: decide(f.id, false) })),
     adminMetrics: !isSupabaseAuth ? [
       { label: 'Active lost', value: '1,293', color: '#16181F', delta: '↓ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
       { label: 'Recovered', value: '256k', color: '#0B6BCB', delta: '↑ 36.8% vs last month', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
@@ -784,7 +791,8 @@ export function buildVals(store: Store) {
       : () => store.setStatus(sel.id, sel.status === 'Reunited' ? 'Active' : 'Reunited'),
     // Supabase mode: creates the real conversation row (4.6) and stops there --
     // the chat sheet itself starts reading real conversations/messages in Phase 5.
-    claim: isSupabaseAuth ? store.claimItemSupabase : () => {
+    // Already claimed (this session or an earlier one)? Supabase mode opens that conversation instead of re-claiming.
+    claim: isSupabaseAuth ? (existingConvo ? () => store.openChatSupabase(existingConvo.id) : store.claimItemSupabase) : () => {
       store.setState((s) => {
         const exists = s.convos.find((c) => c.itemId === sel.id);
         const convos = exists
@@ -795,7 +803,7 @@ export function buildVals(store: Store) {
       store.scrollChat();
       store.flash('Claim opened. You can talk to ' + sel.by + ' directly.');
     },
-    claimLabel: st.claimed[sel.id] ? 'Open chat with finder' : (sel.kind === 'Found' ? 'This is mine' : 'I have found this'),
+    claimLabel: (st.claimed[sel.id] || existingConvo) ? 'Open chat with finder' : (sel.kind === 'Found' ? 'This is mine' : 'I have found this'),
 
     isMessages: sc === 'messages',
     unreadTotal: unread, hasUnread: unread > 0,

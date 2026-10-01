@@ -23,7 +23,7 @@ export function Moderation() {
 
       <LoadGate status={v.loads.moderation} onRetry={v.retry.moderation} what="the review queue" />
       {v.flagged.map((f) => (
-        <Card key={f.id}>
+        <Card key={f.key}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(180,35,24,.1)', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="flag" size={19} color={C.danger} />
