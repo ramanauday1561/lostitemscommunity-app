@@ -301,7 +301,8 @@ export class Store {
       await this.loadSupportMessagesSupabase();
     } catch (e) {
       console.error('support bot failed:', e);
-      this.flash("Couldn't send that. Please try again.");
+      // A rate-limit rejection (migration 0025) carries a message worth showing; anything else stays generic.
+      this.flash(e instanceof Error && /too often/i.test(e.message) ? e.message : "Couldn't send that. Please try again.");
       this.setState({ supportDraft: text });
     } finally {
       this.setState({ botTyping: false });

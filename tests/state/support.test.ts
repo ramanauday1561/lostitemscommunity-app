@@ -81,6 +81,18 @@ describe('support chat in Supabase mode (11.1-11.2)', () => {
     } finally { console.error = orig; }
   });
 
+  test('a rate-limit rejection shows its own message instead of the generic one', async () => {
+    const store = supportStore();
+    const orig = console.error; console.error = () => {};
+    try {
+      fake.queue({ error: { message: 'You are doing that too often. Please wait a few minutes and try again.' } });
+      store.askBot('hello?');
+      await waitFor(() => !store.state.botTyping, 'bot to stop typing');
+      assert.match(store.state.toast, /too often/);
+      assert.equal(store.state.supportDraft, 'hello?');
+    } finally { console.error = orig; }
+  });
+
   test('a blank question does nothing', () => {
     const store = supportStore();
     store.askBot('   ');
