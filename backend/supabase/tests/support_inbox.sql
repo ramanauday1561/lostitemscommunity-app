@@ -4,7 +4,7 @@
 -- Needs: testuser1, testuser2, superadmin.
 
 do $$
-declare u1 uuid; u2 uuid; adm uuid; n int; r text := ''; req uuid; msg text;
+declare u1 uuid; u2 uuid; adm uuid; n int; r text := ''; req uuid;
 begin
   select id into u1 from profiles where username='testuser1';
   select id into u2 from profiles where username='testuser2';

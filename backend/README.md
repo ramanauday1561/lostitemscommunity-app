@@ -1,16 +1,17 @@
 # Backend
 
-Supabase (Postgres + Auth + Storage) schema for Lost Items Community. This
-folder is new — the app currently runs entirely on the mock state in
-`src/state/store.ts` / `src/data/constants.ts`; nothing here is wired up to
-the frontend yet. It exists so the schema can be designed, reviewed and
-migrated independently of the UI work.
+Supabase (Postgres + Auth + Storage + Edge Functions) backend for Lost Items
+Community. Every screen in the app is wired to it through `src/api/`; the mock
+state in `src/state/store.ts` / `src/data/constants.ts` remains only for the
+demo mode.
 
 ```
 backend/
+  functions/        -- Edge Functions (Deno), see "Edge Functions"
   supabase/
-    migrations/     -- numbered, applied in order
-    seed.sql         -- local dev data, mirrors src/data/constants.ts
+    migrations/     -- 28 numbered migrations, applied in order (already live: never edit one, add a new one)
+    seed.sql        -- local dev data, mirrors src/data/constants.ts
+    tests/          -- re-runnable SQL regression scripts (they roll back; the error text is the report)
 ```
 
 ## Applying it
@@ -116,8 +117,7 @@ consistent everywhere:
 Two public-read buckets (`0011_storage.sql`):
 
 - `item-photos` — used by the "Add a photo" step in the report sheet
-  (`src/sheets/Report.tsx`). Currently a no-op button (`store.flash('Photo
-  picker opens here.')`); this bucket is ready for when that's wired up.
+  (`src/sheets/Report.tsx`, upload in `src/api/items.ts`).
 - `avatars` — profile pictures.
 
 Both use a `<bucket>/<user_id>/<file>` folder convention so the write policy
@@ -135,21 +135,8 @@ is a simple path check.
   real sentiment pipeline). Confirm with product before building schema for
   this; "active threads" is trivially `count(*) from forum_threads`, the rest
   isn't.
-- Rate limiting / anti-spam beyond the keyword-hit counter.
-
-## Verification pass
-
-Re-walked every screen and sheet after the first draft (Welcome, Login,
-Signup, Forgot, Dashboards, Registry, Forum, Admin, Detail, Chat, Misc,
-Report) against the migrations above. One gap found and fixed: the forum
-thread "Helpful" button (`src/screens/Forum.tsx`, `helpful` in
-`src/state/selectors.ts`) only flashed a toast in the prototype with nothing
-to persist it to — added `forum_thread_votes` + `forum_threads.helpful_count`
-in `0013_forum_helpful_votes.sql`. Everything else (auth fields, item
-fields + photos, claim chat, forum posts/replies, moderation, ads, FAQ,
-notifications, support chat, audit log, profile settings, guidelines) maps
-directly onto the tables above.
-
+- Anti-spam beyond the keyword-hit counter and the rate limits (per-user
+  limits in `0025_per_user_rate_limits.sql`, login throttle in `0023`).
 
 ## Edge Functions
 
@@ -163,4 +150,4 @@ real clients.
 
 The function needs no secrets of its own: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
 `SUPABASE_SERVICE_ROLE_KEY` are provided by the Edge runtime. Migrations it depends on: `0023`
-(throttle table) and, once the matching client is live, `0024` (closes the public email lookup).
+(throttle table) and `0024` (closes the public email lookup).
