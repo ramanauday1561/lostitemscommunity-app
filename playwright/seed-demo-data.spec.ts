@@ -163,7 +163,7 @@ test.describe('sample data for manual testing', () => {
       const page = await as(browser, users[key]);
       await page.getByText('Forum', { exact: true }).last().click();
       await page.getByText('New post', { exact: true }).first().click();
-      await page.getByText(topic, { exact: true }).first().click();
+      await page.getByText(topic, { exact: true }).last().click();   // the sheet's topic pill is drawn over the forum filter pill
       await page.getByPlaceholder('Give it a clear title').fill(title);
       await page.getByPlaceholder('Share what you saw, where and when.').fill(body);
       await page.getByText('Publish to the forum', { exact: true }).click();
