@@ -486,6 +486,8 @@ export class Store {
       await items.claimItem(it.dbId, it.reporterId, s.profile.id);
       this.setState((st) => ({ claimed: { ...st.claimed, [it.id]: true }, sheet: null }));
       this.flash(`Claim sent. ${it.by} can see it in their conversations.`);
+      // The new conversation must show in this person's Messages straight away (it only existed on the server).
+      this.loadConversationsSupabase();
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not send the claim.');
     }

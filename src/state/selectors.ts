@@ -107,6 +107,7 @@ export function buildVals(store: Store) {
     });
     // The review queue changes while the admin is elsewhere (items get flagged), so refetch on every visit.
     if (screen === 'moderation' && isSupabaseAuth) store.loadModerationQueueSupabase();
+    if (screen === 'messages' && isSupabaseAuth) store.loadConversationsSupabase();
   };
 
   const source = sc === 'lost' ? st.lost : st.found;
@@ -830,7 +831,10 @@ export function buildVals(store: Store) {
 
     isMessages: sc === 'messages',
     unreadTotal: unread, hasUnread: unread > 0,
-    openMessages: () => store.setState({ screen: 'messages', sheet: null, toast: '' }),
+    openMessages: () => {
+      store.setState({ screen: 'messages', sheet: null, toast: '' });
+      if (isSupabaseAuth) store.loadConversationsSupabase();
+    },
     conversations: st.convos.map((c) => {
       const msgs = (c as any).msgs || [];
       const last = msgs[msgs.length - 1] || ({} as { from?: string; text?: string });

@@ -47,3 +47,21 @@ describe('claiming an item I already claimed', () => {
     assert.equal(buildVals(store).claimLabel, 'This is mine');
   });
 });
+
+describe('after claiming, the conversation shows up in Messages', () => {
+  beforeEach(() => fake.reset());
+
+  test('claiming reloads the conversation list', async () => {
+    const store = claimant([]);
+    await store.claimItemSupabase();
+    await waitFor(() => fake.calls.filter((c) => c.name === 'conversations').length >= 2, 'claim + reload');
+    assert.equal(fake.calls[0].name, 'conversations');
+  });
+
+  test('opening Messages refetches the list', async () => {
+    const store = claimant([]);
+    buildVals(store).openMessages();
+    await waitFor(() => fake.calls.some((c) => c.name === 'conversations'));
+    assert.equal(store.state.screen, 'messages');
+  });
+});
