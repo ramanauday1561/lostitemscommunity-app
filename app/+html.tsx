@@ -5,6 +5,29 @@ import type { PropsWithChildren } from 'react';
  * Document shell for the static web export. Expo Router renders every route
  * inside this, so the title, favicon and theme colour live here.
  */
+/**
+ * Every deploy replaces the whole site, so a tab (or cached index.html) from
+ * before it points at script chunks that no longer exist. When a lazy chunk
+ * fails to load, reload once to pick up the new build; the guard stops a
+ * genuine outage from looping.
+ */
+const RELOAD_ON_STALE_CHUNK = `
+(function () {
+  function stale(m) { return /Loading module .* failed|ChunkLoadError|Loading chunk/i.test(String(m || '')); }
+  function reloadOnce() {
+    try {
+      var last = Number(sessionStorage.getItem('stale-chunk-reload') || 0);
+      if (Date.now() - last < 60000) return;
+      sessionStorage.setItem('stale-chunk-reload', String(Date.now()));
+    } catch (e) {}
+    location.reload();
+  }
+  window.addEventListener('unhandledrejection', function (e) {
+    if (stale(e.reason && (e.reason.message || e.reason))) reloadOnce();
+  });
+  window.addEventListener('error', function (e) { if (stale(e.message)) reloadOnce(); });
+})();`;
+
 export default function Root({ children }: PropsWithChildren) {
   return (
     <html lang="en">
@@ -23,6 +46,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="theme-color" content="#F2F2F0" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
+        <script dangerouslySetInnerHTML={{ __html: RELOAD_ON_STALE_CHUNK }} />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:#F2F2F0}` }} />
       </head>
