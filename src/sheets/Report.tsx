@@ -4,6 +4,7 @@ import { C, FONTS, MONO } from '../theme/tokens';
 import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
+import { DateField } from '../ui/DateField';
 import { Field } from '../ui/Field';
 import { Cta, Pill, Seg } from '../ui/bits';
 import { MapPicker } from '../ui/MapPicker';
@@ -41,7 +42,7 @@ export function ReportSheet() {
         <>
           <Field icon="place" value={v.rPlace} onChange={v.onRPlace} placeholder="Where? e.g. Central Station platform 3" />
           <View style={{ marginTop: 8 }}>
-            <Field icon="event" value={v.rDate} onChange={v.onRDate} placeholder="When? e.g. 12 Jun 2024" />
+            <DateField icon="event" value={v.rDate} onChange={v.onRDate} placeholder="When? Pick a date" />
           </View>
 
           <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Pin the spot</Text>

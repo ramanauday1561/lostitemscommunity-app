@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, TEST_USERS } from './helpers';
+import { loginAs, pickDate, TEST_USERS } from './helpers';
 import { attachPhoto } from './photo';
 
 /**
@@ -18,7 +18,7 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
     // worker file is actually served (it once was not, and the map stayed empty with no error on screen).
     json: {
       version: 8,
-      sources: { land: { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[-180, -80], [180, -80], [180, 80], [-180, 80], [-180, -80]]] } } } },
+      sources: { land: { type: 'geojson', attribution: 'OpenFreeMap © OpenMapTiles Data from OpenStreetMap', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[-180, -80], [180, -80], [180, 80], [-180, 80], [-180, -80]]] } } } },
       layers: [
         { id: 'bg', type: 'background', paint: { 'background-color': '#dde6ee' } },
         { id: 'land', type: 'fill', source: 'land', paint: { 'fill-color': '#cfe3cf' } },
@@ -47,6 +47,9 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await expect(page.locator('.maplibregl-marker')).toHaveCount(1);
   await workerLoaded;
   await expect(page.locator('[data-map-ready="1"]')).toHaveCount(1, { timeout: 15000 });
+  // The data credits stay (their licences require them) but are folded behind the (i) button, not open over the map.
+  await expect(page.locator('.maplibregl-ctrl-attrib-button')).toBeVisible();
+  await expect(page.locator('.maplibregl-ctrl-attrib.maplibregl-compact-show')).toHaveCount(0);
 
   // Tapping elsewhere on the map moves the pin.
   const canvas = page.locator('.maplibregl-canvas');
@@ -54,7 +57,7 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await page.mouse.click(box.x + box.width * 0.8, box.y + box.height * 0.8);
   await expect(page.getByText(/pin set · /)).not.toContainText('-33.88300, 151.20600');
 
-  await page.getByPlaceholder('When? e.g. 12 Jun 2024').fill('1 Oct 2026');
+  await pickDate(page, '2026-10-01');
   await attachPhoto(page, TITLE);
   await page.getByText('Submit to registry', { exact: true }).click();
   await expect(page.getByText('Report submitted')).toBeVisible({ timeout: 20000 });
@@ -67,6 +70,7 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await expect(page.locator('[data-map-ready="1"]')).toHaveCount(1, { timeout: 15000 });
   await expect(page.getByText('Map pin')).toBeVisible();
   await expect(page.getByText('Open in OpenStreetMap')).toBeVisible();
+  await expect(page.getByText('01 Oct 2026').first()).toBeVisible(); // the picked date
 
   await page.getByText('Withdraw this post', { exact: true }).click();
 });

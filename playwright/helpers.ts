@@ -197,3 +197,9 @@ export async function takeScreenshot(page: Page, label: string) {
   await page.screenshot({ path: `test-results/screenshots/${filename}`, fullPage: true });
   return filename;
 }
+
+/** Sets the Report sheet's date picker. Accepts 'YYYY-MM-DD' or anything Date can read ('30 Sep 2026'). */
+export async function pickDate(page: Page, when: string) {
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(when) ? new Date(`${when}T12:00:00Z`) : new Date(`${when} 12:00 UTC`);
+  await page.locator('input[type="date"]').fill(parsed.toISOString().slice(0, 10));
+}
