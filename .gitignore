@@ -49,3 +49,6 @@ test-results/
 playwright-report/
 playwright.config.test.ts
 .last-run.json
+
+# Copied from node_modules by scripts/copy-maplibre-worker.mjs
+public/maplibre/

@@ -37,6 +37,9 @@ export function MapPicker({ pin, onPick, height = 190 }: MapPickerProps) {
       const l = await import('maplibre-gl');
       if (gone || !box.current) return;
       lib.current = l;
+      // The tile-decoding worker is served from /maplibre/ (see scripts/copy-maplibre-worker.mjs); the bundler
+      // doesn't ship it, and without it the map draws its background but never any streets.
+      l.setWorkerUrl(new URL('/maplibre/maplibre-gl-worker.js', window.location.origin).href);
       const start = latest.current.pin;
       const m = new l.Map({
         container: box.current,
@@ -50,7 +53,10 @@ export function MapPicker({ pin, onPick, height = 190 }: MapPickerProps) {
       });
       map.current = m;
       m.on('click', (e) => latest.current.onPick?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
-      m.on('load', () => show(latest.current.pin, false));
+      // Markers don't need the style: place the pin straight away instead of waiting for tiles.
+      show(latest.current.pin, false);
+      m.on('idle', () => box.current?.setAttribute('data-map-ready', '1'));
+      m.on('error', (e) => console.warn('map error:', e.error?.message ?? e));
     })();
     return () => { gone = true; map.current?.remove(); map.current = null; marker.current = null; };
   }, []);
