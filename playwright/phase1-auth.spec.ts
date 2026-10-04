@@ -46,7 +46,6 @@ test.describe('Phase 1: Authentication', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.getByText('Sign in', { exact: true }).first().click();
-    await page.getByText('Supabase account', { exact: true }).click();
     await page.getByPlaceholder('Username or email').fill('no_such_user_e2e');
     await page.getByPlaceholder('Password').fill('definitely-wrong-password');
     await page.keyboard.press('Enter');
