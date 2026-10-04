@@ -4,7 +4,7 @@ import { C, FONTS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Cta, Divider, StrengthBars } from '../ui/bits';
+import { Cta, StrengthBars } from '../ui/bits';
 
 export function Signup() {
   const v = useVals();
@@ -62,26 +62,6 @@ export function Signup() {
         )}
 
         <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} loading={v.signupLoading} style={{ marginTop: 8 }} />
-
-        <Divider label="Or continue with a social account" />
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-          {v.socials.map((s) => (
-            <Press key={s.name} style={{
-              flex: 1, minHeight: 64, borderRadius: 20, backgroundColor: C.white,
-              alignItems: 'center', justifyContent: 'center', gap: 7,
-              boxShadow: '0 1px 2px rgba(22,24,31,.05), 0 12px 26px -20px rgba(22,24,31,.45)',
-            }} scale={0.95} onPress={s.go}>
-              <View style={{
-                width: 24, height: 24, borderRadius: 12, backgroundColor: s.bg,
-                alignItems: 'center', justifyContent: 'center',
-                ...(s.ring ? { boxShadow: s.bg === '#fff' ? 'inset 0 0 0 1px #D6D5D0' : 'inset 0 0 0 1px rgba(255,255,255,.35)' } : null),
-              }}>
-                <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: s.fg }}>{s.mark}</Text>
-              </View>
-              <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.muted }}>{s.name}</Text>
-            </Press>
-          ))}
-        </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ fontFamily: FONTS[400], fontSize: 13, color: C.muted }}>Already a member? </Text>

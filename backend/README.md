@@ -1,9 +1,8 @@
 # Backend
 
 Supabase (Postgres + Auth + Storage + Edge Functions) backend for Lost Items
-Community. Every screen in the app is wired to it through `src/api/`; the mock
-state in `src/state/store.ts` / `src/data/constants.ts` remains only for the
-demo mode.
+Community. Every screen in the app is wired to it through `src/api/`; there is
+no demo mode or sample data in the app any more.
 
 ```
 backend/
@@ -40,8 +39,8 @@ single account.
 
 ### The frontend's "new user" role
 
-`src/state/store.ts` has a third `Role` value, `'new'`, used only for the
-`newuser` quick-login demo persona (an account with nothing posted yet, so
+`src/state/store.ts` has a third `Role` value, `'new'`, used for a
+brand-new account (nothing posted yet, so
 the dashboard shows onboarding steps instead of stats). It is **not** a
 fourth backend role — it's `role = 'user'` with `post_count = 0` and
 `guidelines_accepted_at is null`. Compute "is this a fresh account" client-side

@@ -18,7 +18,7 @@ const dbRow = (over: Record<string, unknown> = {}) => ({
 function appStore(over: Record<string, unknown> = {}) {
   const store = new Store();
   store.setState({
-    authMode: 'supabase', screen: 'dash', role: 'user', sheet: null, notifications: [note()],
+    screen: 'dash', role: 'user', sheet: null, notifications: [note()],
     convos: [{ id: 'c1', itemId: 'i1', item: 'Wallet', icon: 'wallet', with: 'ann', time: '09:00', unread: 0, msgs: [] }],
     profile: { id: 'me', role: 'user', display_name: 'Me', handle: 'me', username: 'me', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any,
     ...over,
@@ -29,8 +29,7 @@ function appStore(over: Record<string, unknown> = {}) {
 describe('notifications (12.3)', () => {
   beforeEach(() => fake.reset());
 
-  test('the bell exists only in Supabase mode, with an unread count', () => {
-    assert.equal(buildVals(new Store()).showBell, false);
+  test('the bell shows an unread count', () => {
     const v = buildVals(appStore({ notifications: [note(), note({ id: 'n2' }), note({ id: 'n3', isRead: true })] }));
     assert.equal(v.showBell, true);
     assert.equal(v.unreadNotifs, 2);
@@ -49,15 +48,11 @@ describe('notifications (12.3)', () => {
     assert.equal(quiet.state.toast, '', 'message notifications are covered by the chat toast/badge');
   });
 
-  test('a duplicate delivery is ignored; demo mode ignores everything', async () => {
+  test('a duplicate delivery is ignored', async () => {
     const store = appStore();
     await store.handleIncomingNotification(dbRow() as any);
     await store.handleIncomingNotification(dbRow() as any);
     assert.equal(store.state.notifications.length, 2);
-
-    const demo = appStore({ authMode: 'demo' });
-    await demo.handleIncomingNotification(dbRow() as any);
-    assert.equal(demo.state.notifications.length, 1);
   });
 
   test('opening the sheet loads from the server (loading -> ready)', async () => {

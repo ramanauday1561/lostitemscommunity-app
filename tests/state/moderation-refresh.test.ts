@@ -10,7 +10,7 @@ const tables = () => fake.calls.map((c) => c.name);
 
 function admin() {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'dash', role: 'admin', suTerms: true,
+  store.setState({ screen: 'dash', role: 'admin', suTerms: true,
     profile: { id: 'adm', role: 'superadmin', handle: 'boss' } as any,
     dbItems: [{ id: 'LOST-1', dbId: 'item-uuid', reporterId: 'rep', title: 'Bag', kind: 'Lost', by: 'x', status: 'Active', place: '', date: '', cat: 'Bags', icon: 'bag', desc: '', photos: [] }] as any,
     sel: 'LOST-1' } as any);

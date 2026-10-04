@@ -17,7 +17,7 @@ const msg = (over: Record<string, unknown> = {}) => ({
 function supportStore(over: Record<string, unknown> = {}) {
   const store = new Store();
   store.setState({
-    authMode: 'supabase', screen: 'dash', role: 'user', sheet: 'support', suTerms: true,
+    screen: 'dash', role: 'user', sheet: 'support', suTerms: true,
     profile: { id: 'u1', role: 'user', display_name: 'Ann', handle: 'ann', username: 'ann', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any,
     dbFaqEntries: [faq(), faq({ id: 'f2', keywords: ['photo'], question: 'How do I add a photo?', answer: 'Tap Add a photo.', position: 2 })] as any,
     dbSupportMessages: [],
@@ -109,19 +109,12 @@ describe('support chat in Supabase mode (11.1-11.2)', () => {
     assert.equal(fake.calls.length, 0);
     assert.equal(store.state.botTyping, false);
   });
-
-  test('demo mode still uses the mock FAQ and keeps messages local', () => {
-    const store = new Store();
-    const chips = buildVals(store).faqChips;
-    assert.ok(chips.length > 0);
-    assert.equal(fake.calls.length, 0);
-  });
 });
 
 describe('logout clears every cached server list', () => {
   test('all db* fields (and notifications) are reset, so the next account never sees the last user\'s data', () => {
     const store = new Store();
-    store.setState({ authMode: 'supabase', screen: 'dash', role: 'admin' } as any);
+    store.setState({ screen: 'dash', role: 'admin' } as any);
     const dbKeys = Object.keys(store.state).filter((k) => k.startsWith('db'));
     assert.ok(dbKeys.length >= 12, `expected the cached lists to be db* fields, found ${dbKeys.join(',')}`);
     const filled: Record<string, unknown> = {};

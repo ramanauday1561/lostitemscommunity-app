@@ -18,7 +18,7 @@ const FULL = REGISTRY_PAGE_SIZE + 1; // a full page plus the "one more" row that
 function registryStore(over: Record<string, unknown> = {}) {
   const store = new Store();
   store.setState({
-    authMode: 'supabase', screen: 'lost', role: 'user', filter: 'All', q: '',
+    screen: 'lost', role: 'user', filter: 'All', q: '',
     profile: { id: 'u1', role: 'user', display_name: 'Ann', handle: 'ann', username: 'ann', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any,
     ...over,
   } as any);

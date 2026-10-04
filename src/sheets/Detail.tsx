@@ -85,7 +85,7 @@ export function DetailSheet() {
         ))}
       </View>
 
-      {v.liveMap && v.detailPin && (
+      {v.detailPin && (
         <View style={{ marginTop: 14 }}>
           <MapPicker pin={v.detailPin} height={160} />
         </View>

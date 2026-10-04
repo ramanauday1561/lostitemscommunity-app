@@ -15,7 +15,7 @@ const msg = (over: Record<string, unknown> = {}) => ({
 function chatStore(over: Record<string, unknown> = {}) {
   const store = new Store();
   store.setState({
-    authMode: 'supabase', screen: 'dash', role: 'user', sheet: null, activeConvo: null, convos: [convo()],
+    screen: 'dash', role: 'user', sheet: null, activeConvo: null, convos: [convo()],
     profile: { id: 'me', role: 'user', display_name: 'Me', handle: 'me', username: 'me', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any,
     ...over,
   } as any);
@@ -59,13 +59,6 @@ describe('live chat (5.3)', () => {
     store.handleIncomingMessage(msg({ conversation_id: 'new' }) as any);
     await waitFor(() => fake.calls.length >= 1, 'conversations reload');
     assert.equal(fake.calls[0].name, 'conversations');
-  });
-
-  test('ignored entirely outside Supabase mode', () => {
-    const store = chatStore({ authMode: 'demo' });
-    store.handleIncomingMessage(msg() as any);
-    assert.equal(store.state.convos[0].unread, 0);
-    assert.equal(fake.calls.length, 0);
   });
 
   test('startChatRealtime subscribes once (idempotent) and stopChatRealtime unsubscribes', async () => {

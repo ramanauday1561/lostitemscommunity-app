@@ -32,7 +32,7 @@ Everything here is a **dashboard setting on the live project** (`tqkmpirusmdckcc
 - [ ] Security advisor: Dashboard → Advisors → Security (or `get_advisors`) — see "expected findings" below.
 - [ ] Performance advisor: reviewed; the remaining findings are INFO/WARN at this scale (see 14.7 in the integration checklist).
 - [ ] `backend/supabase/tests/rls_attacks.sql` and `rate_limits.sql` run clean (they roll back; run them in the SQL editor as described in their headers).
-- [ ] `npm test`, `npm run oracle` and the *Checks* workflow green on `main`.
+- [ ] `npm test` and the *Checks* workflow green on `main`.
 
 ## Expected advisor findings (not bugs)
 

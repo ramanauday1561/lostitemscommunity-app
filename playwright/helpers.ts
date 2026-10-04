@@ -65,7 +65,6 @@ async function loginWithForm(page: Page, user: TestUser) {
   if (!(await onLoginForm(page))) {
     await page.getByText('Sign in', { exact: true }).first().click();
   }
-  await page.getByText('Supabase account', { exact: true }).click();
   await page.getByPlaceholder('Username or email').fill(user.username);
   await page.getByPlaceholder('Password').fill(user.password);
   await page.keyboard.press('Enter');
@@ -83,8 +82,7 @@ async function loginWithForm(page: Page, user: TestUser) {
 }
 
 /**
- * Login through the real Supabase path: Welcome -> Sign in -> "Supabase account"
- * segment -> username/email + password -> submit. Throws if the app shows an error.
+ * Login through the real Supabase path: Welcome -> Sign in -> username/email + password -> submit. Throws if the app shows an error.
  * The first call per user signs in with the form; later calls reuse the saved session (see above).
  */
 export async function loginAs(page: Page, user: TestUser) {

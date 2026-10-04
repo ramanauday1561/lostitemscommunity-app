@@ -15,12 +15,12 @@ const quiet = async (fn: () => Promise<void> | void) => { const o = console.erro
 
 function member() {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'dash', role: 'user', sheet: 'support', suTerms: true, profile: profile(), dbSupportMessages: [] } as any);
+  store.setState({ screen: 'dash', role: 'user', sheet: 'support', suTerms: true, profile: profile(), dbSupportMessages: [] } as any);
   return store;
 }
 function admin(inbox: unknown = null) {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'dash', role: 'admin', suTerms: true, profile: profile({ id: 'adm', role: 'superadmin', handle: 'superadmin', display_name: 'Super' }), dbSupportInbox: inbox } as any);
+  store.setState({ screen: 'dash', role: 'admin', suTerms: true, profile: profile({ id: 'adm', role: 'superadmin', handle: 'superadmin', display_name: 'Super' }), dbSupportInbox: inbox } as any);
   return store;
 }
 const item = (over: Record<string, unknown> = {}) => ({
@@ -63,14 +63,6 @@ describe('"Talk to a human" (11.3)', () => {
       fake.queue({ error: { message: 'relation "x" does not exist' } });
       await quiet(async () => { buildVals(b).escalate(); await waitFor(() => !!b.state.toast); });
       assert.equal(b.state.toast, "Couldn't reach the support team. Please try again.");
-    });
-
-    test('demo mode keeps the old behaviour and never calls Supabase', () => {
-      const store = new Store();
-      store.setState({ sheet: 'support' } as any);
-      buildVals(store).escalate();
-      assert.equal(store.state.sheet, null);
-      assert.equal(fake.calls.length, 0);
     });
 
     test('a "Support replied" notification refreshes the thread, and tapping it opens the support sheet', async () => {

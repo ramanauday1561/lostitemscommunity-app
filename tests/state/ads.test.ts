@@ -18,7 +18,7 @@ const campaign = (over: Record<string, unknown> = {}) => ({
 function adStore(over: Record<string, unknown> = {}) {
   const store = new Store();
   store.setState({
-    authMode: 'supabase', screen: 'ads', role: 'admin',
+    screen: 'ads', role: 'admin',
     profile: { id: 'adm', role: 'superadmin', display_name: 'Admin', handle: 'admin', username: 'admin', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any,
     dbAdPlacements: [placement(), placement({ id: 'p-uuid-2', display_id: 'AD-02', screen: 'Forum', is_live: false, days_left: 0, ended: true, revenue: 0, impressions: 0, ctr: 0 })] as any,
     dbAdCampaigns: [campaign(), campaign({ id: 'c-uuid-2', key: 'citylock', name: 'CityLock 24h', advertiser: 'CityLock', icon: 'lock', rate_label: '$22 CPM', cpm: 22 })] as any,
@@ -131,11 +131,6 @@ describe('ads in Supabase mode (10.1-10.5)', () => {
     test('a brand-new user who has not accepted the guidelines sees no ads (same rule as the prototype)', () => {
       const store = adStore({ suTerms: false });
       assert.equal(store.slotFor('Home', true, store.state).live, false);
-      assert.equal(store.slotFor('Home', false, store.state).live, true);
-    });
-
-    test('demo mode still uses the mock placements', () => {
-      const store = new Store();
       assert.equal(store.slotFor('Home', false, store.state).live, true);
     });
   });

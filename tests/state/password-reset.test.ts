@@ -21,7 +21,6 @@ describe('password reset link (14)', () => {
       assert.equal(store.state.screen, 'forgot');
       assert.equal(store.state.fpStage, 'reset');
       assert.equal(store.state.fpRecovery, true);
-      assert.equal(store.state.authMode, 'supabase');
       const v = buildVals(store);
       assert.equal(v.fpIsReset, true);
       assert.equal(v.fpTitle, 'Set a new password');
@@ -155,7 +154,7 @@ describe('password reset link (14)', () => {
     });
   });
 
-  test('demo mode and the normal "send me a link" flow are unaffected', () => {
+  test('the normal "send me a link" flow is unaffected', () => {
     const v = buildVals(new Store());
     assert.equal(v.fpShowSignInLink, true);
     assert.equal(v.fpIsReset, false);

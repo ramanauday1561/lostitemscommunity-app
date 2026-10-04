@@ -109,7 +109,7 @@ export function Empty({ icon, title, body }: { icon: string; title: string; body
 
 /**
  * Loading / error state for a Supabase-backed list. Renders nothing when idle or ready, so
- * demo mode and loaded lists are untouched; the genuine empty state is each screen's own
+ * loaded lists are untouched; the genuine empty state is each screen's own
  * <Empty>, which the selectors only show once the list is 'ready'.
  */
 export function LoadGate({ status, onRetry, what }: {
