@@ -6,6 +6,7 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import { Cta } from '../ui/bits';
+import { SocialButtons } from '../ui/SocialButtons';
 
 function CheckBox({ on }: { on: boolean }) {
   return (
@@ -56,6 +57,8 @@ export function Login() {
           )}
 
           <Cta label={v.signInLabel} on={v.signInEnabled} onPress={v.submit} loading={v.signInLoading} style={{ marginTop: 16 }} />
+
+          <SocialButtons />
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 'auto', paddingTop: 20 }}>

@@ -153,6 +153,12 @@ export function buildVals(store: Store) {
     nextSlide: () => store.setState((s) => s.slide === SLIDES.length - 1 ? { screen: 'login' } : { slide: s.slide + 1 }),
     skipWelcome: () => store.setState({ screen: 'login' }),
 
+    // Social sign-in: the buttons are shown, the providers are not connected yet, so a tap only says so.
+    socials: [
+      { name: 'Google', mark: 'G', bg: '#fff', fg: '#101319', ring: true },
+      { name: 'Facebook', mark: 'f', bg: '#1877F2', fg: '#fff', ring: false },
+      { name: 'X', mark: 'X', bg: '#101319', fg: '#fff', ring: true },
+    ].map((p) => ({ ...p, go: () => store.flash(`Sign in with ${p.name} is coming soon.`) })),
     goSignup: () => store.setState({ screen: 'signup', error: '' }),
     goLogin: () => store.setState({ screen: 'login', suError: '' }),
 
