@@ -1,4 +1,4 @@
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, ScrollView, Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
@@ -88,6 +88,9 @@ export function DetailSheet() {
       {v.detailPin && (
         <View style={{ marginTop: 14 }}>
           <MapPicker pin={v.detailPin} height={160} />
+          <Press style={{ minHeight: 44, justifyContent: 'center' }} scale={0.98} onPress={() => { Linking.openURL(v.detailMapUrl); }}>
+            <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.primary }}>Open in OpenStreetMap</Text>
+          </Press>
         </View>
       )}
     </Sheet>

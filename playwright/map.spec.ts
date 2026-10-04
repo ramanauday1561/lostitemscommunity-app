@@ -14,13 +14,23 @@ const TITLE = `PWMAP${Date.now().toString().slice(-6)} red scooter`;
 
 test('pin a place on the map, submit, and see the pin on the post', async ({ page }) => {
   await page.route('https://tiles.openfreemap.org/**', (route) => route.fulfill({
-    json: { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#dde6ee' } }] },
+    // A GeoJSON source is decoded in MapLibre's web worker, like real vector tiles: the map only reaches "ready" when the
+    // worker file is actually served (it once was not, and the map stayed empty with no error on screen).
+    json: {
+      version: 8,
+      sources: { land: { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[-180, -80], [180, -80], [180, 80], [-180, 80], [-180, -80]]] } } } },
+      layers: [
+        { id: 'bg', type: 'background', paint: { 'background-color': '#dde6ee' } },
+        { id: 'land', type: 'fill', source: 'land', paint: { 'fill-color': '#cfe3cf' } },
+      ],
+    },
   }));
   await page.route('https://nominatim.openstreetmap.org/search**', (route) => route.fulfill({
     json: [{ display_name: 'Central Station, Railway Square, Sydney, Australia', lat: '-33.8830', lon: '151.2060' }],
   }));
   await page.route('https://nominatim.openstreetmap.org/reverse**', (route) => route.fulfill({ json: { display_name: 'Somewhere, Sydney' } }));
 
+  const workerLoaded = page.waitForResponse((r) => r.url().includes('/maplibre/maplibre-gl-worker.js') && r.status() === 200);
   await loginAs(page, TEST_USERS.regularUser);
   await page.getByText('add', { exact: true }).last().click();
   await page.getByText('I lost this', { exact: true }).click();
@@ -35,6 +45,8 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await expect(page.getByPlaceholder('Where? e.g. Central Station platform 3')).toHaveValue('Central Station, Railway Square, Sydney');
   await expect(page.getByText(/pin set · -33\.88300, 151\.20600/)).toBeVisible();
   await expect(page.locator('.maplibregl-marker')).toHaveCount(1);
+  await workerLoaded;
+  await expect(page.locator('[data-map-ready="1"]')).toHaveCount(1, { timeout: 15000 });
 
   // Tapping elsewhere on the map moves the pin.
   const canvas = page.locator('.maplibregl-canvas');
@@ -52,7 +64,9 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await page.getByPlaceholder('Search title, place or reference').fill(TITLE);
   await page.getByText(TITLE).first().click();
   await expect(page.locator('.maplibregl-marker')).toHaveCount(1, { timeout: 15000 });
+  await expect(page.locator('[data-map-ready="1"]')).toHaveCount(1, { timeout: 15000 });
   await expect(page.getByText('Map pin')).toBeVisible();
+  await expect(page.getByText('Open in OpenStreetMap')).toBeVisible();
 
   await page.getByText('Withdraw this post', { exact: true }).click();
 });

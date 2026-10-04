@@ -643,6 +643,7 @@ export function buildVals(store: Store) {
     placeSearching: st.placeSearching,
     placeResults: st.placeResults.map((r) => ({ key: `${r.lat},${r.lng}`, label: r.label, pick: () => store.setPinSupabase(r, r.label) })),
     detailPin: parseCoords(sel.coords),
+    detailMapUrl: (() => { const c = parseCoords(sel.coords); return c ? `https://www.openstreetmap.org/?mlat=${c.lat}&mlon=${c.lng}#map=17/${c.lat}/${c.lng}` : ''; })(),
     useMyLocation: store.useMyLocationSupabase,
 
     meName: store.me().name,
