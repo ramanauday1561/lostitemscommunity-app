@@ -44,8 +44,14 @@ export default function Root({ children }: PropsWithChildren) {
           content="Report what you've found, search for what you've lost, and be part of a caring community."
         />
         <meta name="theme-color" content="#F2F2F0" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        {/* Home-screen install on iPhone: full screen, with the app's own name under the icon. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Lost Items" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script dangerouslySetInnerHTML={{ __html: RELOAD_ON_STALE_CHUNK }} />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: `html,body{background:#F2F2F0}` }} />
