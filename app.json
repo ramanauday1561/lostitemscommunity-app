@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "community.lostitems.app"
+      "bundleIdentifier": "community.lostitems.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "community.lostitems.app",
@@ -30,7 +33,20 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lost Items Community needs your photo library so you can attach a photo of the item you are reporting."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Lost Items Community uses your location only to drop a pin where you lost or found something."
+        }
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "runtimeVersion": {
       "policy": "fingerprint"
