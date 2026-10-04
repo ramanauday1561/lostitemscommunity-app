@@ -16,10 +16,10 @@ test.describe('install banner', () => {
       }, 300));
     });
     await page.goto('/');
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Install Lost Items')).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'Install the app' }).or(page.getByLabel('Install the app')).first().click();
     await expect.poll(() => page.evaluate(() => (window as any).__installed)).toBe(1);
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeHidden();
+    await expect(page.getByText('Install Lost Items')).toBeHidden();
   });
 
   test('dismissing hides it and it stays away on the next visit', async ({ page }) => {
@@ -31,21 +31,23 @@ test.describe('install banner', () => {
       }, 300));
     });
     await page.goto('/');
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Install Lost Items')).toBeVisible({ timeout: 10000 });
     await page.getByLabel('Not now').first().click();
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeHidden();
+    await expect(page.getByText('Install Lost Items')).toBeHidden();
     await page.reload();
     await page.waitForTimeout(3500);
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toHaveCount(0);
+    await expect(page.getByText('Install Lost Items')).toHaveCount(0);
   });
 
   test('iPhone: shows the Share -> Add to Home Screen steps', async ({ browser }) => {
     const context = await browser.newContext({ ...devices['iPhone 14'] });
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Install Lost Items')).toBeVisible({ timeout: 10000 });
     await page.getByLabel('Show how to add to Home Screen').first().click();
-    await expect(page.getByText('Add to Home Screen”')).toBeVisible();
+    await expect(page.getByText(/Open this page in Safari/)).toBeVisible();
+    await expect(page.getByLabel('Copy the link').first()).toBeVisible();
+    await expect(page.getByText(/Add to Home Screen”/)).toBeVisible();
     await context.close();
   });
 
@@ -53,11 +55,11 @@ test.describe('install banner', () => {
     const context = await browser.newContext({ ...devices['iPhone 14'] });
     const page = await context.newPage();
     await page.goto('/');
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeVisible({ timeout: 10000 });
-    await page.getByText('Skip', { exact: true }).click({ timeout: 5000 }); // would time out if the banner sat on top of it
+    await expect(page.getByText('Install Lost Items')).toBeVisible({ timeout: 10000 });
+    await page.getByText('Skip', { exact: true }).click({ timeout: 5000 }); // the banner sits above the page, not over it
     await page.getByLabel('Not now').first().click();
     await page.goto('/?install=1');
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Install Lost Items')).toBeVisible({ timeout: 10000 });
     await context.close();
   });
 
@@ -75,6 +77,6 @@ test.describe('install banner', () => {
   test('a browser that cannot install shows nothing', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(3500);
-    await expect(page.getByText('Add Lost Items to your Home Screen')).toHaveCount(0);
+    await expect(page.getByText('Install Lost Items')).toHaveCount(0);
   });
 });
