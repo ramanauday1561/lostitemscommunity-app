@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { useVals } from './StoreProvider';
 import { Shell } from './ui/Shell';
+import { InstallBanner } from './ui/InstallBanner';
 import { BottomNav, Header, Toast } from './ui/Chrome';
 import { Welcome } from './screens/Welcome';
 import { Login } from './screens/Login';
@@ -53,6 +54,7 @@ function Sheets() {
 }
 
 export function App() {
+  const v = useVals();
   return (
     <Shell>
       <View style={{ flex: 1, overflow: 'hidden' }}>
@@ -62,6 +64,8 @@ export function App() {
         </View>
         <BottomNav />
         <Toast />
+        {/* Above the bottom bar on app screens; at the top on welcome/sign-in, where the bottom holds the main button. */}
+        <InstallBanner {...(v.showNav ? { bottom: 92 } : { top: 8 })} />
         <Sheets />
       </View>
     </Shell>
