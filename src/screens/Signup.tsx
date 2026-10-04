@@ -5,6 +5,7 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import { Cta, StrengthBars } from '../ui/bits';
+import { SocialButtons } from '../ui/SocialButtons';
 
 export function Signup() {
   const v = useVals();
@@ -62,6 +63,8 @@ export function Signup() {
         )}
 
         <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} loading={v.signupLoading} style={{ marginTop: 8 }} />
+
+        <SocialButtons />
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 }}>
           <Text style={{ fontFamily: FONTS[400], fontSize: 13, color: C.muted }}>Already a member? </Text>
