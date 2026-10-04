@@ -29,9 +29,11 @@ export function InstallBanner({ bottom, top }: { bottom?: number; top?: number }
     // The service worker is what makes Chrome treat the site as installable (and is where web push will live).
     navigator.serviceWorker?.register('/sw.js').catch(() => {});
 
+    // ?install=1 on the address forces the banner (ignores a past dismissal), to see it or check it on a device.
+    const forced = new URLSearchParams(window.location.search).has('install');
     const evaluate = () => setMode(installMode({
       standalone: isStandalone(),
-      snoozed: isSnoozed(dismissedAt(), Date.now()),
+      snoozed: !forced && isSnoozed(dismissedAt(), Date.now()),
       ios: isIos(navigator.userAgent, navigator.platform, navigator.maxTouchPoints ?? 0),
       canPrompt: !!deferred.current,
     }));
