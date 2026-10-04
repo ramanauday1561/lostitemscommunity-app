@@ -20,9 +20,10 @@ function isStandalone(): boolean {
 /** Offers to install the app as soon as someone visits: a one-tap Install where the browser allows it (Android,
  *  desktop Chrome/Edge), and the "Share -> Add to Home Screen" steps on iPhone, where no browser can install for you.
  *  Never shown inside the installed app, and a dismissal keeps it away for a week. */
-export function InstallBanner({ bottom, top }: { bottom?: number; top?: number }) {
+export function InstallBanner() {
   const [mode, setMode] = useState<InstallMode>(null);
   const [steps, setSteps] = useState(false);
+  const [copied, setCopied] = useState(false);
   const deferred = useRef<PromptEvent | null>(null);
 
   useEffect(() => {
@@ -65,36 +66,48 @@ export function InstallBanner({ bottom, top }: { bottom?: number; top?: number }
     setMode(null);
   };
 
+  const ios = mode === 'ios';
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(window.location.origin); setCopied(true); } catch { /* the link is in the address bar anyway */ }
+  };
+
+  // In the page flow, above the header, so it pushes the app down instead of covering it.
   return (
     <View
       accessibilityRole="alert"
-      style={[{
-        position: 'absolute', left: 12, right: 12, ...(top != null ? { top } : { bottom }), zIndex: 40, backgroundColor: C.white, borderRadius: 22, padding: 14,
-      }, SHADOW.card]}
+      style={[{ marginHorizontal: 12, marginBottom: 8, backgroundColor: C.white, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 }, SHADOW.card]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Image source={{ uri: '/icon-192.png' }} style={{ width: 44, height: 44, borderRadius: 12 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Image source={{ uri: '/icon-192.png' }} style={{ width: 38, height: 38, borderRadius: 10 }} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: FONTS[700], fontSize: 14, color: C.ink }}>Add Lost Items to your Home Screen</Text>
-          <Text style={{ fontFamily: FONTS[400], fontSize: 12, lineHeight: 17, color: C.subtle, marginTop: 2 }}>
-            Opens full screen, one tap away.
+          <Text numberOfLines={1} style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.ink }}>Install Lost Items</Text>
+          <Text numberOfLines={1} style={{ fontFamily: FONTS[400], fontSize: 11.5, color: C.subtle, marginTop: 1 }}>
+            {ios ? 'Add it to your Home Screen' : 'One tap, opens full screen'}
           </Text>
         </View>
         <Press
-          style={{ minHeight: 40, paddingHorizontal: 16, borderRadius: 14, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}
-          scale={0.96} onPress={install} accessibilityLabel={mode === 'ios' ? 'Show how to add to Home Screen' : 'Install the app'}
+          style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 12, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}
+          scale={0.96} onPress={install} accessibilityLabel={ios ? 'Show how to add to Home Screen' : 'Install the app'}
         >
-          <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.white }}>{mode === 'ios' ? 'How' : 'Install'}</Text>
+          <Text style={{ fontFamily: FONTS[700], fontSize: 12.5, color: C.white }}>{ios ? 'How' : 'Install'}</Text>
         </Press>
-        <Press style={{ width: 32, height: 40, alignItems: 'center', justifyContent: 'center' }} scale={0.9} onPress={dismiss} accessibilityLabel="Not now">
+        <Press style={{ width: 30, height: 36, alignItems: 'center', justifyContent: 'center' }} scale={0.9} onPress={dismiss} accessibilityLabel="Not now">
           <Icon name="close" size={18} color={C.subtle} />
         </Press>
       </View>
-      {mode === 'ios' && steps && (
-        <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line, gap: 8 }}>
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>1. Tap the Share button (the square with an arrow) in your browser's bar.</Text>
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>2. Scroll down and tap “Add to Home Screen”.</Text>
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>3. Tap Add. The icon appears on your Home Screen.</Text>
+      {ios && steps && (
+        <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line, gap: 7 }}>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>
+            1. Open this page in Safari. In Brave, Chrome, Firefox or an app's built-in browser, tap the ⋯ menu and choose “Open in Safari”, or copy the link and paste it into Safari.
+          </Text>
+          <Press
+            style={{ alignSelf: 'flex-start', minHeight: 34, paddingHorizontal: 12, borderRadius: 10, backgroundColor: C.fillSoft, justifyContent: 'center' }}
+            scale={0.97} onPress={copyLink} accessibilityLabel="Copy the link"
+          >
+            <Text style={{ fontFamily: FONTS[600], fontSize: 12, color: C.primary }}>{copied ? 'Link copied' : 'Copy link'}</Text>
+          </Press>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>2. In Safari, tap the Share button (the square with an arrow).</Text>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, lineHeight: 18, color: C.ink }}>3. Scroll down, tap “Add to Home Screen”, then Add.</Text>
         </View>
       )}
     </View>

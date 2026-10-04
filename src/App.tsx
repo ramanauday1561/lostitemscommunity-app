@@ -54,18 +54,16 @@ function Sheets() {
 }
 
 export function App() {
-  const v = useVals();
   return (
     <Shell>
       <View style={{ flex: 1, overflow: 'hidden' }}>
+        <InstallBanner />
         <Header />
         <View style={{ flex: 1, minHeight: 0 }}>
           <Screen />
         </View>
         <BottomNav />
         <Toast />
-        {/* Above the bottom bar on app screens; on welcome/sign-in it sits just below the top row (Skip / back) because the bottom holds the main button. */}
-        <InstallBanner {...(v.showNav ? { bottom: 92 } : { top: 76 })} />
         <Sheets />
       </View>
     </Shell>
