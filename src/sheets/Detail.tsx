@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
@@ -64,6 +64,14 @@ export function DetailSheet() {
         </View>
         <Chip status={d.status} />
       </View>
+
+      {v.itemPhotos.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }} contentContainerStyle={{ gap: 8 }}>
+          {v.itemPhotos.map((uri) => (
+            <Image key={uri} source={{ uri }} resizeMode="cover" style={{ width: v.itemPhotos.length > 1 ? 260 : 330, maxWidth: '100%', height: 200, borderRadius: 20, backgroundColor: C.fillSoft }} />
+          ))}
+        </ScrollView>
+      )}
 
       <Text style={{ fontFamily: FONTS[400], fontSize: 13.5, lineHeight: 21, color: C.muted, marginTop: 16 }}>{d.desc}</Text>
 

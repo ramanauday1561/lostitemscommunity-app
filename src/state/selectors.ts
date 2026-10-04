@@ -96,7 +96,10 @@ export function buildVals(store: Store) {
   const existingConvo = isSupabaseAuth && sel && (sel as { dbId?: string }).dbId
     ? st.convos.find((c) => c.itemId === (sel as { dbId?: string }).dbId) : undefined;
   const meHandle = isSupabaseAuth ? (st.profile?.handle ?? '') : ME;
-  const openItem = (it: Item) => () => store.setState({ sel: it.id, sheet: 'detail', toast: '' });
+  const openItem = (it: Item) => () => {
+    store.setState({ sel: it.id, sheet: 'detail', toast: '' });
+    if (isSupabaseAuth) store.loadPhotosSupabase(it.dbId);
+  };
   const go = (screen: string, extra?: Partial<AppState>) => () => {
     // Entering the other registry tab: drop the previous tab's rows and show the loader straight away, instead of
     // one frame of the old list before the effect starts the fetch.
@@ -880,7 +883,11 @@ export function buildVals(store: Store) {
     onRDesc: (v: string) => store.setState({ rDesc: v }),
     categories: CATS.map((c) => ({ name: c, on: st.rCat === c, pick: () => store.setState({ rCat: c }) })),
     reportBtnLabel: st.step === 1 ? 'Continue' : 'Submit to registry',
-    reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim(),
+    reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim() && (!isSupabaseAuth || !!st.rPhotoBlob),
+    photoRequired: isSupabaseAuth,
+    photoPreview: st.rPhotoPreview,
+    removePhoto: store.removePhoto,
+    itemPhotos: (isSupabaseAuth && sel.dbId ? st.photoUrls[sel.dbId] : undefined) ?? [],
     reportBtnLoading: !!st.pending.report && st.step === 2,
     reportNext: isSupabaseAuth ? () => store.withPending('report', store.reportItemSupabase) : () => {
       if (st.step === 1) { if (st.rTitle.trim() && st.rCat) store.setState({ step: 2 }); return; }

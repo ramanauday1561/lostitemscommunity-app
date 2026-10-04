@@ -187,3 +187,11 @@ export async function uploadItemPhoto(itemDbId: string, uploaderId: string, blob
   const { error: rowError } = await supabase.from('item_photos').insert({ item_id: itemDbId, storage_path: path });
   if (rowError) throw new Error(rowError.message);
 }
+
+/** Public URLs of an item's photos, in display order. */
+export async function loadItemPhotoUrls(itemDbId: string): Promise<string[]> {
+  const { data, error } = await supabase.from('item_photos')
+    .select('storage_path').eq('item_id', itemDbId).order('position').order('created_at');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => supabase.storage.from('item-photos').getPublicUrl(r.storage_path).data.publicUrl);
+}

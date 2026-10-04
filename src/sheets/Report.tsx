@@ -1,4 +1,4 @@
-import { Text, TextInput, View } from 'react-native';
+import { Image, Text, TextInput, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
 import { inputFont } from '../theme/input';
@@ -88,10 +88,23 @@ export function ReportSheet() {
               textAlignVertical: 'top', outlineStyle: 'none',
             } as object}
           />
-          <Press style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 48, marginTop: 8 }} scale={0.98} onPress={v.addPhoto}>
-            <Icon name="add_a_photo" size={20} color={C.primary} />
-            <Text style={{ fontFamily: FONTS[600], fontSize: 13, color: C.primary }}>Add a photo</Text>
-          </Press>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>
+            {v.photoRequired ? 'Photo (required)' : 'Photo'}
+          </Text>
+          {!!v.photoPreview && (
+            <Image source={{ uri: v.photoPreview }} resizeMode="cover" style={{ height: 180, borderRadius: 20, backgroundColor: C.fillSoft }} />
+          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <Press style={{ flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 48, marginTop: 4 }} scale={0.98} onPress={v.addPhoto}>
+              <Icon name="add_a_photo" size={20} color={C.primary} />
+              <Text style={{ fontFamily: FONTS[600], fontSize: 13, color: C.primary }}>{v.photoPreview ? 'Change photo' : 'Add a photo'}</Text>
+            </Press>
+            {!!v.photoPreview && (
+              <Press style={{ minHeight: 48, justifyContent: 'center', marginTop: 4 }} scale={0.98} onPress={v.removePhoto}>
+                <Text style={{ fontFamily: FONTS[600], fontSize: 13, color: C.subtle }}>Remove</Text>
+              </Press>
+            )}
+          </View>
         </>
       )}
     </Sheet>
