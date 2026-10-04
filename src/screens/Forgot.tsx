@@ -30,19 +30,6 @@ export function Forgot() {
           <Field icon="mail" value={v.fpEmail} onChange={v.onFpEmail} placeholder="Email on your account" keyboardType="email-address" />
         )}
 
-        {v.fpIsCode && (
-          <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, paddingHorizontal: 16, borderRadius: 18, backgroundColor: 'rgba(11,107,203,.07)', marginBottom: 12 }}>
-              <Icon name="mark_email_read" size={20} color={C.primary} />
-              <Text numberOfLines={1} style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, color: C.primary }}>Code sent to {v.fpEmail}</Text>
-            </View>
-            <Field icon="pin" value={v.fpCode} onChange={v.onFpCode} placeholder="6-digit code" keyboardType="number-pad" maxLength={6} />
-            <Press style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: 4 }} scale={1} onPress={v.fpResend}>
-              <Text style={{ fontFamily: FONTS[600], fontSize: 13, color: C.primary }}>Resend code</Text>
-            </Press>
-          </>
-        )}
-
         {v.fpIsReset && (
           <>
             <Field icon="lock" value={v.fpPass} onChange={v.onFpPass} placeholder="New password" secure />

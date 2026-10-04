@@ -8,8 +8,3 @@ both are written down.
 
 - [`architecture.md`](./architecture.md) — folder layout, entity-relationship
   diagram, and the role matrix (superadmin vs. user) across every screen.
-
-See also `docs/PARITY.md` at the repo root, which documents how the frontend
-stays in lockstep with `prototype/Lost Items App v3 (native).dc.html` — that
-doc is frontend-specific (it's tied to `tools/oracle/`) so it stays next to
-the code it verifies rather than moving here.

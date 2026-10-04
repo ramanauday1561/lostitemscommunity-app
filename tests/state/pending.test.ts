@@ -8,7 +8,7 @@ import { waitFor } from './waitFor';
 
 const member = () => {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'dash', role: 'user', suTerms: true,
+  store.setState({ screen: 'dash', role: 'user', suTerms: true,
     profile: { id: 'u1', role: 'user', handle: 'ann', display_name: 'Ann', username: 'ann', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any } as any);
   return store;
 };
@@ -49,7 +49,7 @@ describe('buttons show the loader while their request is in flight', () => {
 
   test('"I understand" from the sign-up form (nobody signed in yet) closes the sheet and ticks the box', async () => {
     const store = new Store();
-    store.setState({ authMode: 'supabase', screen: 'signup', sheet: 'guidelines', suTerms: false } as any);
+    store.setState({ screen: 'signup', sheet: 'guidelines', suTerms: false } as any);
     buildVals(store).acceptGuidelines();
     await waitFor(() => store.state.sheet === null);
     assert.equal(store.state.suTerms, true);

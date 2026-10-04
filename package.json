@@ -49,7 +49,6 @@
     "web": "expo start --web",
     "dev": "expo start --web",
     "export:web": "expo export -p web --output-dir dist",
-    "oracle": "tsx tools/oracle/check.ts",
     "test:api": "tsx --test tests/api/*.test.ts",
     "test": "npm run test:api && npm run test:state && npm run test:functions && npm run test:lib",
     "test:state": "tsx --test tests/state/*.test.ts",

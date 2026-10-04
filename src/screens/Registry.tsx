@@ -14,10 +14,10 @@ export function Registry() {
   const st = store.state;
 
   // Re-fetch whenever screen/filter changes; debounce the search box so we
-  // don't fire a request per keystroke. No-ops in demo mode (see loadRegistry).
+  // don't fire a request per keystroke.
   useEffect(() => {
     store.loadRegistry();
-  }, [store, st.screen, st.filter, st.authMode]);
+  }, [store, st.screen, st.filter]);
 
   // Debounced search. Skips the first run: the effect above already loads on mount, and a second load 300 ms
   // later is what made the loader appear twice.
@@ -31,7 +31,7 @@ export function Registry() {
 
   // While the list is (re)loading, show only the loader: the rows still in memory belong to the previous
   // tab/filter and would sit under the spinner looking like the new results.
-  const reloading = v.isSupabaseAuthMode && v.loads.registry === 'loading';
+  const reloading = v.loads.registry === 'loading';
 
   return (
     <View style={{ flex: 1 }}>

@@ -7,7 +7,7 @@ import { buildVals } from '../../src/state/selectors';
 
 function admin(reports: { day: string | null; reports: number | null }[], keywords: unknown[] = []) {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'analysis', role: 'admin', suTerms: true,
+  store.setState({ screen: 'analysis', role: 'admin', suTerms: true,
     profile: { id: 'a', role: 'superadmin' } as any, dbWeeklyReports: reports, dbKeywords: keywords } as any);
   return buildVals(store);
 }

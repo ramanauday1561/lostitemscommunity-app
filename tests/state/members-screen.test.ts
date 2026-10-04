@@ -12,7 +12,7 @@ const member = (over: Record<string, unknown> = {}) => ({
 });
 function admin(members: unknown[]) {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'members', role: 'admin', suTerms: true,
+  store.setState({ screen: 'members', role: 'admin', suTerms: true,
     profile: { id: 'adm', role: 'superadmin' } as any, dbMembers: members } as any);
   return store;
 }
@@ -76,10 +76,5 @@ describe('admin Members screen in Supabase mode', () => {
     assert.ok(store.state.dbMembers!.every((m: any) => m.id !== undefined));
     assert.equal(store.state.memberSearchQuery, 'ab');
     assert.deepEqual(store.state.dbMembers!.map((m: any) => m.id), ['new']);
-  });
-
-  test('demo mode keeps the mock list with its Remove button', () => {
-    const rows = buildVals(new Store()).members;
-    assert.ok(rows.length > 0 && rows.every((r) => r.canAct && r.canRemove));
   });
 });

@@ -14,7 +14,7 @@ describe('forum thread sheet in Supabase mode', () => {
   function open(extra: Record<string, unknown> = {}) {
     const store = new Store();
     store.setState({
-      authMode: 'supabase', screen: 'forum', role: 'user', suTerms: true,
+      screen: 'forum', role: 'user', suTerms: true,
       profile: { id: 'u1', role: 'user', handle: 'ann' } as any,
       dbThreads: [dbThread()] as any, dbReplies: [], sheet: 'thread', activeThread: 't-uuid-1', ...extra,
     } as any);
@@ -43,18 +43,12 @@ describe('forum thread sheet in Supabase mode', () => {
     assert.equal(v.hasThread, false);
     assert.deepEqual((v.thread as any).replies, []);
   });
-
-  test('demo mode still reads the mock threads', () => {
-    const store = new Store();
-    store.setState({ screen: 'forum', sheet: 'thread', activeThread: store.state.threads[0].id } as any);
-    assert.equal((buildVals(store).thread as any).title, store.state.threads[0].title);
-  });
 });
 
 describe('suspended threads', () => {
   const mk = (role: 'admin' | 'user') => {
     const store = new Store();
-    store.setState({ authMode: 'supabase', screen: 'forum', role, suTerms: true, forumTag: 'All',
+    store.setState({ screen: 'forum', role, suTerms: true, forumTag: 'All',
       profile: { id: 'u1', role: role === 'admin' ? 'superadmin' : 'user', handle: 'x' } as any,
       dbThreads: [dbThread({ id: 'a', status: 'suspended' }), dbThread({ id: 'b' })] as any } as any);
     return buildVals(store);
@@ -71,7 +65,7 @@ describe('suspended threads', () => {
 describe('admin buttons on a forum card (Supabase mode)', () => {
   const mk = (status: string) => {
     const store = new Store();
-    store.setState({ authMode: 'supabase', screen: 'forum', role: 'admin', suTerms: true, forumTag: 'All',
+    store.setState({ screen: 'forum', role: 'admin', suTerms: true, forumTag: 'All',
       profile: { id: 'adm', role: 'superadmin', handle: 'boss' } as any, dbThreads: [dbThread({ status })] as any } as any);
     return buildVals(store).threads[0];
   };

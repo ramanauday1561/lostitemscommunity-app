@@ -1,18 +1,14 @@
 import type { RefObject } from 'react';
 import type { ScrollView } from 'react-native';
-import {
-  ADS, CHAT_SEED, CONVOS, FAQ, FLAGGED, FOUND, LOST, MEMBERS, SLIDES, SUPPORT_SEED, THREADS,
-  type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Status, type Thread,
-} from '../data/constants';
+import { type ChatMsg, type Convo, type Item, type Status } from '../data/constants';
 import { initials } from '../theme/tokens';
 import type { Place } from '../api/places';
 import { coord, type LatLng } from '../lib/geo';
 import { JPEG_QUALITY, MAX_UPLOAD_BYTES, photoProblem, shrinkPhoto } from '../lib/image';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
-// dynamic import(), so requiring store.ts outside Expo/Metro -- as the
-// Node-based prototype-parity oracle in tools/oracle/ does -- doesn't try to
-// transform React Native internals through plain esbuild.
+// dynamic import(), so requiring store.ts outside Expo/Metro -- as the Node
+// unit tests do -- doesn't try to transform React Native internals.
 import type * as AuthApi from '../api/auth';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
@@ -24,9 +20,6 @@ import type { IncomingMessage, IncomingNotification } from '../api/realtime';
 import type { AppNotification } from '../api/notifications';
 
 export type Role = 'admin' | 'user' | 'new' | null;
-/** 'demo' is the existing mock-data flow, unchanged; 'supabase' hits the real backend.
- *  Temporary scaffolding for Phase 1 testing -- see backend/INTEGRATION_CHECKLIST.md. */
-export type AuthMode = 'demo' | 'supabase';
 export type Sheet =
   | 'detail' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
   | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | 'supportReply' | null;
@@ -34,7 +27,7 @@ export type Sheet =
 export interface Pin { x: number; y: number; lat: string; lng: string }
 
 /** Mirrors `state` in the prototype's Component class (line 1404). */
-/** Lists that load from Supabase. Demo mode never touches these (they stay 'idle'). */
+/** Lists that load from Supabase. */
 export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications' | 'support';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 export const IDLE_LOADS: Record<LoadKey, LoadState> = {
@@ -45,13 +38,12 @@ export interface AppState {
   screen: string; slide: number; convos: Convo[]; activeConvo: string | null;
   draft: string; role: Role;
   supportMsgs: ChatMsg[]; supportDraft: string; botTyping: boolean;
-  threads: Thread[]; activeThread: string | number | null; replyDraft: string;
+  activeThread: string | number | null; replyDraft: string;
   ntTitle: string; ntBody: string; ntTag: string;
   username: string; password: string; remember: boolean; error: string; busy: boolean;
-  authMode: AuthMode;
-  /** Only populated in Supabase mode -- null in demo mode / before login. */
+  /** The signed-in member's profile -- null before login. */
   profile: AuthApi.Profile | null;
-  /** auth.users email of the signed-in Supabase account (not on profiles). */
+  /** Auth.users email of the signed-in Supabase account (not on profiles). */
   authEmail: string | null;
   /** True while the user arrived via a password-reset link and is choosing a new password. */
   fpRecovery: boolean;
@@ -73,45 +65,42 @@ export interface AppState {
   registryHasMore: boolean; registryLoadingMore: boolean;
   suUser: string; suEmail: string; suPass: string; suConfirm: string;
   suTerms: boolean; suError: string; suInfo: string;
-  fpStage: string; fpEmail: string; fpCode: string; fpPass: string;
+  fpStage: string; fpEmail: string; fpPass: string;
   fpConfirm: string; fpError: string; fpBusy: boolean; fpInfo: string;
   sheet: Sheet;
-  ads: Ad[]; adEditId: string; adDraft: { campaignKey: string; days: number } | null;
-  flagged: FlaggedRecord[]; approved: number; removed: number;
-  lost: Item[]; found: Item[]; members: Member[];
-  q: string; uq: string; filter: string; topic: string; sel: string | null;
-  claimed: Record<string, boolean>; toast: string; newId: string;
+  adEditId: string; adDraft: { campaignKey: string; days: number } | null;
+  q: string; uq: string; filter: string; sel: string | null;
+  toast: string; newId: string;
   step: number; rType: string; rTitle: string; rCat: string;
   rPlace: string; rDate: string; rDesc: string; pin: Pin | null;
   /** Report sheet's place search (live mode): the box text, last results and whether a search is running. */
   placeQuery: string; placeResults: Place[]; placeSearching: boolean;
-  /** Supabase mode only: a photo picked in the Report sheet, held in memory and
+  /** A photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
   rPhotoBlob: Blob | null; rPhotoName: string; rPhotoPreview: string;
-  /** Supabase mode: public photo URLs per item uuid, filled when a Detail sheet opens. */
+  /** Public photo URLs per item uuid, filled when a Detail sheet opens. */
   photoUrls: Record<string, string[]>;
-  /** Supabase mode only: moderation queue (pending flags). Real data replaces
-   *  the mock flagged array in Admin > Moderation screen. */
+  /** Moderation queue (pending flags). */
   dbModerationQueue: ModerationFlag[] | null;
-  /** Supabase mode only: count of moderation flags by status (pending, approved, removed). */
+  /** Count of moderation flags by status (pending, approved, removed). */
   dbModerationStats: { pending: number; approved: number; removed: number } | null;
-  /** Supabase mode only: list of all members for admin management (Phase 8). */
+  /** List of all members for admin management (Phase 8). */
   dbMembers: MemberProfile[] | null;
   /** Search query for members list (Phase 8). */
   memberSearchQuery: string;
-  /** Supabase mode only: weekly report counts for analysis dashboard (Phase 9). */
+  /** Weekly report counts for analysis dashboard (Phase 9). */
   dbWeeklyReports: WeeklyReportCount[] | null;
-  /** Supabase mode only: moderation keyword hits for analysis dashboard (Phase 9). */
+  /** Moderation keyword hits for analysis dashboard (Phase 9). */
   dbKeywords: ModerationKeyword[] | null;
-  /** Supabase mode only: ad placements with status for admin ads screen (Phase 10). */
+  /** Ad placements with status for admin ads screen (Phase 10). */
   dbAdPlacements: AdPlacementWithStatus[] | null;
-  /** Supabase mode only: available ad campaigns for editor (Phase 10). */
+  /** Available ad campaigns for editor (Phase 10). */
   dbAdCampaigns: AdCampaign[] | null;
-  /** Supabase mode only: FAQ entries for support bot (Phase 11). */
+  /** FAQ entries for support bot (Phase 11). */
   dbFaqEntries: FaqEntry[] | null;
-  /** Supabase mode only: support messages for current user (Phase 11). */
+  /** Support messages for current user (Phase 11). */
   dbSupportMessages: SupportMessage[] | null;
-  /** Superadmin, Supabase mode: open "talk to a human" requests with their threads (11.3). */
+  /** Superadmin, open "talk to a human" requests with their threads (11.3). */
   dbSupportInbox: SupportInboxItem[] | null;
   /** The member whose thread the reply sheet is showing, and the reply being typed. */
   activeSupportUser: string | null;
@@ -119,21 +108,19 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
-  screen: 'welcome', slide: 0, convos: CONVOS, activeConvo: null, draft: '', role: null,
-  supportMsgs: SUPPORT_SEED, supportDraft: '', botTyping: false,
-  threads: THREADS, activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
+  screen: 'welcome', slide: 0, convos: [], activeConvo: null, draft: '', role: null,
+  supportMsgs: [], supportDraft: '', botTyping: false,
+  activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
-  authMode: 'demo',
   profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null, dbSupportInbox: null, activeSupportUser: null, supportReplyDraft: '',
   suUser: '', suEmail: '', suPass: '', suConfirm: '', suTerms: false, suError: '', suInfo: '',
-  fpStage: 'email', fpEmail: '', fpCode: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
+  fpStage: 'email', fpEmail: '', fpPass: '', fpConfirm: '', fpError: '', fpBusy: false, fpInfo: '',
   sheet: null,
-  ads: ADS, adEditId: 'AD-01', adDraft: null,
-  flagged: FLAGGED, approved: 0, removed: 0, lost: LOST, found: FOUND, members: MEMBERS,
-  q: '', uq: '', filter: 'All', topic: 'All', sel: null, claimed: {}, toast: '', newId: '',
+  adEditId: 'AD-01', adDraft: null,
+  q: '', uq: '', filter: 'All', sel: null, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
   rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
@@ -142,10 +129,7 @@ export const initialState: AppState = {
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
-/**
- * Port of the prototype's Component class. Behaviour, timings and messages are
- * kept identical -- see the corresponding methods at lines 1418-1538.
- */
+/** All app state and the actions that change it; `buildVals` (selectors.ts) turns it into what the screens read. */
 export class Store {
   state: AppState = initialState;
   chatRef: RefObject<ScrollView | null> | null = null;
@@ -196,7 +180,7 @@ export class Store {
   }
 
   me() {
-    const p = this.state.authMode === 'supabase' ? this.state.profile : null;
+    const p = this.state.profile;
     if (p) return { name: p.display_name, ini: initials(p.display_name), handle: p.handle };
     const r = this.state.role;
     if (r === 'admin') return { name: 'Super Admin', ini: 'SA', handle: 'superadmin' };
@@ -204,116 +188,20 @@ export class Store {
     return { name: 'Simple User', ini: 'SU', handle: 'user' };
   }
 
-  roleState(username: string): Partial<AppState> {
-    if (username === 'superadmin') return { role: 'admin' };
-    if (username === 'newuser') return {
-      role: 'new', filter: 'All', suTerms: false,
-      activeConvo: null, threads: THREADS,
-      lost: LOST.filter((i) => i.by !== 'simple.user'),
-      found: FOUND.filter((i) => i.by !== 'simple.user'),
-    };
-    return { role: 'user', threads: THREADS, lost: LOST, found: FOUND, filter: 'All' };
-  }
-
-  /** The finder replies automatically after 1600ms. */
-  pushMsg(text: string) {
-    const t = (text || '').trim();
-    if (!t) return;
-    const id = this.state.activeConvo;
-    const time = this.stamp();
-    this.setState((s) => ({
-      draft: '',
-      convos: s.convos.map((c) => (c.id === id || c.itemId === id) ? { ...c, time, msgs: [...c.msgs, { from: 'me', text: t, time }] } : c),
-    }));
-    this.scrollChat();
-    clearTimeout(this.tReply);
-    this.tReply = setTimeout(() => {
-      const reply = "Works for me. I'll bring it in the original box — see you there.";
-      const s = this.state;
-      const open = s.sheet === 'chat' && s.activeConvo === id;
-      const c = s.convos.find((x) => x.id === id || x.itemId === id);
-      const now = this.stamp();
-      this.setState({
-        convos: s.convos.map((x) => (x.id === id || x.itemId === id)
-          ? { ...x, time: now, unread: open ? 0 : (x.unread || 0) + 1, msgs: [...x.msgs, { from: 'them', text: reply, time: now }] }
-          : x),
-      });
-      if (open) this.scrollChat();
-      else if (c) this.flash(`New message from ${c.with}`);
-    }, 1600);
-  }
-
-  postReply() {
-    const t2 = (this.state.replyDraft || '').trim();
-    if (!t2) return;
-    const id = this.state.activeThread;
-    const time = this.stamp();
-    this.setState((s) => ({
-      replyDraft: '',
-      threads: s.threads.map((v) => v.id === id
-        ? { ...v, replies: [...v.replies, { user: this.me().name, ini: this.me().ini, time, text: t2 }] }
-        : v),
-    }));
-    this.scrollChat();
-  }
-
-  /** Bot answers from FAQ keyword matching after 900ms. */
-  askBot(text: string) {
-    const t = (text || '').trim();
-    // One question at a time: a second tap while the assistant is still answering would send the question twice.
-    if (!t || this.state.botTyping) return;
-    if (this.state.authMode === 'supabase') { this.askBotSupabase(t); return; }
-    const time = this.stamp();
-    this.setState((s) => ({
-      supportMsgs: [...s.supportMsgs, { from: 'me', text: t, time }], supportDraft: '', botTyping: true,
-    }));
-    this.scrollChat();
-    const low = t.toLowerCase();
-    const hit = FAQ.find((f) => f.q.toLowerCase() === low) || FAQ.find((f) => f.keys.some((k) => low.includes(k)));
-    const answer = hit ? hit.a
-      : 'I\'m not sure about that one yet. Tap "Talk to a human instead" and our support team will pick it up — they usually reply within minutes.';
-    clearTimeout(this.tBot);
-    this.tBot = setTimeout(() => {
-      this.setState((s) => ({
-        supportMsgs: [...s.supportMsgs, { from: 'bot', text: answer, time: this.stamp() }], botTyping: false,
-      }));
-      this.scrollChat();
-    }, 900);
-  }
-
-  signIn = () => {
-    const u = this.state.username.trim().toLowerCase();
-    if (!u || !this.state.password) { this.setState({ error: 'Username and password are required.' }); return; }
-    this.setState({ busy: true, error: '' });
-    setTimeout(() => {
-      if (u === 'superadmin' && this.state.password !== 'Password1!') {
-        this.setState({ busy: false, error: 'Invalid password for superadmin. Hint: Password1!' });
-        return;
-      }
-      this.setState({
-        busy: false, screen: 'dash',
-        ...this.roleState(u === 'superadmin' ? 'superadmin' : (u === 'newuser' || u === 'new') ? 'newuser' : 'user'),
-      });
-    }, 600);
-  };
-
-  quick = (username: string) => {
-    this.setState({ username, password: 'Password1!', error: '', busy: true });
-    setTimeout(() => this.setState({ busy: false, screen: 'dash', ...this.roleState(username) }), 550);
-  };
-
-  setAuthMode = (mode: AuthMode) => this.setState({ authMode: mode, error: '', username: '', password: '' });
-
-  /** role/fresh derived from the real profile row, not a hardcoded username switch. */
+  /** Role/fresh derived from the real profile row, not a hardcoded username switch. */
   private roleFromProfile(p: AuthApi.Profile): Partial<AppState> {
     const role: Role = p.role === 'superadmin' ? 'admin'
       : (p.post_count === 0 && !p.guidelines_accepted_at) ? 'new' : 'user';
     return { role, suTerms: !!p.guidelines_accepted_at, profile: p };
   }
 
-  /** Support bot in Supabase mode (11.1/11.2): the question and the bot's answer are stored in
+  /** Support bot (11.1/11.2): the question and the bot's answer are stored in
    *  `support_messages`, and the answer comes from the real `faq_entries`. Same 900 ms typing beat as the prototype. */
-  private askBotSupabase = async (text: string) => {
+  askBot = async (text: string) => {
+    const t = (text || '').trim();
+    // One question at a time: a second tap while the assistant is still answering would send the question twice.
+    if (!t || this.state.botTyping) return;
+    text = t;
     const s = this.state;
     if (!s.profile) return;
     const userId = s.profile.id;
@@ -371,8 +259,7 @@ export class Store {
    *  Registry.tsx rather than from every place filter/q/screen can change. */
   loadRegistry = async () => {
     const st = this.state;
-    if (st.authMode !== 'supabase') return;
-    const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
+        const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
     if (!kind) return;
     // Only the newest query may write: typing fast or switching filters can return responses out of order.
     const req = ++this.registryReq;
@@ -391,7 +278,7 @@ export class Store {
   /** Appends the next page (3.4). No-op unless the server said more exists and nothing is in flight. */
   loadMoreRegistry = async () => {
     const st = this.state;
-    if (st.authMode !== 'supabase' || !st.registryHasMore || st.registryLoadingMore || st.loads.registry === 'loading') return;
+    if (!st.registryHasMore || st.registryLoadingMore || st.loads.registry === 'loading') return;
     const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
     if (!kind) return;
     const req = this.registryReq;
@@ -563,7 +450,7 @@ export class Store {
     try {
       const items = await import('../api/items');
       await items.claimItem(it.dbId, it.reporterId, s.profile.id);
-      this.setState((st) => ({ claimed: { ...st.claimed, [it.id]: true }, sheet: null }));
+      this.setState({ sheet: null });
       this.flash(`Claim sent. ${it.by} can see it in their conversations.`);
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not send the claim.');
@@ -626,7 +513,7 @@ export class Store {
     try {
       const items = await import('../api/items');
       await items.deleteItem(it.dbId);
-      this.setState((s) => ({ sheet: null, removed: s.removed + 1, dbItems: (s.dbItems ?? []).filter((x) => x.id !== it.id) }));
+      this.setState((s) => ({ sheet: null, dbItems: (s.dbItems ?? []).filter((x) => x.id !== it.id) }));
       this.flash(`${it.id} was permanently deleted by Super Admin.`);
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not delete this record.');
@@ -637,7 +524,7 @@ export class Store {
 
   loadConversationsSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const profile = s.profile;
     await this.track('conversations', async () => {
       const convApi = await import('../api/conversations');
@@ -648,7 +535,7 @@ export class Store {
 
   loadMessagesSupabase = async (conversationId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const convApi = await import('../api/conversations');
       const msgs = await convApi.loadMessages(conversationId, s.profile.id);
@@ -669,7 +556,7 @@ export class Store {
   sendMessageSupabase = async () => {
     const s = this.state;
     const activeConvo = s.convos.find((c) => c.id === s.activeConvo);
-    if (s.authMode !== 'supabase' || !s.profile || !activeConvo || !s.draft.trim()) return;
+    if (!s.profile || !activeConvo || !s.draft.trim()) return;
     const text = s.draft;
     this.setState({ draft: '' });
     try {
@@ -686,7 +573,7 @@ export class Store {
   /** Live chat (5.3): called for every message row Realtime delivers to this user. */
   handleIncomingMessage = (m: IncomingMessage) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const convo = s.convos.find((c) => c.id === m.conversation_id);
     if (!convo) { this.loadConversationsSupabase(); return; } // a conversation we haven't loaded yet
 
@@ -707,7 +594,7 @@ export class Store {
 
   loadNotificationsSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const profile = s.profile;
     await this.track('notifications', async () => {
       const api = await import('../api/notifications');
@@ -718,8 +605,7 @@ export class Store {
   /** Realtime delivered a new notification row. Message notifications don't toast: the chat
    *  handler already does, and the unread chat badge covers them. */
   handleIncomingNotification = async (row: IncomingNotification) => {
-    if (this.state.authMode !== 'supabase') return;
-    const api = await import('../api/notifications');
+        const api = await import('../api/notifications');
     const n = api.toAppNotification(row);
     if (!this.state.notifications.some((x) => x.id === n.id)) this.setState({ notifications: [n, ...this.state.notifications] });
     if (n.type !== 'message') this.flash(n.title);
@@ -734,7 +620,7 @@ export class Store {
 
   markAllNotificationsRead = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile || !s.notifications.some((n) => !n.isRead)) return;
+    if (!s.profile || !s.notifications.some((n) => !n.isRead)) return;
     const before = s.notifications;
     this.setState({ notifications: before.map((n) => ({ ...n, isRead: true })) });
     try {
@@ -790,7 +676,7 @@ export class Store {
 
   loadForumSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const profile = s.profile;
     await this.track('forum', async () => {
       const forumApi = await import('../api/forum');
@@ -801,7 +687,7 @@ export class Store {
 
   loadRepliesSupabase = async (threadId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const forumApi = await import('../api/forum');
       const replies = await forumApi.loadReplies(threadId, s.profile.id);
@@ -813,7 +699,7 @@ export class Store {
 
   createThreadSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile || !s.ntTitle.trim() || !s.ntBody.trim()) return;
+    if (!s.profile || !s.ntTitle.trim() || !s.ntBody.trim()) return;
     const tag = s.ntTag as 'Sighting' | 'Question' | 'Reunited';
     try {
       const forumApi = await import('../api/forum');
@@ -829,7 +715,7 @@ export class Store {
   replyToThreadSupabase = async () => {
     const s = this.state;
     const activeThread = s.activeThread;
-    if (s.authMode !== 'supabase' || !s.profile || !activeThread || !s.replyDraft.trim()) return;
+    if (!s.profile || !activeThread || !s.replyDraft.trim()) return;
     const threadId = String(activeThread);
     const text = s.replyDraft;
     this.setState({ replyDraft: '' });
@@ -845,7 +731,7 @@ export class Store {
 
   toggleThreadHelpfulSupabase = async (threadId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const forumApi = await import('../api/forum');
       await forumApi.toggleThreadHelpful(threadId, s.profile.id);
@@ -863,7 +749,7 @@ export class Store {
 
   suspendThreadSupabase = async (threadId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const forumApi = await import('../api/forum');
       await forumApi.suspendThread(threadId);
@@ -877,7 +763,7 @@ export class Store {
 
   restoreThreadSupabase = async (threadId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const forumApi = await import('../api/forum');
       await forumApi.restoreThread(threadId);
@@ -891,7 +777,7 @@ export class Store {
 
   deleteThreadSupabase = async (threadId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const forumApi = await import('../api/forum');
       await forumApi.deleteThread(threadId);
@@ -905,7 +791,7 @@ export class Store {
 
   loadModerationQueueSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     await this.track('moderation', async () => {
       const modApi = await import('../api/moderation');
       const queue = await modApi.loadModerationQueue();
@@ -916,7 +802,7 @@ export class Store {
 
   takeModActionSupabase = async (flagId: string, action: 'approve' | 'remove') => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const flag = (s.dbModerationQueue ?? []).find((f) => f.id === flagId);
     const ref = flag?.target_ref || flag?.target_title || 'Item';
     try {
@@ -936,8 +822,7 @@ export class Store {
 
   // Phase 8: Members Management
   loadMembersSupabase = async () => {
-    if (this.state.authMode !== 'supabase') return;
-    await this.track('members', async () => {
+        await this.track('members', async () => {
       const membersApi = await import('../api/members');
       const members = await membersApi.loadMembers();
       this.setState({ dbMembers: members });
@@ -954,8 +839,7 @@ export class Store {
   };
 
   searchMembersSupabase = async (query: string) => {
-    if (this.state.authMode !== 'supabase') return;
-    this.setState({ memberSearchQuery: query });
+        this.setState({ memberSearchQuery: query });
     const seq = ++this.memberSearchSeq;
     // A slower, older search must not overwrite the result of a newer one.
     await this.track('members', async () => {
@@ -966,8 +850,7 @@ export class Store {
   };
 
   suspendMemberSupabase = async (memberId: string) => {
-    if (this.state.authMode !== 'supabase') return;
-    try {
+        try {
       const membersApi = await import('../api/members');
       await membersApi.suspendMember(memberId);
       this.flash('Member suspended.');
@@ -978,8 +861,7 @@ export class Store {
   };
 
   restoreMemberSupabase = async (memberId: string) => {
-    if (this.state.authMode !== 'supabase') return;
-    try {
+        try {
       const membersApi = await import('../api/members');
       await membersApi.restoreMember(memberId);
       this.flash('Member restored.');
@@ -990,8 +872,7 @@ export class Store {
   };
 
   removeMemberSupabase = async (memberId: string) => {
-    if (this.state.authMode !== 'supabase') return;
-    try {
+        try {
       const membersApi = await import('../api/members');
       await membersApi.removeMember(memberId);
       this.flash('Member removed.');
@@ -1002,8 +883,7 @@ export class Store {
   };
 
   loadAnalysisSupabase = async () => {
-    if (this.state.authMode !== 'supabase') return;
-    await this.track('analysis', async () => {
+        await this.track('analysis', async () => {
       const analysisApi = await import('../api/analysis');
       const [reports, keywords] = await Promise.all([
         analysisApi.getWeeklyReportCounts(),
@@ -1014,8 +894,7 @@ export class Store {
   };
 
   loadAdsSupabase = async () => {
-    if (this.state.authMode !== 'supabase') return;
-    await this.track('ads', async () => {
+        await this.track('ads', async () => {
       const adsApi = await import('../api/ads');
       const [placements, campaigns] = await Promise.all([
         adsApi.getAdPlacements(),
@@ -1027,8 +906,7 @@ export class Store {
 
   // Phase 11: Support Chat & FAQ
   loadFaqSupabase = async () => {
-    if (this.state.authMode !== 'supabase') return;
-    try {
+        try {
       const supportApi = await import('../api/support');
       const faqEntries = await supportApi.getFaqEntries();
       this.setState({ dbFaqEntries: faqEntries });
@@ -1039,7 +917,7 @@ export class Store {
 
   loadSupportMessagesSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const supportApi = await import('../api/support');
       const messages = await supportApi.loadSupportMessages(s.profile.id);
@@ -1052,7 +930,7 @@ export class Store {
   /** "Talk to a human instead": opens (or finds) the member's request and tells them so in the thread. */
   escalateSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     const userId = s.profile.id;
     try {
       const api = await import('../api/support');
@@ -1071,7 +949,7 @@ export class Store {
 
   loadSupportInboxSupabase = async () => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile || s.profile.role !== 'superadmin') return;
+    if (!s.profile || s.profile.role !== 'superadmin') return;
     await this.track('support', async () => {
       const api = await import('../api/support');
       this.setState({ dbSupportInbox: await api.loadSupportInbox() });
@@ -1086,7 +964,7 @@ export class Store {
   sendSupportReply = async () => {
     const s = this.state;
     const text = s.supportReplyDraft.trim();
-    if (s.authMode !== 'supabase' || !s.profile || !s.activeSupportUser || !text) return;
+    if (!s.profile || !s.activeSupportUser || !text) return;
     const userId = s.activeSupportUser;
     this.setState({ supportReplyDraft: '' });
     try {
@@ -1102,7 +980,7 @@ export class Store {
 
   resolveSupportRequest = async (requestId: string) => {
     const s = this.state;
-    if (s.authMode !== 'supabase' || !s.profile) return;
+    if (!s.profile) return;
     try {
       const api = await import('../api/support');
       await api.closeSupportRequest(requestId, s.profile.id);
@@ -1143,7 +1021,7 @@ export class Store {
       await authApi.signIn(identifier, this.state.password);
       const profile = await authApi.getMyProfile();
       if (!profile) throw new authApi.AuthApiError('Signed in, but no profile was found for this account.');
-      this.setState({ busy: false, screen: 'dash', authMode: 'supabase', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
+      this.setState({ busy: false, screen: 'dash', convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
       this.bootstrapSession(profile);
     } catch (e) {
       this.setState({ busy: false, error: e instanceof Error ? e.message : 'Something went wrong.' });
@@ -1235,7 +1113,7 @@ export class Store {
 
     const showError = (message: string) => {
       this.recovering = false;
-      this.setState({ authMode: 'supabase', screen: 'forgot', fpStage: 'email', fpRecovery: false, fpError: message, fpInfo: '' });
+      this.setState({ screen: 'forgot', fpStage: 'email', fpRecovery: false, fpError: message, fpInfo: '' });
     };
     if (parsed.kind === 'error') { showError(parsed.message); return true; }
 
@@ -1244,7 +1122,7 @@ export class Store {
       const authApi = await import('../api/auth');
       await authApi.startRecovery(parsed.accessToken, parsed.refreshToken);
       this.setState({
-        authMode: 'supabase', screen: 'forgot', fpStage: 'reset', fpRecovery: true,
+        screen: 'forgot', fpStage: 'reset', fpRecovery: true,
         fpPass: '', fpConfirm: '', fpError: '', fpInfo: '', role: null, profile: null,
       });
     } catch (e) {
@@ -1289,37 +1167,19 @@ export class Store {
     if (!['welcome', 'login'].includes(this.state.screen)) return;
     const profile = await authApi.getMyProfile();
     if (!profile) return;
-    this.setState({ authMode: 'supabase', screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
+    this.setState({ screen: 'dash', convos: [], ...this.roleFromProfile(profile) });
     this.bootstrapSession(profile);
   };
 
   slotFor(screen: string, fresh: boolean, st: AppState) {
-    // Supabase mode reads the real placement for this screen (loaded at sign-in), never the mock list.
-    // Same rule as the prototype: not live, ended, or a brand-new user who hasn't accepted the guidelines -> hidden.
-    if (st.authMode === 'supabase') {
-      const p = (st.dbAdPlacements ?? []).find((x) => x.screen === screen);
-      if (!p) return { live: false } as Ad & { live: boolean };
-      return {
-        live: p.is_live && p.days_left > 0 && !(fresh && !st.suTerms),
-        campaign: p.campaign_name, advertiser: p.advertiser, icon: p.icon,
-      } as unknown as Ad & { live: boolean };
-    }
-    const a = st.ads.find((x) => x.screen === screen);
-    if (!a) return { live: false } as Ad & { live: boolean };
-    return { ...a, live: a.live && a.daysLeft > 0 && !(fresh && !st.suTerms) };
-  }
-
-  toggleAd(id: string) {
-    let msg = '';
-    this.setState((s) => ({
-      ads: s.ads.map((a) => {
-        if (a.id !== id) return a;
-        const ended = a.daysLeft <= 0;
-        const next = ended ? { ...a, live: true, daysLeft: a.days } : { ...a, live: !a.live };
-        msg = next.live ? `${id} live on ${a.screen}.` : `${id} paused on ${a.screen}.`;
-        return next;
-      }),
-    }), () => this.flash(msg));
+    // The real placement for this screen (loaded at sign-in). Not live, ended, or a brand-new user who hasn't
+    // accepted the guidelines -> hidden.
+    const p = (st.dbAdPlacements ?? []).find((x) => x.screen === screen);
+    if (!p) return { live: false } as { live: boolean; campaign?: string; advertiser?: string; icon?: string };
+    return {
+      live: p.is_live && p.days_left > 0 && !(fresh && !st.suTerms),
+      campaign: p.campaign_name, advertiser: p.advertiser, icon: p.icon,
+    };
   }
 
   toggleAdSupabase = async (id: string, isLive: boolean) => {
@@ -1351,11 +1211,4 @@ export class Store {
       this.flash(e instanceof Error ? e.message : 'Could not save this placement.');
     }
   };
-
-  setStatus(id: string, status: string) {
-    const swap = (list: Item[]) => list.map((i) => i.id === id ? { ...i, status: status as Item['status'] } : i);
-    this.setState((s) => ({ lost: swap(s.lost), found: swap(s.found) }));
-    this.flash(status === 'Reunited' ? `${id} marked as handed over.`
-      : status === 'Resolved' ? `${id} closed.` : `${id} is active again.`);
-  }
 }

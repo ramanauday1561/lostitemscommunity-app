@@ -44,45 +44,21 @@ export function ReportSheet() {
             <Field icon="event" value={v.rDate} onChange={v.onRDate} placeholder="When? e.g. 12 Jun 2024" />
           </View>
 
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>{v.liveMap ? 'Pin the spot' : 'Drop a pin'}</Text>
-          {v.liveMap ? (
-            <>
-              <Field icon="search" value={v.placeQuery} onChange={v.onPlaceQuery} onSubmit={v.searchPlace} placeholder="Search a street or landmark" compact />
-              {v.placeSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 8 }}>Searching…</Text>}
-              {v.placeResults.length > 0 && (
-                <View style={{ marginTop: 8, borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
-                  {v.placeResults.map((r) => (
-                    <Press key={r.key} style={{ minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' }} scale={0.99} onPress={r.pick}>
-                      <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.ink }}>{r.label}</Text>
-                    </Press>
-                  ))}
-                </View>
-              )}
-              <View style={{ marginTop: 8 }}>
-                <MapPicker pin={v.mapPin} onPick={v.onMapPick} />
-              </View>
-            </>
-          ) : (
-          <Press
-            style={{ height: 150, borderRadius: 20, backgroundColor: '#E4E9EF', overflow: 'hidden' }}
-            scale={1}
-            onPress={(e) => {
-              const { locationX, locationY } = e.nativeEvent;
-              v.onMapTap((locationX / 330) * 100, (locationY / 150) * 100);
-            }}
-          >
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="map" size={30} color="#B9C2CD" />
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Pin the spot</Text>
+          <Field icon="search" value={v.placeQuery} onChange={v.onPlaceQuery} onSubmit={v.searchPlace} placeholder="Search a street or landmark" compact />
+          {v.placeSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 8 }}>Searching…</Text>}
+          {v.placeResults.length > 0 && (
+            <View style={{ marginTop: 8, borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
+              {v.placeResults.map((r) => (
+                <Press key={r.key} style={{ minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' }} scale={0.99} onPress={r.pick}>
+                  <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.ink }}>{r.label}</Text>
+                </Press>
+              ))}
             </View>
-            {v.pin && (
-              <View style={{
-                position: 'absolute', left: `${v.pin.x}%`, top: `${v.pin.y}%`, width: 22, height: 22,
-                marginLeft: -11, marginTop: -11, borderRadius: 11, backgroundColor: C.danger,
-                borderWidth: 4, borderColor: C.white,
-              }} />
-            )}
-          </Press>
           )}
+          <View style={{ marginTop: 8 }}>
+            <MapPicker pin={v.mapPin} onPick={v.onMapPick} />
+          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
             <Text style={{ flex: 1, fontFamily: MONO[500], fontSize: 10.5, color: C.lighter }}>{v.pinLabel}</Text>
             <Press style={{ minHeight: 36, paddingHorizontal: 10, justifyContent: 'center' }} scale={0.96} onPress={v.useMyLocation}>

@@ -8,8 +8,6 @@
   app/                  Expo Router entry
   src/                  screens, sheets, state, theme, ui
   assets/, prototype/   images, the source-of-truth HTML prototype
-  tools/oracle/         parity test harness against the prototype
-  docs/PARITY.md        frontend<->prototype parity notes
 
 backend/              -- Supabase: schema, RLS, storage, seed data
   supabase/migrations/
@@ -20,7 +18,7 @@ design/               -- this folder: cross-cutting product/architecture docs
 
 Frontend, backend and design are siblings. The frontend keeps its existing
 root-level Expo config (`app.json`, `eas.json`, `package.json`, ...)
-untouched — nothing in `tools/oracle/` or CI needed to change.
+untouched — nothing in CI needed to change.
 
 ## Data model (ERD)
 

@@ -13,7 +13,7 @@ const item = (over: Record<string, unknown> = {}) => ({
 
 function claimant(convos: unknown[]) {
   const store = new Store();
-  store.setState({ authMode: 'supabase', screen: 'found', role: 'user', suTerms: true, sel: 'FOUND-1',
+  store.setState({ screen: 'found', role: 'user', suTerms: true, sel: 'FOUND-1',
     profile: { id: 'me', role: 'user', handle: 'ann' } as any, dbItems: [item()] as any, convos } as any);
   return store;
 }
