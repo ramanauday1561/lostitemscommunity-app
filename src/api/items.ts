@@ -187,11 +187,13 @@ export async function flagItem(itemDbId: string, reason: string, flaggedBy: stri
 /** Uploads to the `item-photos` bucket under `<uploader>/<item>/<n>.<ext>` (matches
  *  the storage RLS policy's `(storage.foldername(name))[1] = auth.uid()` check --
  *  see 0011_storage.sql) and records the row the Detail sheet would read back. */
-export async function uploadItemPhoto(itemDbId: string, uploaderId: string, blob: Blob, fileName: string): Promise<void> {
+export async function uploadItemPhoto(
+  itemDbId: string, uploaderId: string, body: Blob | ArrayBuffer, fileName: string, contentType?: string,
+): Promise<void> {
   const ext = (fileName.split('.').pop() || 'jpg').toLowerCase();
   const path = `${uploaderId}/${itemDbId}/${Date.now()}.${ext}`;
-  const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, blob, {
-    contentType: blob.type || 'image/jpeg',
+  const { error: uploadError } = await supabase.storage.from('item-photos').upload(path, body, {
+    contentType: contentType || (typeof Blob !== 'undefined' && body instanceof Blob ? body.type : '') || 'image/jpeg',
   });
   if (uploadError) throw new Error(uploadError.message);
   const { error: rowError } = await supabase.from('item_photos').insert({ item_id: itemDbId, storage_path: path });

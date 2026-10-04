@@ -4,7 +4,6 @@ import { type ChatMsg, type Convo, type Item, type Status } from '../data/consta
 import { initials } from '../theme/tokens';
 import type { Place } from '../api/places';
 import { coord, type LatLng } from '../lib/geo';
-import { JPEG_QUALITY, MAX_UPLOAD_BYTES, photoProblem, shrinkPhoto } from '../lib/image';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the Node
@@ -77,7 +76,7 @@ export interface AppState {
   placeQuery: string; placeResults: Place[]; placeSearching: boolean;
   /** A photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
-  rPhotoBlob: Blob | null; rPhotoName: string; rPhotoPreview: string;
+  rPhotoBlob: Blob | ArrayBuffer | null; rPhotoName: string; rPhotoType: string; rPhotoPreview: string;
   /** Public photo URLs per item uuid, filled when a Detail sheet opens. */
   photoUrls: Record<string, string[]>;
   /** Moderation queue (pending flags). */
@@ -122,7 +121,7 @@ export const initialState: AppState = {
   adEditId: 'AD-01', adDraft: null,
   q: '', uq: '', filter: 'All', sel: null, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
-  rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '', photoUrls: {},
+  rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
   dbMembers: null, memberSearchQuery: '',
 };
@@ -334,7 +333,7 @@ export class Store {
         reporterId: s.profile.id,
       });
       try {
-        await items.uploadItemPhoto(created.dbId!, s.profile.id, s.rPhotoBlob, s.rPhotoName || 'photo.jpg');
+        await items.uploadItemPhoto(created.dbId!, s.profile.id, s.rPhotoBlob, s.rPhotoName || 'photo.jpg', s.rPhotoType);
       } catch (e) {
         // A photo is required, so don't leave a photo-less report behind.
         await items.deleteItem(created.dbId!).catch(() => {});
@@ -344,7 +343,7 @@ export class Store {
       this.setState({
         busy: false, sheet: 'sent', newId: created.id, step: 1,
         rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [],
-        rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '',
+        rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '',
       });
     } catch (e) {
       this.setState({ busy: false });
@@ -363,20 +362,15 @@ export class Store {
         if (!perm.granted) { this.flash('Photo library permission was denied.'); return; }
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: JPEG_QUALITY,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 1, // compressed once, below, by preparePhoto
       });
       if (result.canceled || !result.assets?.[0]) return;
-      const asset = result.assets[0];
-      const res = await fetch(asset.uri);
-      const picked = await res.blob();
-      const problem = photoProblem(picked.type || asset.mimeType || '', picked.size);
-      if (problem) { this.flash(problem); return; }
-      const blob = await shrinkPhoto(picked);
-      if (blob.size > MAX_UPLOAD_BYTES) { this.flash('That photo is still too large after shrinking — try another.'); return; }
-      const name = (asset.fileName || `photo-${Date.now()}`).replace(/\.[^.]+$/, '') + (blob === picked ? '' : '.jpg');
+      // Web re-encodes on a canvas, iOS/Android through expo-image-manipulator (see src/lib/photoPrep*).
+      const { preparePhoto } = await import('../lib/photoPrep');
+      const prepared = await preparePhoto(result.assets[0]);
+      if ('error' in prepared) { this.flash(prepared.error); return; }
       this.revokePreview();
-      const preview = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : asset.uri;
-      this.setState({ rPhotoBlob: blob, rPhotoName: blob === picked ? (asset.fileName || `photo-${Date.now()}.jpg`) : name, rPhotoPreview: preview });
+      this.setState({ rPhotoBlob: prepared.body, rPhotoName: prepared.name, rPhotoType: prepared.type, rPhotoPreview: prepared.preview });
       this.flash('Photo attached — it uploads when you submit.');
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not open the photo picker.');
@@ -411,14 +405,13 @@ export class Store {
     }
   };
 
-  useMyLocationSupabase = () => {
-    const geo = typeof navigator !== 'undefined' ? navigator.geolocation : undefined;
-    if (!geo) { this.flash('Location is not available on this device — search for the place instead.'); return; }
-    geo.getCurrentPosition(
-      (pos) => { this.setPinSupabase({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-      (err) => this.flash(err.code === 1 ? 'Location permission was denied — search for the place instead.' : 'Could not get your location.'),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+  useMyLocationSupabase = async () => {
+    try {
+      const { getDeviceLocation } = await import('../lib/location');
+      this.setPinSupabase(await getDeviceLocation());
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not get your location.');
+    }
   };
 
   private revokePreview() {
@@ -428,7 +421,7 @@ export class Store {
 
   removePhoto = () => {
     this.revokePreview();
-    this.setState({ rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '' });
+    this.setState({ rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '' });
   };
 
   /** Fetches an item's photo URLs once per item; the Detail sheet reads them from `photoUrls`. */
