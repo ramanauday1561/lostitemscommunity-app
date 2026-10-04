@@ -55,6 +55,17 @@ export function MapPicker({ pin, onPick, height = 190 }: MapPickerProps) {
       m.on('click', (e) => latest.current.onPick?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }));
       // Markers don't need the style: place the pin straight away instead of waiting for tiles.
       show(latest.current.pin, false);
+      // The credits ("OpenFreeMap © OpenMapTiles, data from OpenStreetMap") are required by the data licences, so they
+      // stay -- but folded behind the (i) button instead of open over the map. Hidden until that fold has happened.
+      const foldCredits = () => {
+        const el = box.current; if (!el) return;
+        const credits = el.querySelector('.maplibregl-ctrl-attrib');
+        if (credits?.classList.contains('maplibregl-compact-show')) credits.querySelector<HTMLElement>('.maplibregl-ctrl-attrib-button')?.click();
+        el.removeAttribute('data-credits-init');
+      };
+      box.current.setAttribute('data-credits-init', '1');
+      const foldTimer = setTimeout(foldCredits, 4000);
+      m.once('idle', () => { clearTimeout(foldTimer); foldCredits(); });
       m.on('idle', () => box.current?.setAttribute('data-map-ready', '1'));
       m.on('error', (e) => console.warn('map error:', e.error?.message ?? e));
     })();
@@ -63,5 +74,10 @@ export function MapPicker({ pin, onPick, height = 190 }: MapPickerProps) {
 
   useEffect(() => { show(pin, true); }, [pin?.lat, pin?.lng]);
 
-  return <div ref={box} style={{ height, borderRadius: 20, overflow: 'hidden', background: '#E4E9EF', cursor: onPick ? 'crosshair' : 'default' }} />;
+  return (
+    <>
+      <style>{'[data-credits-init] .maplibregl-ctrl-attrib-inner{display:none!important}'}</style>
+      <div ref={box} style={{ height, borderRadius: 20, overflow: 'hidden', background: '#E4E9EF', cursor: onPick ? 'crosshair' : 'default' }} />
+    </>
+  );
 }

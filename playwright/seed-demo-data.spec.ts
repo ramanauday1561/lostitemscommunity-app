@@ -1,6 +1,6 @@
 import { test, expect, Browser, Page } from '@playwright/test';
 import { attachPhoto } from './photo';
-import { loginAs, TEST_USERS, TestUser } from './helpers';
+import { loginAs, pickDate, TEST_USERS, TestUser } from './helpers';
 
 /**
  * Fills the live project with sample data so every screen has something to show: posts in every category and
@@ -77,7 +77,7 @@ async function report(page: Page, p: Post) {
   await page.getByText(p.cat, { exact: true }).first().click();
   await page.getByText('Continue', { exact: true }).click();
   await page.getByPlaceholder('Where? e.g. Central Station platform 3').fill(p.place);
-  await page.getByPlaceholder('When? e.g. 12 Jun 2024').fill(p.when);
+  await pickDate(page, p.when);
   if (p.desc) await page.getByPlaceholder('Marks, contents, colour — details only the owner would know.').fill(p.desc);
   await attachPhoto(page, p.title);
   await page.getByText('Submit to registry', { exact: true }).click();

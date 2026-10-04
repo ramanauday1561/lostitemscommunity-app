@@ -1,6 +1,6 @@
 import { test, expect, Browser, Page } from '@playwright/test';
 import { attachPhoto } from './photo';
-import { loginAs, TEST_USERS, TestUser } from './helpers';
+import { loginAs, pickDate, TEST_USERS, TestUser } from './helpers';
 
 /**
  * End-to-end lifecycle of several posts, with three real accounts:
@@ -52,7 +52,7 @@ async function reportPost(page: Page, name: PostName) {
   await page.getByText(p.cat, { exact: true }).first().click();
   await page.getByText('Continue', { exact: true }).click();
   await page.getByPlaceholder('Where? e.g. Central Station platform 3').fill(p.place);
-  await page.getByPlaceholder('When? e.g. 12 Jun 2024').fill('1 Oct 2026');
+  await pickDate(page, '2026-10-01');
   await attachPhoto(page, p.title);
   await page.getByText('Submit to registry', { exact: true }).click();
   // Members may report 10 posts an hour (database rate limit) and this spec reports 4, so more than two runs an hour
