@@ -32,6 +32,21 @@ describe('items api', () => {
       assert.equal(items.toFrontendItem(row({ reporter: null }) as any).by, '');
     });
 
+    test('uses the first photo (by position, then upload time) as the list thumbnail', () => {
+      process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://proj.supabase.co';
+      const photos = [
+        { storage_path: 'u1/uuid-1/b.jpg', position: 0, created_at: '2026-09-21T10:05:00Z' },
+        { storage_path: 'u1/uuid-1/a.jpg', position: 0, created_at: '2026-09-21T10:01:00Z' },
+        { storage_path: 'u1/uuid-1/c.jpg', position: 1, created_at: '2026-09-21T09:00:00Z' },
+      ];
+      assert.equal(items.toFrontendItem(row({ photos }) as any).photo, 'https://proj.supabase.co/storage/v1/object/public/item-photos/u1/uuid-1/a.jpg');
+    });
+
+    test('a post without photos has no thumbnail (the row falls back to its icon)', () => {
+      assert.equal(items.toFrontendItem(row() as any).photo, undefined);
+      assert.equal(items.toFrontendItem(row({ photos: [] }) as any).photo, undefined);
+    });
+
     test('formats coords only when both lat and lng exist', () => {
       assert.equal(items.toFrontendItem(row({ location_lat: 40.7, location_lng: -73.9 }) as any).coords, '40.7, -73.9');
       assert.equal(items.toFrontendItem(row({ location_lat: 40.7 }) as any).coords, null);
@@ -39,6 +54,13 @@ describe('items api', () => {
   });
 
   describe('listItems', () => {
+    test('asks for each post\'s photos in the same query', async () => {
+      fake.queue({ data: [] });
+      await items.listItems({ kind: 'lost', filter: 'All' });
+      const select = fake.calls[0].ops.find(([m]) => m === 'select')![1][0] as string;
+      assert.match(select, /photos:item_photos\(storage_path, position, created_at\)/);
+    });
+
     test('filters by kind, newest first, capped at 50', async () => {
       fake.queue({ data: [row()] });
       const r = await items.listItems({ kind: 'lost', filter: 'All' });
