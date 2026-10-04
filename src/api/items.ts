@@ -1,10 +1,19 @@
 import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import type { Item, Kind, Status } from '../data/constants';
+import { itemPhotoUrl } from '../lib/photoUrl';
 
 type ItemRow = Database['public']['Tables']['items']['Row'] & {
   reporter: { handle: string } | { handle: string }[] | null;
+  /** Embedded photo rows; only the first one is shown on list rows. */
+  photos?: { storage_path: string; position: number; created_at: string }[] | null;
 };
+
+/** The first photo (by position, then upload time) as a public URL, or undefined when the post has none. */
+function firstPhotoUrl(photos: ItemRow['photos']): string | undefined {
+  const first = [...(photos ?? [])].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at))[0];
+  return first ? itemPhotoUrl(first.storage_path) : undefined;
+}
 
 const KIND_LABEL: Record<Database['public']['Enums']['item_kind'], Kind> = { lost: 'Lost', found: 'Found' };
 const STATUS_LABEL: Record<Database['public']['Enums']['item_status'], Status> = {
@@ -39,6 +48,7 @@ export function toFrontendItem(row: ItemRow): Item {
     coords: row.location_lat != null && row.location_lng != null ? `${row.location_lat}, ${row.location_lng}` : null,
     dbId: row.id,
     reporterId: row.reporter_id,
+    photo: firstPhotoUrl(row.photos),
   };
 }
 
@@ -69,7 +79,7 @@ export async function listItems(params: ListItemsParams): Promise<ItemsPage> {
   const pageSize = params.pageSize ?? REGISTRY_PAGE_SIZE;
   let q = supabase
     .from('items')
-    .select('*, reporter:profiles!items_reporter_id_fkey(handle)')
+    .select('*, reporter:profiles!items_reporter_id_fkey(handle), photos:item_photos(storage_path, position, created_at)')
     .eq('kind', params.kind)
     .order('created_at', { ascending: false })
     // Tie-break so rows with the same timestamp never swap places between pages.
@@ -193,5 +203,5 @@ export async function loadItemPhotoUrls(itemDbId: string): Promise<string[]> {
   const { data, error } = await supabase.from('item_photos')
     .select('storage_path').eq('item_id', itemDbId).order('position').order('created_at');
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => supabase.storage.from('item-photos').getPublicUrl(r.storage_path).data.publicUrl);
+  return (data ?? []).map((r) => itemPhotoUrl(r.storage_path));
 }

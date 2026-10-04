@@ -12,6 +12,8 @@ export interface Item {
    *  a human-readable string, not the primary key). */
   dbId?: string;
   reporterId?: string;
+  /** Public URL of the post's first photo (list rows show it instead of the category icon). */
+  photo?: string;
 }
 export interface Campaign {
   key: string; campaign: string; advertiser: string; icon: string; rate: string; cpm: number;
