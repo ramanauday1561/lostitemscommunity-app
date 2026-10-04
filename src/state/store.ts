@@ -5,6 +5,7 @@ import {
   type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Status, type Thread,
 } from '../data/constants';
 import { initials } from '../theme/tokens';
+import { JPEG_QUALITY, MAX_UPLOAD_BYTES, photoProblem, shrinkPhoto } from '../lib/image';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the
@@ -82,7 +83,9 @@ export interface AppState {
   rPlace: string; rDate: string; rDesc: string; pin: Pin | null;
   /** Supabase mode only: a photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
-  rPhotoBlob: Blob | null; rPhotoName: string;
+  rPhotoBlob: Blob | null; rPhotoName: string; rPhotoPreview: string;
+  /** Supabase mode: public photo URLs per item uuid, filled when a Detail sheet opens. */
+  photoUrls: Record<string, string[]>;
   /** Supabase mode only: moderation queue (pending flags). Real data replaces
    *  the mock flagged array in Admin > Moderation screen. */
   dbModerationQueue: ModerationFlag[] | null;
@@ -128,7 +131,7 @@ export const initialState: AppState = {
   flagged: FLAGGED, approved: 0, removed: 0, lost: LOST, found: FOUND, members: MEMBERS,
   q: '', uq: '', filter: 'All', topic: 'All', sel: null, claimed: {}, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
-  rPhotoBlob: null, rPhotoName: '',
+  rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
   dbMembers: null, memberSearchQuery: '',
 };
@@ -424,6 +427,7 @@ export class Store {
       return;
     }
     if (!s.rPlace.trim() || !s.profile) return;
+    if (!s.rPhotoBlob) { this.flash('Add a photo of the item before submitting.'); return; }
     this.setState({ busy: true });
     try {
       const items = await import('../api/items');
@@ -438,14 +442,18 @@ export class Store {
         description: s.rDesc.trim() || null,
         reporterId: s.profile.id,
       });
-      if (s.rPhotoBlob && created.dbId) {
-        // A failed photo upload shouldn't undo an already-created report.
-        await items.uploadItemPhoto(created.dbId, s.profile.id, s.rPhotoBlob, s.rPhotoName || 'photo.jpg').catch(() => {});
+      try {
+        await items.uploadItemPhoto(created.dbId!, s.profile.id, s.rPhotoBlob, s.rPhotoName || 'photo.jpg');
+      } catch (e) {
+        // A photo is required, so don't leave a photo-less report behind.
+        await items.deleteItem(created.dbId!).catch(() => {});
+        throw new Error(e instanceof Error ? `Photo upload failed: ${e.message}` : 'Photo upload failed.');
       }
+      this.revokePreview();
       this.setState({
         busy: false, sheet: 'sent', newId: created.id, step: 1,
         rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
-        rPhotoBlob: null, rPhotoName: '',
+        rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '',
       });
     } catch (e) {
       this.setState({ busy: false });
@@ -464,16 +472,45 @@ export class Store {
         if (!perm.granted) { this.flash('Photo library permission was denied.'); return; }
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: JPEG_QUALITY,
       });
       if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
       const res = await fetch(asset.uri);
-      const blob = await res.blob();
-      this.setState({ rPhotoBlob: blob, rPhotoName: asset.fileName || `photo-${Date.now()}.jpg` });
+      const picked = await res.blob();
+      const problem = photoProblem(picked.type || asset.mimeType || '', picked.size);
+      if (problem) { this.flash(problem); return; }
+      const blob = await shrinkPhoto(picked);
+      if (blob.size > MAX_UPLOAD_BYTES) { this.flash('That photo is still too large after shrinking — try another.'); return; }
+      const name = (asset.fileName || `photo-${Date.now()}`).replace(/\.[^.]+$/, '') + (blob === picked ? '' : '.jpg');
+      this.revokePreview();
+      const preview = typeof URL !== 'undefined' && URL.createObjectURL ? URL.createObjectURL(blob) : asset.uri;
+      this.setState({ rPhotoBlob: blob, rPhotoName: blob === picked ? (asset.fileName || `photo-${Date.now()}.jpg`) : name, rPhotoPreview: preview });
       this.flash('Photo attached — it uploads when you submit.');
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not open the photo picker.');
+    }
+  };
+
+  private revokePreview() {
+    const url = this.state.rPhotoPreview;
+    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+  }
+
+  removePhoto = () => {
+    this.revokePreview();
+    this.setState({ rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '' });
+  };
+
+  /** Fetches an item's photo URLs once per item; the Detail sheet reads them from `photoUrls`. */
+  loadPhotosSupabase = async (dbId: string | undefined) => {
+    if (!dbId || this.state.photoUrls[dbId]) return;
+    try {
+      const items = await import('../api/items');
+      const urls = await items.loadItemPhotoUrls(dbId);
+      this.setState((st) => ({ photoUrls: { ...st.photoUrls, [dbId]: urls } }));
+    } catch (e) {
+      console.error('loadPhotos failed:', e);
     }
   };
 

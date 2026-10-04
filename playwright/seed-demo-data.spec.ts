@@ -1,4 +1,5 @@
 import { test, expect, Browser, Page } from '@playwright/test';
+import { attachPhoto } from './photo';
 import { loginAs, TEST_USERS, TestUser } from './helpers';
 
 /**
@@ -78,6 +79,7 @@ async function report(page: Page, p: Post) {
   await page.getByPlaceholder('Where? e.g. Central Station platform 3').fill(p.place);
   await page.getByPlaceholder('When? e.g. 12 Jun 2024').fill(p.when);
   if (p.desc) await page.getByPlaceholder('Marks, contents, colour — details only the owner would know.').fill(p.desc);
+  await attachPhoto(page, p.title);
   await page.getByText('Submit to registry', { exact: true }).click();
   await expect(page.getByText('Report submitted')).toBeVisible({ timeout: 20000 });
   await page.getByText('View it in the registry', { exact: true }).click();
