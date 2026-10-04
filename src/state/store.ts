@@ -5,6 +5,8 @@ import {
   type Ad, type ChatMsg, type Convo, type FlaggedRecord, type Item, type Member, type Status, type Thread,
 } from '../data/constants';
 import { initials } from '../theme/tokens';
+import type { Place } from '../api/places';
+import { coord, type LatLng } from '../lib/geo';
 import { JPEG_QUALITY, MAX_UPLOAD_BYTES, photoProblem, shrinkPhoto } from '../lib/image';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
@@ -81,6 +83,8 @@ export interface AppState {
   claimed: Record<string, boolean>; toast: string; newId: string;
   step: number; rType: string; rTitle: string; rCat: string;
   rPlace: string; rDate: string; rDesc: string; pin: Pin | null;
+  /** Report sheet's place search (live mode): the box text, last results and whether a search is running. */
+  placeQuery: string; placeResults: Place[]; placeSearching: boolean;
   /** Supabase mode only: a photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
   rPhotoBlob: Blob | null; rPhotoName: string; rPhotoPreview: string;
@@ -130,7 +134,7 @@ export const initialState: AppState = {
   ads: ADS, adEditId: 'AD-01', adDraft: null,
   flagged: FLAGGED, approved: 0, removed: 0, lost: LOST, found: FOUND, members: MEMBERS,
   q: '', uq: '', filter: 'All', topic: 'All', sel: null, claimed: {}, toast: '', newId: '',
-  step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
+  step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
   rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
   dbMembers: null, memberSearchQuery: '',
@@ -452,7 +456,7 @@ export class Store {
       this.revokePreview();
       this.setState({
         busy: false, sheet: 'sent', newId: created.id, step: 1,
-        rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null,
+        rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [],
         rPhotoBlob: null, rPhotoName: '', rPhotoPreview: '',
       });
     } catch (e) {
@@ -490,6 +494,44 @@ export class Store {
     } catch (e) {
       this.flash(e instanceof Error ? e.message : 'Could not open the photo picker.');
     }
+  };
+
+  /** Drops the pin at a map point; if the place box is still empty, fills it with what's there. */
+  setPinSupabase = async (at: LatLng, label?: string) => {
+    this.setState({ pin: { x: 50, y: 50, lat: coord(at.lat), lng: coord(at.lng) }, placeResults: [] });
+    if (label) { this.setState({ rPlace: label }); return; }
+    if (this.state.rPlace.trim()) return;
+    try {
+      const places = await import('../api/places');
+      const name = await places.describePlace(at);
+      const still = this.state.pin;
+      if (name && !this.state.rPlace.trim() && still && still.lat === coord(at.lat) && still.lng === coord(at.lng)) this.setState({ rPlace: name });
+    } catch { /* naming the spot is a convenience; the pin is already set */ }
+  };
+
+  searchPlaceSupabase = async () => {
+    const q = this.state.placeQuery.trim();
+    if (q.length < 3) { this.flash('Type at least 3 letters to search.'); return; }
+    this.setState({ placeSearching: true });
+    try {
+      const places = await import('../api/places');
+      const found = await places.searchPlaces(q);
+      this.setState({ placeResults: found, placeSearching: false });
+      if (!found.length) this.flash('No places found — try a street or landmark name.');
+    } catch (e) {
+      this.setState({ placeSearching: false });
+      this.flash(e instanceof Error ? e.message : 'Place search is unavailable right now.');
+    }
+  };
+
+  useMyLocationSupabase = () => {
+    const geo = typeof navigator !== 'undefined' ? navigator.geolocation : undefined;
+    if (!geo) { this.flash('Location is not available on this device — search for the place instead.'); return; }
+    geo.getCurrentPosition(
+      (pos) => { this.setPinSupabase({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+      (err) => this.flash(err.code === 1 ? 'Location permission was denied — search for the place instead.' : 'Could not get your location.'),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   };
 
   private revokePreview() {

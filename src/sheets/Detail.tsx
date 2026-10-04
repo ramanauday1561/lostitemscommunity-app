@@ -4,6 +4,7 @@ import { C, FONTS, MONO } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Chip, Cta } from '../ui/bits';
+import { MapPicker } from '../ui/MapPicker';
 import { Sheet } from './SheetHost';
 
 export function DetailSheet() {
@@ -83,6 +84,12 @@ export function DetailSheet() {
           </View>
         ))}
       </View>
+
+      {v.liveMap && v.detailPin && (
+        <View style={{ marginTop: 14 }}>
+          <MapPicker pin={v.detailPin} height={160} />
+        </View>
+      )}
     </Sheet>
   );
 }

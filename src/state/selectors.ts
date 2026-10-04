@@ -4,6 +4,7 @@ import {
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
 import { formatTime } from '../lib/time';
+import { parseCoords, type LatLng } from '../lib/geo';
 import { IDLE_LOADS, type AppState, type Store, type LoadKey } from './store';
 
 const ME = 'simple.user';
@@ -914,7 +915,16 @@ export function buildVals(store: Store) {
       store.setState({ pin: { x, y, lat: (40.7128 + (50 - y) / 900).toFixed(4), lng: (-73.9960 + (x - 50) / 900).toFixed(4) } });
     },
     clearPin: () => store.setState({ pin: null }),
-    useMyLocation: () => store.setState((s) => ({ pin: { x: 50, y: 48, lat: '40.7139', lng: '-73.9960' }, rPlace: s.rPlace || 'Union Square, current location' })),
+    liveMap: isSupabaseAuth,
+    mapPin: st.pin ? { lat: Number(st.pin.lat), lng: Number(st.pin.lng) } : null,
+    onMapPick: (at: LatLng) => { store.setPinSupabase(at); },
+    placeQuery: st.placeQuery,
+    onPlaceQuery: (q: string) => store.setState({ placeQuery: q }),
+    searchPlace: store.searchPlaceSupabase,
+    placeSearching: st.placeSearching,
+    placeResults: st.placeResults.map((r) => ({ key: `${r.lat},${r.lng}`, label: r.label, pick: () => store.setPinSupabase(r, r.label) })),
+    detailPin: parseCoords(sel.coords),
+    useMyLocation: isSupabaseAuth ? store.useMyLocationSupabase : () => store.setState((s) => ({ pin: { x: 50, y: 48, lat: '40.7139', lng: '-73.9960' }, rPlace: s.rPlace || 'Union Square, current location' })),
 
     meName: store.me().name,
     meEmail: isSupabaseAuth ? (st.authEmail || '') : admin ? 'admin@lostitems.community' : fresh ? 'newuser@lostitems.community' : 'user@lostitems.community',

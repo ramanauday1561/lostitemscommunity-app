@@ -6,6 +6,7 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import { Cta, Pill, Seg } from '../ui/bits';
+import { MapPicker } from '../ui/MapPicker';
 import { Sheet } from './SheetHost';
 
 export function ReportSheet() {
@@ -43,7 +44,25 @@ export function ReportSheet() {
             <Field icon="event" value={v.rDate} onChange={v.onRDate} placeholder="When? e.g. 12 Jun 2024" />
           </View>
 
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Drop a pin</Text>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>{v.liveMap ? 'Pin the spot' : 'Drop a pin'}</Text>
+          {v.liveMap ? (
+            <>
+              <Field icon="search" value={v.placeQuery} onChange={v.onPlaceQuery} onSubmit={v.searchPlace} placeholder="Search a street or landmark" compact />
+              {v.placeSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 8 }}>Searching…</Text>}
+              {v.placeResults.length > 0 && (
+                <View style={{ marginTop: 8, borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
+                  {v.placeResults.map((r) => (
+                    <Press key={r.key} style={{ minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' }} scale={0.99} onPress={r.pick}>
+                      <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.ink }}>{r.label}</Text>
+                    </Press>
+                  ))}
+                </View>
+              )}
+              <View style={{ marginTop: 8 }}>
+                <MapPicker pin={v.mapPin} onPick={v.onMapPick} />
+              </View>
+            </>
+          ) : (
           <Press
             style={{ height: 150, borderRadius: 20, backgroundColor: '#E4E9EF', overflow: 'hidden' }}
             scale={1}
@@ -63,6 +82,7 @@ export function ReportSheet() {
               }} />
             )}
           </Press>
+          )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 }}>
             <Text style={{ flex: 1, fontFamily: MONO[500], fontSize: 10.5, color: C.lighter }}>{v.pinLabel}</Text>
             <Press style={{ minHeight: 36, paddingHorizontal: 10, justifyContent: 'center' }} scale={0.96} onPress={v.useMyLocation}>
