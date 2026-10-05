@@ -21,7 +21,7 @@ export function Forum() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 12 }}>
         <AdSlot ad={v.adForum} />
-        <LoadGate status={v.loads.forum} onRetry={v.retry.forum} what="threads" />
+        <LoadGate status={v.loads.forum} onRetry={v.retry.forum} what="threads" hasData={v.threads.length > 0} />
         {v.threads.map((t, n) => (
           <Animated.View key={t.id} entering={rise(n)} style={[{
             backgroundColor: C.white, borderRadius: 26, padding: 18,
