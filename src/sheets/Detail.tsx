@@ -1,10 +1,11 @@
-import { Image, Linking, ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Chip, Cta } from '../ui/bits';
 import { MapPicker } from '../ui/MapPicker';
+import { PhotoFrame } from '../ui/PhotoFrame';
 import { Sheet } from './SheetHost';
 
 export function DetailSheet() {
@@ -56,9 +57,7 @@ export function DetailSheet() {
       }
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 13 }}>
-        <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={d.icon} size={28} color={C.ink} />
-        </View>
+        <PhotoFrame width={56} uri={v.itemPhotos[0]} icon={d.icon} label={`Photo of ${d.title}`} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: FONTS[800], fontSize: 19, letterSpacing: -0.4, color: C.ink }}>{d.title}</Text>
           <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.lighter, marginTop: 3 }}>{d.id}</Text>
@@ -69,7 +68,7 @@ export function DetailSheet() {
       {v.itemPhotos.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }} contentContainerStyle={{ gap: 8 }}>
           {v.itemPhotos.map((uri) => (
-            <Image key={uri} source={{ uri }} resizeMode="cover" style={{ width: v.itemPhotos.length > 1 ? 260 : 330, maxWidth: '100%', height: 200, borderRadius: 20, backgroundColor: C.fillSoft }} />
+            <PhotoFrame key={uri} width={v.itemPhotos.length > 1 ? 260 : 330} height={200} uri={uri} label={`Photo of ${d.title}`} />
           ))}
         </ScrollView>
       )}

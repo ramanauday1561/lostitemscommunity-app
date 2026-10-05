@@ -65,7 +65,8 @@ function Sheets() {
 export function App() {
   return (
     <Shell>
-      <View style={{ flex: 1, overflow: 'hidden' }}>
+      {/* No overflow clipping here: backdrops and sheet scrims reach up under the status bar (see useTopInset). */}
+      <View style={{ flex: 1 }}>
         <InstallBanner />
         <Header />
         <View style={{ flex: 1, minHeight: 0 }}>
