@@ -52,3 +52,6 @@ playwright.config.test.ts
 
 # Copied from node_modules by scripts/copy-maplibre-worker.mjs
 public/maplibre/
+
+# Written by the deploy workflow (the commit id of the build)
+public/version.json
