@@ -7,6 +7,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useVals } from '../StoreProvider';
 import { C, FONTS } from '../theme/tokens';
 import { Glass } from '../ui/Glass';
+import { useTopInset } from '../ui/Shell';
 
 /** Drag the grabber down this far (or flick it) and the sheet closes. */
 const DISMISS_DISTANCE = 110;
@@ -23,6 +24,7 @@ export function Sheet({ title, children, footer }: {
 }) {
   const v = useVals();
   const close = v.closeSheet;
+  const top = useTopInset(); // the dimmed scrim covers the status-bar strip too
   const y = useSharedValue(0);
 
   const drag = Gesture.Pan()
@@ -40,7 +42,7 @@ export function Sheet({ title, children, footer }: {
 
   return (
     <>
-      <Animated.View entering={FadeIn.duration(200)} style={[{ position: 'absolute', inset: 0, zIndex: 45 } as object, scrim]}>
+      <Animated.View entering={FadeIn.duration(200)} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, top: -top, zIndex: 45 } as object, scrim]}>
         <Pressable onPress={close} style={{ flex: 1, backgroundColor: 'rgba(16,19,25,.42)' }} />
       </Animated.View>
       <Animated.View

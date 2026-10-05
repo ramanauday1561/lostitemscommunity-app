@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../theme/tokens';
@@ -6,6 +7,11 @@ import { C } from '../theme/tokens';
  *  top edge now that the prototype's mock status bar is gone. On a phone this
  *  also clears the notch / system status bar. */
 const MIN_TOP = 14;
+
+/** How far the Shell pads the top (status bar / notch). Full-screen layers (backdrops, sheet scrims) reach up by this
+ *  much so they cover the whole phone instead of starting below the status bar. */
+const TopInsetContext = createContext(0);
+export const useTopInset = () => useContext(TopInsetContext);
 
 /**
  * The prototype is a 390x844 phone mock. On a phone browser we want full bleed;
@@ -18,7 +24,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const top = Math.max(insets.top, MIN_TOP);
 
   if (!framed) {
-    return <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}>{children}</View>;
+    return (
+      <TopInsetContext.Provider value={top}>
+        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}>{children}</View>
+      </TopInsetContext.Provider>
+    );
   }
 
   return (
@@ -28,7 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         overflow: 'hidden', paddingTop: MIN_TOP,
         boxShadow: '0 40px 80px -20px rgba(22,24,31,.35), 0 0 0 1px rgba(22,24,31,.1)',
       }}>
-        {children}
+        <TopInsetContext.Provider value={MIN_TOP}>{children}</TopInsetContext.Provider>
       </View>
     </View>
   );

@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { C } from '../theme/tokens';
+import { useTopInset } from './Shell';
 
 function Orb({ color, size, left, top, dx, dy, ms }: {
   color: string; size: number; left: number | string; top: number | string; dx: number; dy: number; ms: number;
@@ -26,8 +27,9 @@ function Orb({ color, size, left, top, dx, dy, ms }: {
  * Only transforms animate (no blur), so it stays cheap on every platform.
  */
 export function Aurora({ tint = C.primary }: { tint?: string }) {
+  const top = useTopInset(); // reach up under the status bar, so the colour fills the whole phone
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', inset: 0, overflow: 'hidden' } as object}>
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: -top, overflow: 'hidden' } as object}>
       <LinearGradient colors={['#F7F8FB', C.bg, '#EEF3FA']} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={{ position: 'absolute', inset: 0 } as object} />
       <Orb color={tint + '33'} size={220} left={-70} top={-40} dx={40} dy={30} ms={7000} />
       <Orb color="rgba(0,227,155,.16)" size={180} left="62%" top="38%" dx={-36} dy={44} ms={9000} />
