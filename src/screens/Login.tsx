@@ -5,7 +5,8 @@ import { C, FONTS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Cta } from '../ui/bits';
+import { Cta, Notice } from '../ui/bits';
+import { Backdrop } from '../ui/Aurora';
 import { SocialButtons } from '../ui/SocialButtons';
 
 function CheckBox({ on }: { on: boolean }) {
@@ -23,7 +24,7 @@ function CheckBox({ on }: { on: boolean }) {
 export function Login() {
   const v = useVals();
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 32, paddingBottom: 32, backgroundColor: C.bg, flexGrow: 1 }}>
+    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 32, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Image source={img('logo.png')} style={{ width: 46, height: 46, marginLeft: -4 }} resizeMode="contain" />
         <Text style={{ fontFamily: FONTS[700], fontSize: 15, color: C.ink }}>Lost Items Community</Text>
@@ -36,8 +37,8 @@ export function Login() {
       </Text>
 
       <View style={{ marginTop: 40 }}>
-          <Field icon="person" value={v.username} onChange={v.onUser} placeholder="Username or email" style={{ marginBottom: 8 }} />
-          <Field icon="lock" value={v.password} onChange={v.onPass} placeholder="Password" secure onSubmit={v.submit} />
+          <Field icon="person" value={v.username} onChange={v.onUser} placeholder="Username or email" style={{ marginBottom: 8 }} glass error={!!v.error} autoComplete="username" returnKeyType="next" />
+          <Field icon="lock" value={v.password} onChange={v.onPass} placeholder="Password" secure onSubmit={v.submit} glass error={!!v.error} autoComplete="password" returnKeyType="go" />
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
             <Press style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingRight: 8 }} scale={1} onPress={v.toggleRemember}>
@@ -49,12 +50,7 @@ export function Login() {
             </Press>
           </View>
 
-          {!!v.error && (
-            <View style={{ marginTop: 8, flexDirection: 'row', gap: 9, padding: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(180,35,24,.08)' }}>
-              <Icon name="error" size={19} color={C.danger} />
-              <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.danger }}>{v.error}</Text>
-            </View>
-          )}
+          {!!v.error && <Notice tone="error" icon="error" text={v.error} style={{ marginTop: 8 }} />}
 
           <Cta label={v.signInLabel} on={v.signInEnabled} onPress={v.submit} loading={v.signInLoading} style={{ marginTop: 16 }} />
 
@@ -67,6 +63,6 @@ export function Login() {
           <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.primary }}>Join free in 30 seconds</Text>
         </Press>
       </View>
-    </ScrollView>
+    </ScrollView></Backdrop>
   );
 }

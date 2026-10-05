@@ -1,12 +1,47 @@
+import { useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Card } from '../ui/bits';
 import { AdSlot } from '../ui/AdSlot';
+import { Glass } from '../ui/Glass';
+import { rise } from '../ui/motion';
 
 const page = { paddingHorizontal: 20, paddingBottom: 32, gap: 16 };
+
+/** A dark hero card: a deep gradient with a soft coloured glow in one corner. */
+function Hero({ children, glow, enter = 0 }: { children: React.ReactNode; glow: string; enter?: number }) {
+  return (
+    <Animated.View entering={rise(enter)} style={{ borderRadius: 28, overflow: 'hidden', boxShadow: '0 20px 40px -24px rgba(16,19,25,.8)' }}>
+      <LinearGradient colors={['#1B2130', '#101319']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ position: 'absolute', inset: 0 } as object} />
+      <View pointerEvents="none" style={{
+        position: 'absolute', right: -50, top: -50, width: 170, height: 170, borderRadius: 85,
+        backgroundColor: glow, boxShadow: `0 0 90px 50px ${glow}`,
+      } as object} />
+      {children}
+    </Animated.View>
+  );
+}
+
+/** Red dot that breathes, so a non-empty moderation queue catches the eye. */
+function Pulse({ color }: { color: string }) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = withRepeat(withTiming(1, { duration: 1300, easing: Easing.out(Easing.quad) }), -1, false);
+    return () => cancelAnimation(t);
+  }, [t]);
+  const ring = useAnimatedStyle(() => ({ opacity: 0.55 * (1 - t.value), transform: [{ scale: 1 + t.value * 1.8 }] }));
+  return (
+    <View style={{ width: 10, height: 10, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={[{ position: 'absolute', width: 10, height: 10, borderRadius: 5, backgroundColor: color }, ring]} />
+      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />
+    </View>
+  );
+}
 
 /** Section heading with an optional action on the right. */
 function SectionHead({ title, action, onAction, badge }: {
@@ -30,15 +65,16 @@ export function UserDash() {
   return (
     <ScrollView contentContainerStyle={{ ...page, gap: 14 }}>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        {v.myStats.map((s) => (
-          <Card key={s.label} style={{ flex: 1, padding: 14, borderRadius: 22 }}>
+        {v.myStats.map((s, n) => (
+          <Card key={s.label} enter={n} style={{ flex: 1, padding: 14, borderRadius: 22 }}>
             <Text style={{ fontFamily: FONTS[800], fontSize: 22, color: s.color }}>{s.value}</Text>
             <Text style={{ fontFamily: FONTS[500], fontSize: 10.5, color: C.subtle, marginTop: 3 }}>{s.label}</Text>
           </Card>
         ))}
       </View>
-      {v.shortcuts.map((s) => (
-        <Press key={s.title} style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+      {v.shortcuts.map((s, n) => (
+        <Animated.View key={s.title} entering={rise(n + 3)}>
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
           scale={0.98} onPress={s.go}>
           <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={s.icon} size={21} color={C.primary} />
@@ -49,6 +85,7 @@ export function UserDash() {
           </View>
           <Icon name="chevron_right" size={20} color={C.lighter} />
         </Press>
+        </Animated.View>
       ))}
       <AdSlot ad={v.adHome} />
     </ScrollView>
@@ -90,10 +127,8 @@ export function FreshDash() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={{ ...page, gap: 20 }}>
-      <View style={{
-        paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20, borderRadius: 28,
-        backgroundColor: '#101319', boxShadow: '0 20px 40px -24px rgba(16,19,25,.8)',
-      }}>
+      <Hero glow="rgba(0,227,155,.22)">
+        <View style={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20 }}>
         <View style={{
           alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6,
           paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(0,227,155,.14)',
@@ -112,14 +147,16 @@ export function FreshDash() {
             scale={0.97} onPress={v.openReport}>
             <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white }}>Report an item</Text>
           </Press>
-          <Press style={{ minHeight: 48, paddingHorizontal: 18, borderRadius: 16, backgroundColor: 'rgba(255,255,255,.1)', alignItems: 'center', justifyContent: 'center' }}
-            scale={0.97} onPress={v.openGuidelines}>
-            <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white }}>The rules</Text>
+          <Press scale={0.97} onPress={v.openGuidelines}>
+            <Glass tint="dark" radius={16} style={{ backgroundColor: 'rgba(255,255,255,.1)', boxShadow: 'none' }}>
+              <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white, paddingHorizontal: 18, paddingVertical: 14 }}>The rules</Text>
+            </Glass>
           </Press>
         </View>
-      </View>
+        </View>
+      </Hero>
 
-      <View>
+      <Animated.View entering={rise(1)}>
         <SectionHead
           title="Set up your account"
           badge={<Text style={{ fontFamily: MONO[600], fontSize: 11, color: C.subtle }}>{v.setupProgress}</Text>}
@@ -142,7 +179,7 @@ export function FreshDash() {
             </Press>
           ))}
         </View>
-      </View>
+      </Animated.View>
 
 
       <SponsoredSlot />
@@ -168,7 +205,7 @@ export function AdminDash() {
     <ScrollView contentContainerStyle={page}>
       {/* Ads are off until real campaigns exist: no entry point to an empty screen. */}
       {v.adSlots.length > 0 && (
-        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+        <Press entering={rise(0)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
           scale={0.985} onPress={v.goAds}>
           <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="payments" size={23} color={C.success} />
@@ -181,8 +218,10 @@ export function AdminDash() {
         </Press>
       )}
 
-      <View style={{ backgroundColor: '#101319', borderRadius: 28, padding: 20, boxShadow: '0 20px 40px -24px rgba(16,19,25,.8)' }}>
+      <Hero glow="rgba(255,138,128,.2)" enter={1}>
+      <View style={{ padding: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {v.flaggedCount > 0 ? <Pulse color="#FF8A80" /> : null}
           <Icon name="flag" size={16} color="#FF8A80" />
           <Text style={{ fontFamily: MONO[600], fontSize: 10, letterSpacing: 1.4, color: 'rgba(255,255,255,.5)' }}>NEEDS MODERATION</Text>
         </View>
@@ -197,8 +236,9 @@ export function AdminDash() {
           </Press>
         </View>
       </View>
+      </Hero>
 
-      <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+      <Press entering={rise(2)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
         scale={0.985} onPress={v.goSupportInbox}>
         <Icon name="support_agent" size={22} color={C.primary} />
         <View style={{ flex: 1 }}>
@@ -215,19 +255,19 @@ export function AdminDash() {
         style={{ marginHorizontal: -20 }}
         contentContainerStyle={{ gap: 12, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 }}
       >
-        {v.adminMetrics.map((m) => (
-          <View key={m.label} style={[{ width: 176, backgroundColor: C.white, borderRadius: 24, padding: 18 }, SHADOW.card]}>
+        {v.adminMetrics.map((m, n) => (
+          <Animated.View key={m.label} entering={rise(n + 3)} style={[{ width: 176, backgroundColor: C.white, borderRadius: 24, padding: 18 }, SHADOW.card]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <Icon name={m.icon} size={16} color={m.iconColor} />
               <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle }}>{m.label}</Text>
             </View>
             <Text style={{ fontFamily: FONTS[800], fontSize: 28, letterSpacing: -1.1, color: m.color, marginTop: 12 }}>{m.value}</Text>
             <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: m.deltaColor, marginTop: 6 }}>{m.delta}</Text>
-          </View>
+          </Animated.View>
         ))}
       </ScrollView>
 
-      <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+      <Press entering={rise(4)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
         scale={0.985} onPress={v.goAnalysis}>
         <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(11,107,203,.1)', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="analytics" size={23} color={C.primary} />
@@ -248,8 +288,8 @@ export function AdminDash() {
           </View>
         </View>
         <View style={{ gap: 8 }}>
-          {v.flagged.map((f) => (
-            <View key={f.id} style={[{ backgroundColor: C.white, borderRadius: 24, padding: 16 }, SHADOW.card]}>
+          {v.flagged.map((f, n) => (
+            <Animated.View key={f.id} entering={rise(n)} style={[{ backgroundColor: C.white, borderRadius: 24, padding: 16 }, SHADOW.card]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.subtle }}>{f.id}</Text>
                 <View style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(180,35,24,.1)' }}>
@@ -268,7 +308,7 @@ export function AdminDash() {
                   <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.danger }}>Remove</Text>
                 </Press>
               </View>
-            </View>
+            </Animated.View>
           ))}
           {v.flaggedEmpty && (
             <View style={{ backgroundColor: C.white, borderRadius: 24, paddingVertical: 40, paddingHorizontal: 24, alignItems: 'center', boxShadow: '0 1px 2px rgba(22,24,31,.05)' }}>

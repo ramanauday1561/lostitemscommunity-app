@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import Animated, {
+  Easing, FadeInDown, ZoomIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming,
+} from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
+import { Backdrop } from '../ui/Aurora';
+import { SPRING } from '../ui/motion';
 import { img } from '../data/assets';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
@@ -15,6 +20,25 @@ const MIN_CARD = 96;
 /** Vertical padding around the card inside its slot. */
 const ROOM_PAD = 12;
 
+/** One pagination dot: stretches into a pill when its slide is current. */
+function Dot({ on }: { on: boolean }) {
+  const w = useSharedValue(on ? 24 : 6);
+  useEffect(() => { w.value = withSpring(on ? 24 : 6, SPRING); }, [on, w]);
+  const style = useAnimatedStyle(() => ({ width: w.value }));
+  return <Animated.View style={[{ height: 6, borderRadius: 999, backgroundColor: on ? C.primary : '#D6D5D0' }, style]} />;
+}
+
+/** The illustration drifts up and down a few pixels, so the first screen feels alive. */
+function Float({ children, style }: { children: React.ReactNode; style: object }) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }), -1, true);
+    return () => cancelAnimation(t);
+  }, [t]);
+  const a = useAnimatedStyle(() => ({ transform: [{ translateY: t.value * -8 }] }));
+  return <Animated.View style={[style, a]}>{children}</Animated.View>;
+}
+
 export function Welcome() {
   const v = useVals();
   // The picture card is a square sized to the SMALLER of the width and height left for it (between the header
@@ -28,7 +52,8 @@ export function Welcome() {
   const compact = useWindowDimensions().height < 700;
   const card = room ? Math.min(room.w, room.h - ROOM_PAD * 2, MAX_CARD) : 0;
   return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: compact ? 16 : 28, backgroundColor: C.bg }}>
+    <Backdrop tint={v.slide.tint === '#E2ECF7' ? C.primary : v.slide.tint}>
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: compact ? 16 : 28 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
           <Image source={img('logo.png')} style={{ width: 36, height: 36, marginLeft: -3 }} resizeMode="contain" />
@@ -41,25 +66,20 @@ export function Welcome() {
 
       <View onLayout={onRoom} style={{ flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', paddingVertical: ROOM_PAD }}>
         {card >= MIN_CARD && (
-          <View style={[{ width: card, height: card, borderRadius: Math.min(36, card * 0.14), backgroundColor: v.slide.tint, overflow: 'hidden' }, SHADOW.slide]}>
-            <Image
-              source={img(v.slide.img)}
-              style={{ position: 'absolute', left: '9%', top: '9%', width: '82%', height: '82%' }}
-              resizeMode="contain"
-            />
-          </View>
+          <Animated.View key={v.slideIndex} entering={ZoomIn.duration(380).springify().damping(18)}
+            style={[{ width: card, height: card, borderRadius: Math.min(36, card * 0.14), backgroundColor: v.slide.tint, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,.7)' }, SHADOW.slide]}>
+            <Float style={{ position: 'absolute', left: '9%', top: '9%', width: '82%', height: '82%' }}>
+              <Image source={img(v.slide.img)} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+            </Float>
+          </Animated.View>
         )}
       </View>
 
       <View>
         <View style={{ flexDirection: 'row', gap: 6, marginBottom: compact ? 12 : 20 }}>
-          {SLIDES.map((_, i) => (
-            <View key={i} style={{
-              width: i === v.slideIndex ? 24 : 6, height: 6, borderRadius: 999,
-              backgroundColor: i === v.slideIndex ? C.primary : '#D6D5D0',
-            }} />
-          ))}
+          {SLIDES.map((_, i) => <Dot key={i} on={i === v.slideIndex} />)}
         </View>
+        <Animated.View key={v.slideIndex} entering={FadeInDown.duration(300)}>
         <Kicker color={C.primary}>{v.slide.kicker}</Kicker>
         <Text style={{ fontFamily: FONTS[800], fontSize: compact ? 26 : 30, lineHeight: compact ? 30 : 34, letterSpacing: -1, color: C.ink, marginTop: compact ? 8 : 12, minHeight: compact ? 60 : 69 }}>
           {v.slide.title}
@@ -67,6 +87,7 @@ export function Welcome() {
         <Text style={{ fontFamily: FONTS[400], fontSize: compact ? 14 : 15, lineHeight: compact ? 21 : 24, color: C.muted, marginTop: compact ? 8 : 12, minHeight: compact ? 84 : 96 }}>
           {v.slide.body}
         </Text>
+        </Animated.View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: compact ? 14 : 20 }}>
           {v.showWelcomeBack && (
@@ -88,5 +109,6 @@ export function Welcome() {
         </View>
       </View>
     </View>
+    </Backdrop>
   );
 }

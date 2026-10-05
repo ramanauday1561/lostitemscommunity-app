@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useApp } from '../StoreProvider';
+import { rise } from '../ui/motion';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Field } from '../ui/Field';
 import { AdSlot } from '../ui/AdSlot';
@@ -48,11 +50,11 @@ export function Registry() {
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 10 }}>
         <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
-        {!reloading && v.registry.map((it) => (
-          <View key={it.id} style={{ gap: 10 }}>
+        {!reloading && v.registry.map((it, n) => (
+          <Animated.View key={it.id} entering={rise(n)} style={{ gap: 10 }}>
             <ItemCard item={it} onPress={it.open} />
             {it.adAfter ? <AdSlot ad={v.adFeed} /> : null}
-          </View>
+          </Animated.View>
         ))}
         {!reloading && v.registryHasMore && (
           <Press style={{ minHeight: 48, borderRadius: 24, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}

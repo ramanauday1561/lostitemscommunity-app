@@ -1,4 +1,6 @@
 import { View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { screenIn } from './ui/motion';
 import { useVals } from './StoreProvider';
 import { Shell } from './ui/Shell';
 import { InstallBanner } from './ui/InstallBanner';
@@ -16,24 +18,31 @@ import { ReportSheet, SentSheet } from './sheets/Report';
 import { ChatSheet, SupportReplySheet, SupportSheet, ThreadSheet } from './sheets/Chat';
 import { AdSheet, GuidelinesSheet, NewThreadSheet, NotificationsSheet, ProfileSheet } from './sheets/Misc';
 
+/** The active screen's name and element. */
+function pick(v: ReturnType<typeof useVals>): [string, React.ReactNode] {
+  if (v.isWelcome) return ['welcome', <Welcome />];
+  if (v.isLogin) return ['login', <Login />];
+  if (v.isSignup) return ['signup', <Signup />];
+  if (v.isForgot) return ['forgot', <Forgot />];
+  if (v.isUserDash) return ['userDash', <UserDash />];
+  if (v.isFreshDash) return ['freshDash', <FreshDash />];
+  if (v.isAdminDash) return ['adminDash', <AdminDash />];
+  if (v.isRegistry) return ['registry', <Registry />];
+  if (v.isForum) return ['forum', <Forum />];
+  if (v.isModeration) return ['moderation', <Moderation />];
+  if (v.isSupportInbox) return ['supportInbox', <SupportInbox />];
+  if (v.isAnalysis) return ['analysis', <Analysis />];
+  if (v.isMembers) return ['members', <Members />];
+  if (v.isAds) return ['ads', <Ads />];
+  if (v.isMessages) return ['messages', <Messages />];
+  return ['none', null];
+}
+
+/** Keyed by screen name so each navigation fades the new screen in instead of cutting to it. */
 function Screen() {
-  const v = useVals();
-  if (v.isWelcome) return <Welcome />;
-  if (v.isLogin) return <Login />;
-  if (v.isSignup) return <Signup />;
-  if (v.isForgot) return <Forgot />;
-  if (v.isUserDash) return <UserDash />;
-  if (v.isFreshDash) return <FreshDash />;
-  if (v.isAdminDash) return <AdminDash />;
-  if (v.isRegistry) return <Registry />;
-  if (v.isForum) return <Forum />;
-  if (v.isModeration) return <Moderation />;
-  if (v.isSupportInbox) return <SupportInbox />;
-  if (v.isAnalysis) return <Analysis />;
-  if (v.isMembers) return <Members />;
-  if (v.isAds) return <Ads />;
-  if (v.isMessages) return <Messages />;
-  return null;
+  const [name, node] = pick(useVals());
+  if (!node) return null;
+  return <Animated.View key={name} entering={screenIn} style={{ flex: 1 }}>{node}</Animated.View>;
 }
 
 function Sheets() {

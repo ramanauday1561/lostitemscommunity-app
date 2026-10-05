@@ -4,12 +4,15 @@ import { C, FONTS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Cta, Kicker, StrengthBars } from '../ui/bits';
+import Animated from 'react-native-reanimated';
+import { Backdrop } from '../ui/Aurora';
+import { pop } from '../ui/motion';
+import { Cta, Kicker, Notice, StrengthBars } from '../ui/bits';
 
 export function Forgot() {
   const v = useVals();
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 20, paddingBottom: 32, backgroundColor: C.bg, flexGrow: 1 }}>
+    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <Press style={{ width: 44, height: 44, marginLeft: -10, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
         scale={0.92} activeBg="rgba(22,24,31,.06)" onPress={v.fpBack}>
         <Icon name="arrow_back" size={24} color={C.ink} />
@@ -27,17 +30,17 @@ export function Forgot() {
 
       <View style={{ marginTop: 26 }}>
         {v.fpIsEmail && (
-          <Field icon="mail" value={v.fpEmail} onChange={v.onFpEmail} placeholder="Email on your account" keyboardType="email-address" />
+          <Field icon="mail" value={v.fpEmail} onChange={v.onFpEmail} placeholder="Email on your account" keyboardType="email-address" glass autoComplete="email" />
         )}
 
         {v.fpIsReset && (
           <>
-            <Field icon="lock" value={v.fpPass} onChange={v.onFpPass} placeholder="New password" secure />
+            <Field icon="lock" value={v.fpPass} onChange={v.onFpPass} placeholder="New password" secure glass autoComplete="new-password" />
             <StrengthBars strength={v.fpStrength} color={v.fpStrengthColor} />
             <Text style={{ fontFamily: FONTS[500], fontSize: 11.5, color: v.fpStrengthColor, marginTop: 6, marginBottom: 8 }}>{v.fpStrengthLabel}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ flex: 1 }}>
-                <Field icon="lock_reset" value={v.fpConfirm} onChange={v.onFpConfirm} placeholder="Confirm new password" secure />
+                <Field icon="lock_reset" value={v.fpConfirm} onChange={v.onFpConfirm} placeholder="Confirm new password" secure glass autoComplete="new-password" />
               </View>
               {!!v.fpMatchGlyph && <Icon name={v.fpMatchGlyph} size={22} color={v.fpMatchColor} />}
             </View>
@@ -46,18 +49,13 @@ export function Forgot() {
 
         {v.fpIsDone && (
           <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-            <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(15,123,61,.12)', alignItems: 'center', justifyContent: 'center' }}>
+            <Animated.View entering={pop} style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(15,123,61,.12)', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="check_circle" size={38} color={C.success} />
-            </View>
+            </Animated.View>
           </View>
         )}
 
-        {!!v.fpError && (
-          <View style={{ marginTop: 8, flexDirection: 'row', gap: 9, padding: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(180,35,24,.08)' }}>
-            <Icon name="error" size={19} color={C.danger} />
-            <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.danger }}>{v.fpError}</Text>
-          </View>
-        )}
+        {!!v.fpError && <Notice tone="error" icon="error" text={v.fpError} style={{ marginTop: 8 }} />}
 
         <Cta label={v.fpPrimaryLabel} on={v.fpPrimaryEnabled} onPress={v.fpPrimary} loading={v.fpLoading} style={{ marginTop: 16 }} />
 
@@ -70,6 +68,6 @@ export function Forgot() {
           </View>
         )}
       </View>
-    </ScrollView>
+    </ScrollView></Backdrop>
   );
 }
