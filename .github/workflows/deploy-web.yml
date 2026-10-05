@@ -31,7 +31,13 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Export static web build
-        run: npx expo export -p web --output-dir dist
+        # The commit id goes into the page and into /version.json, so open tabs and installed copies can tell
+        # when a newer build is live and fetch it (see app/+html.tsx).
+        env:
+          EXPO_PUBLIC_BUILD_ID: ${{ github.sha }}
+        run: |
+          echo "{\"id\":\"${{ github.sha }}\"}" > public/version.json
+          npx expo export -p web --output-dir dist
       - name: Prepare for GitHub Pages
         run: |
           touch dist/.nojekyll          # Pages runs Jekyll, which strips _expo/
