@@ -1,11 +1,10 @@
-import { Image, Text, TextInput, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
-import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { DateField } from '../ui/DateField';
-import { Field } from '../ui/Field';
+import { Field, TextArea } from '../ui/Field';
 import { Cta, Pill, Seg } from '../ui/bits';
 import { MapPicker } from '../ui/MapPicker';
 import { Sheet } from './SheetHost';
@@ -73,18 +72,7 @@ export function ReportSheet() {
           </View>
 
           <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Anything else?</Text>
-          <TextInput
-            value={v.rDesc}
-            onChangeText={v.onRDesc}
-            placeholder="Marks, contents, colour — details only the owner would know."
-            placeholderTextColor={C.faint}
-            multiline
-            style={{
-              minHeight: 92, padding: 16, borderRadius: 18, backgroundColor: C.fillSoft,
-              fontFamily: FONTS[500], fontSize: inputFont(14), lineHeight: 22, color: C.ink,
-              textAlignVertical: 'top', outlineStyle: 'none',
-            } as object}
-          />
+          <TextArea value={v.rDesc} onChange={v.onRDesc} placeholder="Marks, contents, colour — details only the owner would know." />
           <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>
             {v.photoRequired ? 'Photo (required)' : 'Photo'}
           </Text>

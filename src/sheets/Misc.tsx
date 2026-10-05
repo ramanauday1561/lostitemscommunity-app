@@ -1,10 +1,9 @@
-import { Text, TextInput, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
-import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
-import { Field } from '../ui/Field';
+import { Field, TextArea } from '../ui/Field';
 import { Avatar, Cta, Empty, Kicker, LoadGate, Pill } from '../ui/bits';
 import { Sheet } from './SheetHost';
 
@@ -16,16 +15,7 @@ export function NewThreadSheet() {
         {v.newTopics.map((t) => <Pill key={t.name} label={t.name} on={t.on} onPress={t.pick} />)}
       </View>
       <Field icon="title" value={v.ntTitle} onChange={v.onNtTitle} placeholder="Give it a clear title" />
-      <TextInput
-        value={v.ntBody} onChangeText={v.onNtBody}
-        placeholder="Share what you saw, where and when."
-        placeholderTextColor={C.faint} multiline
-        style={{
-          minHeight: 120, padding: 16, marginTop: 8, borderRadius: 18, backgroundColor: C.fillSoft,
-          fontFamily: FONTS[500], fontSize: inputFont(14), lineHeight: 22, color: C.ink,
-          textAlignVertical: 'top', outlineStyle: 'none',
-        } as object}
-      />
+      <TextArea value={v.ntBody} onChange={v.onNtBody} placeholder="Share what you saw, where and when." minHeight={120} style={{ marginTop: 8 }} />
     </Sheet>
   );
 }

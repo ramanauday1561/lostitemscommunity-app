@@ -1,5 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
+import { rise } from '../ui/motion';
 import { C, FONTS, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
@@ -20,8 +22,8 @@ export function Forum() {
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 12 }}>
         <AdSlot ad={v.adForum} />
         <LoadGate status={v.loads.forum} onRetry={v.retry.forum} what="threads" />
-        {v.threads.map((t) => (
-          <View key={t.id} style={[{
+        {v.threads.map((t, n) => (
+          <Animated.View key={t.id} entering={rise(n)} style={[{
             backgroundColor: C.white, borderRadius: 26, padding: 18,
             opacity: t.suspended ? 0.72 : 1,
           }, t.suspended ? { boxShadow: 'inset 0 0 0 1px rgba(180,35,24,.25), 0 1px 2px rgba(22,24,31,.05)' } : SHADOW.card]}>
@@ -62,7 +64,7 @@ export function Forum() {
                 </View>
               )}
             </View>
-          </View>
+          </Animated.View>
         ))}
         {v.threadsEmpty && (
           <Empty icon="forum" title="No posts in this topic" body="Switch topic, or start the conversation yourself." />

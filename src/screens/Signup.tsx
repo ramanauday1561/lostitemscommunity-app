@@ -4,13 +4,14 @@ import { C, FONTS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
-import { Cta, StrengthBars } from '../ui/bits';
+import { Cta, Notice, StrengthBars } from '../ui/bits';
+import { Backdrop } from '../ui/Aurora';
 import { SocialButtons } from '../ui/SocialButtons';
 
 export function Signup() {
   const v = useVals();
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 28, paddingBottom: 32, backgroundColor: C.bg, flexGrow: 1 }}>
+    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 28, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <Press style={{ width: 44, height: 44, marginLeft: -10, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
         scale={0.92} activeBg="rgba(22,24,31,.06)" onPress={v.goLogin}>
         <Icon name="arrow_back" size={24} color={C.ink} />
@@ -23,15 +24,15 @@ export function Signup() {
       </Text>
 
       <View style={{ marginTop: 26, gap: 8 }}>
-        <Field icon="person" value={v.suUser} onChange={v.onSuUser} placeholder="Choose a username" />
-        <Field icon="mail" value={v.suEmail} onChange={v.onSuEmail} placeholder="Email address" keyboardType="email-address" />
-        <Field icon="lock" value={v.suPass} onChange={v.onSuPass} placeholder="Password" secure />
+        <Field icon="person" value={v.suUser} onChange={v.onSuUser} placeholder="Choose a username" glass autoComplete="username" returnKeyType="next" />
+        <Field icon="mail" value={v.suEmail} onChange={v.onSuEmail} placeholder="Email address" keyboardType="email-address" glass autoComplete="email" returnKeyType="next" />
+        <Field icon="lock" value={v.suPass} onChange={v.onSuPass} placeholder="Password" secure glass autoComplete="new-password" />
         <StrengthBars strength={v.strength} color={v.strengthColor} />
         <Text style={{ fontFamily: FONTS[500], fontSize: 11.5, color: v.strengthColor, marginTop: 2 }}>{v.strengthLabel}</Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ flex: 1 }}>
-            <Field icon="lock_reset" value={v.suConfirm} onChange={v.onSuConfirm} placeholder="Confirm password" secure />
+            <Field icon="lock_reset" value={v.suConfirm} onChange={v.onSuConfirm} placeholder="Confirm password" secure glass autoComplete="new-password" />
           </View>
           {!!v.suMatchGlyph && <Icon name={v.suMatchGlyph} size={22} color={v.suMatchColor} />}
         </View>
@@ -49,18 +50,8 @@ export function Signup() {
           </Text>
         </Press>
 
-        {!!v.suError && (
-          <View style={{ flexDirection: 'row', gap: 9, padding: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(180,35,24,.08)' }}>
-            <Icon name="error" size={19} color={C.danger} />
-            <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.danger }}>{v.suError}</Text>
-          </View>
-        )}
-        {!!v.suInfo && (
-          <View style={{ flexDirection: 'row', gap: 9, padding: 14, paddingHorizontal: 16, borderRadius: 16, backgroundColor: 'rgba(11,107,203,.08)' }}>
-            <Icon name="mark_email_read" size={19} color={C.primary} />
-            <Text style={{ flex: 1, fontFamily: FONTS[500], fontSize: 12.5, lineHeight: 19, color: C.primary }}>{v.suInfo}</Text>
-          </View>
-        )}
+        {!!v.suError && <Notice tone="error" icon="error" text={v.suError} />}
+        {!!v.suInfo && <Notice tone="info" icon="mark_email_read" text={v.suInfo} />}
 
         <Cta label="Create account" on={v.signupEnabled} onPress={v.submitSignup} loading={v.signupLoading} style={{ marginTop: 8 }} />
 
@@ -73,6 +64,6 @@ export function Signup() {
           </Press>
         </View>
       </View>
-    </ScrollView>
+    </ScrollView></Backdrop>
   );
 }

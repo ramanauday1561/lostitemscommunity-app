@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useApp, useVals } from '../StoreProvider';
 import { C, FONTS, MONO } from '../theme/tokens';
-import { inputFont } from '../theme/input';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Avatar } from '../ui/bits';
 import { Loader } from '../ui/Loader';
+import { ComposerField } from '../ui/Field';
 
 export function Bubble({ m }: { m: { text: string; time: string; mine: boolean } }) {
   return (
@@ -32,13 +32,7 @@ export function Composer({ value, onChange, onSend, placeholder, sending }: {
   const on = !!value.trim() && !sending;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      <View style={{ flex: 1, minHeight: 52, justifyContent: 'center', paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.fillSoft }}>
-        <TextInput
-          value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={C.faint}
-          onSubmitEditing={onSend} returnKeyType="send"
-          style={{ fontFamily: FONTS[500], fontSize: inputFont(14), color: C.ink, outlineStyle: 'none' } as object}
-        />
-      </View>
+      <ComposerField value={value} onChange={onChange} onSend={onSend} placeholder={placeholder} />
       <Press style={{
         width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
         backgroundColor: on ? C.primary : C.fill,

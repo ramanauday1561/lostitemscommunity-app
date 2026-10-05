@@ -4,17 +4,28 @@ import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
+import { useEffect } from 'react';
+import { rise, SPRING } from '../ui/motion';
 import { Avatar, Card, Chip, Empty, Kicker, LoadGate } from '../ui/bits';
 
 const pad = { padding: 20, paddingTop: 6, paddingBottom: 28, gap: 12 };
+
+/** A chart bar that grows up from the baseline, one after the other. */
+function Bar({ height, on, index }: { height: number; on: boolean; index: number }) {
+  const h = useSharedValue(0);
+  useEffect(() => { h.value = withDelay(index * 55, withSpring(height, SPRING)); }, [height, index, h]);
+  const style = useAnimatedStyle(() => ({ height: h.value }));
+  return <Animated.View style={[{ width: '100%', maxWidth: 24, borderRadius: 8, backgroundColor: on ? C.primary : C.chartTrack }, style]} />;
+}
 
 export function Moderation() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        {v.modStats.map((s) => (
-          <Card key={s.label} style={{ flex: 1, padding: 14, borderRadius: 22 }}>
+        {v.modStats.map((s, n) => (
+          <Card key={s.label} enter={n} style={{ flex: 1, padding: 14, borderRadius: 22 }}>
             <Text style={{ fontFamily: FONTS[800], fontSize: 22, color: s.color }}>{s.value}</Text>
             <Text style={{ fontFamily: FONTS[500], fontSize: 10.5, color: C.subtle, marginTop: 3 }}>{s.label}</Text>
           </Card>
@@ -22,8 +33,8 @@ export function Moderation() {
       </View>
 
       <LoadGate status={v.loads.moderation} onRetry={v.retry.moderation} what="the review queue" />
-      {v.flagged.map((f) => (
-        <Card key={f.key}>
+      {v.flagged.map((f, n) => (
+        <Card key={f.key} enter={n + 1}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(180,35,24,.1)', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="flag" size={19} color={C.danger} />
@@ -60,8 +71,8 @@ export function SupportInbox() {
   return (
     <ScrollView contentContainerStyle={pad}>
       <LoadGate status={v.loads.support} onRetry={v.retry.support} what="the support inbox" />
-      {v.supportInbox.map((i) => (
-        <Card key={i.id}>
+      {v.supportInbox.map((i, n) => (
+        <Card key={i.id} enter={n}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Avatar text={i.ini} size={38} bg={C.bg} color={C.ink} />
             <View style={{ flex: 1, minWidth: 0 }}>
@@ -97,12 +108,12 @@ export function Analysis() {
   return (
     <ScrollView contentContainerStyle={pad}>
       <LoadGate status={v.loads.analysis} onRetry={v.retry.analysis} what="analysis" />
-      <Card>
+      <Card enter={0}>
         <Kicker>Reports this week</Kicker>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 110, marginTop: 16, gap: 6 }}>
           {v.bars.map((b, i) => (
             <View key={i} style={{ flex: 1, alignItems: 'center', gap: 8 }}>
-              <View style={{ width: '100%', maxWidth: 24, height: b.height, borderRadius: 8, backgroundColor: b.on ? C.primary : C.chartTrack }} />
+              <Bar height={b.height} on={b.on} index={i} />
               <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.lighter }}>{b.label}</Text>
             </View>
           ))}
@@ -110,7 +121,7 @@ export function Analysis() {
         </View>
       </Card>
 
-      <Card>
+      <Card enter={1}>
         <Kicker>Flagged keywords</Kicker>
         {v.keywordsEmpty && <Text style={{ fontFamily: FONTS[500], fontSize: 12.5, color: C.subtle, marginTop: 12 }}>No keywords flagged yet.</Text>}
         <View style={{ gap: 10, marginTop: 12 }}>
@@ -138,8 +149,8 @@ export function Members() {
       </View>
       <ScrollView contentContainerStyle={{ ...pad, paddingTop: 14 }}>
         <LoadGate status={v.loads.members} onRetry={v.retry.members} what="members" />
-        {v.members.map((m) => (
-          <Card key={m.key}>
+        {v.members.map((m, n) => (
+          <Card key={m.key} enter={n}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
               <Avatar text={m.ini} size={40} bg={C.bg} color={C.ink} />
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -174,7 +185,7 @@ export function Ads() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
-      <Card>
+      <Card enter={0}>
         <Kicker>Revenue this month</Kicker>
         <Text style={{ fontFamily: FONTS[800], fontSize: 32, color: C.ink, marginTop: 6 }}>{v.adRevenue}</Text>
         {!!v.adRevenueDelta && <Text style={{ fontFamily: FONTS[600], fontSize: 11.5, color: C.success, marginTop: 2 }}>{v.adRevenueDelta}</Text>}
@@ -189,8 +200,8 @@ export function Ads() {
       </Card>
 
       <LoadGate status={v.loads.ads} onRetry={v.retry.ads} what="ad placements" />
-      {v.adSlots.map((a) => (
-        <Card key={a.id}>
+      {v.adSlots.map((a, n) => (
+        <Card key={a.id} enter={n + 1}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
             <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
               <Icon name={a.screenIcon} size={20} color={C.ink} />
@@ -247,8 +258,9 @@ export function Messages() {
   return (
     <ScrollView contentContainerStyle={pad}>
       <LoadGate status={v.loads.conversations} onRetry={v.retry.conversations} what="conversations" />
-      {v.conversations.map((c) => (
-        <Press key={c.itemId} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+      {v.conversations.map((c, n) => (
+        <Animated.View key={c.itemId} entering={rise(n)}>
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
           scale={0.98} onPress={c.open}>
           <Avatar text={c.ini} size={44} bg={C.bg} color={C.ink} />
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -268,6 +280,7 @@ export function Messages() {
             </View>
           )}
         </Press>
+        </Animated.View>
       ))}
       {v.noConversations && (
         <Empty icon="chat_bubble" title="No conversations yet"
