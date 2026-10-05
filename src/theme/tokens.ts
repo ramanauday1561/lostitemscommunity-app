@@ -75,3 +75,13 @@ export const initials = (handle: string) => {
   const s = parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : String(handle || '?').slice(0, 2);
   return s.toUpperCase();
 };
+
+/**
+ * Card surface: a translucent white fill with a 1px white rim, so every card, list row and tile reads as one
+ * frosted layer over the app backdrop. The shadow stays whatever each card already had (see SHADOW).
+ */
+export const GLASS = {
+  backgroundColor: 'rgba(255,255,255,.78)',
+  borderWidth: 1,
+  borderColor: '#FFFFFF',
+} as const;

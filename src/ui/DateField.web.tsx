@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from './Icon';
 
 /** 'YYYY-MM-DD' for today in the viewer's time zone (the picker's upper limit: nothing is lost in the future). */
@@ -21,7 +21,7 @@ export function DateField({ icon, value, onChange, placeholder }: {
   const shown = label(value);
   return (
     <View style={[{
-      flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.white, borderRadius: 18,
+      flexDirection: 'row', alignItems: 'center', gap: 12, ...GLASS, borderRadius: 18,
       paddingHorizontal: 16, paddingVertical: 16, minHeight: 56,
     }, SHADOW.field]}>
       <Icon name={icon} size={21} color={C.faint} />

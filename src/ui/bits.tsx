@@ -1,7 +1,7 @@
 import { Text, View, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
+import { C, FONTS, MONO, SHADOW, GLASS } from '../theme/tokens';
 import { chip, chipText, cta, ctaText, pill, pillText, seg, segText } from '../theme/styles';
 import { Press } from './Press';
 import { Loader } from './Loader';
@@ -80,7 +80,7 @@ export function Kicker({ children, color = C.faint }: { children: string; color?
 export function Card({ children, style, enter }: { children: React.ReactNode; style?: ViewStyle; enter?: number }) {
   return (
     <Animated.View entering={enter === undefined ? undefined : rise(enter)}
-      style={[{ backgroundColor: 'rgba(255,255,255,.88)', borderWidth: 1, borderColor: 'rgba(255,255,255,.9)', borderRadius: 26, padding: 18 }, SHADOW.card, style]}>
+      style={[{ ...GLASS, borderRadius: 26, padding: 18 }, SHADOW.card, style]}>
       {children}
     </Animated.View>
   );
@@ -126,7 +126,7 @@ export function Empty({ icon, title, body }: { icon: string; title: string; body
   return (
     <Animated.View entering={rise(0)} style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 }}>
       <Animated.View entering={pop.delay(120)} style={{
-        width: 64, height: 64, borderRadius: 32, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center',
+        width: 64, height: 64, borderRadius: 32, ...GLASS, alignItems: 'center', justifyContent: 'center',
       }}>
         <Icon name={icon} size={30} color={C.lighter} />
       </Animated.View>

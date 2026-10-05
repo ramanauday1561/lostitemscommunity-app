@@ -2,7 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
 import { rise } from '../ui/motion';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { AdSlot } from '../ui/AdSlot';
@@ -24,7 +24,7 @@ export function Forum() {
         <LoadGate status={v.loads.forum} onRetry={v.retry.forum} what="threads" hasData={v.threads.length > 0} />
         {v.threads.map((t, n) => (
           <Animated.View key={t.id} entering={rise(n)} style={[{
-            backgroundColor: C.white, borderRadius: 26, padding: 18,
+            ...GLASS, borderRadius: 26, padding: 18,
             opacity: t.suspended ? 0.72 : 1,
           }, t.suspended ? { boxShadow: 'inset 0 0 0 1px rgba(180,35,24,.25), 0 1px 2px rgba(22,24,31,.05)' } : SHADOW.card]}>
             <Press scale={0.995} onPress={t.open}>

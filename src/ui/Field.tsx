@@ -3,7 +3,7 @@ import { Pressable, TextInput, View, type KeyboardTypeOptions, type ReturnKeyTyp
 import Animated, {
   FadeIn, FadeOut, interpolateColor, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming,
 } from 'react-native-reanimated';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, GLASS, SHADOW } from '../theme/tokens';
 import { inputFont } from '../theme/input';
 import { Icon } from './Icon';
 import { Press } from './Press';
@@ -59,13 +59,13 @@ export function Field({
 }) {
   const ref = useRef<TextInput>(null);
   const [reveal, setReveal] = useState(false);
-  const ring = useRing(glass ? 'rgba(255,255,255,.9)' : 'rgba(11,107,203,0)', error);
+  const ring = useRing('#FFFFFF', error);
   const h = compact ? 46 : 56;
   const hidden = !!secure && !reveal;
 
   return (
     <Animated.View style={[{
-      backgroundColor: glass ? 'rgba(255,255,255,.62)' : C.white,
+      ...(glass ? { backgroundColor: 'rgba(255,255,255,.62)' } : { backgroundColor: GLASS.backgroundColor }),
       borderRadius: compact ? 16 : 18, borderWidth: 1.5, minHeight: h,
     }, glass ? SHADOW.raised : SHADOW.field, ring.style, style]}>
       <Pressable

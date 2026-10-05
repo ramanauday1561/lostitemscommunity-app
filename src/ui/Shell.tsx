@@ -27,7 +27,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (!framed) {
     return (
       <TopInsetContext.Provider value={top}>
-        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}><Aurora />{children}</View>
+        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}>
+          <Aurora />
+          {children}
+        </View>
       </TopInsetContext.Provider>
     );
   }
@@ -39,8 +42,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         overflow: 'hidden', paddingTop: MIN_TOP,
         boxShadow: '0 40px 80px -20px rgba(22,24,31,.35), 0 0 0 1px rgba(22,24,31,.1)',
       }}>
-        <Aurora />
-        <TopInsetContext.Provider value={MIN_TOP}>{children}</TopInsetContext.Provider>
+        <TopInsetContext.Provider value={MIN_TOP}>
+          <Aurora />
+          {children}
+        </TopInsetContext.Provider>
       </View>
     </View>
   );

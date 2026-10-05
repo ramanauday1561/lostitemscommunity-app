@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Image, Text, View } from 'react-native';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { installMode, isIos, isSnoozed, type InstallMode } from '../lib/installLogic';
 import { Icon } from './Icon';
 import { Press } from './Press';
@@ -75,7 +75,7 @@ export function InstallBanner() {
   return (
     <View
       accessibilityRole="alert"
-      style={[{ marginHorizontal: 12, marginBottom: 8, backgroundColor: C.white, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 }, SHADOW.card]}
+      style={[{ marginHorizontal: 12, marginBottom: 8, ...GLASS, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 12 }, SHADOW.card]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Image source={{ uri: '/icon-192.png' }} style={{ width: 38, height: 38, borderRadius: 10 }} />

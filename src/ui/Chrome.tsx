@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from './Icon';
 import { Press } from './Press';
 import { Kicker } from './bits';
@@ -28,7 +28,7 @@ export function Header() {
       </View>
 
       {v.showInbox && (
-        <Press style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
+        <Press style={[{ width: 44, height: 44, borderRadius: 22, ...GLASS, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
           scale={0.94} onPress={v.openMessages}>
           <Icon name="chat" size={22} color={C.ink} />
           {v.hasUnread && (
@@ -44,7 +44,7 @@ export function Header() {
       )}
 
       {v.showBell && (
-        <Press style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
+        <Press style={[{ width: 44, height: 44, borderRadius: 22, ...GLASS, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
           scale={0.94} onPress={v.openNotifications}>
           <Icon name="notifications" size={22} color={C.ink} />
           {v.hasUnreadNotifs && (
@@ -59,7 +59,7 @@ export function Header() {
         </Press>
       )}
 
-      <Press style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
+      <Press style={[{ width: 44, height: 44, borderRadius: 22, ...GLASS, alignItems: 'center', justifyContent: 'center' }, SHADOW.raised]}
         scale={0.94} onPress={v.openProfile}>
         <Text style={{ fontFamily: FONTS[700], fontSize: 12, color: C.primary }}>{v.initials}</Text>
       </Press>
