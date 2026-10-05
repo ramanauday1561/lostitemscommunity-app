@@ -4,7 +4,6 @@ import Animated, {
   Easing, FadeInDown, ZoomIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
-import { Backdrop } from '../ui/Aurora';
 import { SPRING } from '../ui/motion';
 import { img } from '../data/assets';
 import { C, FONTS, SHADOW } from '../theme/tokens';
@@ -52,7 +51,6 @@ export function Welcome() {
   const compact = useWindowDimensions().height < 700;
   const card = room ? Math.min(room.w, room.h - ROOM_PAD * 2, MAX_CARD) : 0;
   return (
-    <Backdrop tint={v.slide.tint === '#E2ECF7' ? C.primary : v.slide.tint}>
     <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: compact ? 16 : 28 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -109,6 +107,5 @@ export function Welcome() {
         </View>
       </View>
     </View>
-    </Backdrop>
   );
 }

@@ -9,7 +9,7 @@ export function ItemCard({ item, onPress }: {
   onPress: () => void;
 }) {
   return (
-    <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+    <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: 24, backgroundColor: 'rgba(255,255,255,.88)', borderWidth: 1, borderColor: 'rgba(255,255,255,.9)' }, SHADOW.card]}
       scale={0.98} onPress={onPress}>
       <PhotoFrame width={60} uri={item.photo} icon={item.icon} label={`Photo of ${item.title}`} />
       <View style={{ flex: 1, minWidth: 0 }}>

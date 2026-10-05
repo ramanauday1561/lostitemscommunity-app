@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C } from '../theme/tokens';
+import { Aurora } from './Aurora';
 
 /** Breathing room above the header, so content never sits flush against the
  *  top edge now that the prototype's mock status bar is gone. On a phone this
@@ -26,7 +27,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   if (!framed) {
     return (
       <TopInsetContext.Provider value={top}>
-        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}>{children}</View>
+        <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: top }}><Aurora />{children}</View>
       </TopInsetContext.Provider>
     );
   }
@@ -38,6 +39,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         overflow: 'hidden', paddingTop: MIN_TOP,
         boxShadow: '0 40px 80px -20px rgba(22,24,31,.35), 0 0 0 1px rgba(22,24,31,.1)',
       }}>
+        <Aurora />
         <TopInsetContext.Provider value={MIN_TOP}>{children}</TopInsetContext.Provider>
       </View>
     </View>

@@ -80,7 +80,7 @@ export function Kicker({ children, color = C.faint }: { children: string; color?
 export function Card({ children, style, enter }: { children: React.ReactNode; style?: ViewStyle; enter?: number }) {
   return (
     <Animated.View entering={enter === undefined ? undefined : rise(enter)}
-      style={[{ backgroundColor: C.white, borderRadius: 26, padding: 18 }, SHADOW.card, style]}>
+      style={[{ backgroundColor: 'rgba(255,255,255,.88)', borderWidth: 1, borderColor: 'rgba(255,255,255,.9)', borderRadius: 26, padding: 18 }, SHADOW.card, style]}>
       {children}
     </Animated.View>
   );
