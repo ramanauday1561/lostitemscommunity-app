@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
+import { C, FONTS, GLASS, MONO, SHADOW } from '../theme/tokens';
 import { PhotoFrame } from './PhotoFrame';
 import { Press } from './Press';
 import { Chip } from './bits';
@@ -9,7 +9,7 @@ export function ItemCard({ item, onPress }: {
   onPress: () => void;
 }) {
   return (
-    <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+    <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: 24, ...GLASS }, SHADOW.card]}
       scale={0.98} onPress={onPress}>
       <PhotoFrame width={60} uri={item.photo} icon={item.icon} label={`Photo of ${item.title}`} />
       <View style={{ flex: 1, minWidth: 0 }}>

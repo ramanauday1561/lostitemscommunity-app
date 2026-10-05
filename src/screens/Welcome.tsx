@@ -4,10 +4,9 @@ import Animated, {
   Easing, FadeInDown, ZoomIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { useVals } from '../StoreProvider';
-import { Backdrop } from '../ui/Aurora';
 import { SPRING } from '../ui/motion';
 import { img } from '../data/assets';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Cta, Kicker } from '../ui/bits';
@@ -52,7 +51,6 @@ export function Welcome() {
   const compact = useWindowDimensions().height < 700;
   const card = room ? Math.min(room.w, room.h - ROOM_PAD * 2, MAX_CARD) : 0;
   return (
-    <Backdrop tint={v.slide.tint === '#E2ECF7' ? C.primary : v.slide.tint}>
     <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: compact ? 16 : 28 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
@@ -92,7 +90,7 @@ export function Welcome() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: compact ? 14 : 20 }}>
           {v.showWelcomeBack && (
             <Press
-              style={[{ width: 56, height: 56, borderRadius: 20, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' }, SHADOW.fab]}
+              style={[{ width: 56, height: 56, borderRadius: 20, ...GLASS, alignItems: 'center', justifyContent: 'center' }, SHADOW.fab]}
               scale={0.94} onPress={v.prevSlide}
             >
               <Icon name="arrow_back" size={23} color={C.ink} />
@@ -109,6 +107,5 @@ export function Welcome() {
         </View>
       </View>
     </View>
-    </Backdrop>
   );
 }

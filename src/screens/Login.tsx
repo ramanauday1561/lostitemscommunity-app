@@ -6,7 +6,6 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import { Cta, Notice } from '../ui/bits';
-import { Backdrop } from '../ui/Aurora';
 import { SocialButtons } from '../ui/SocialButtons';
 
 function CheckBox({ on }: { on: boolean }) {
@@ -24,7 +23,7 @@ function CheckBox({ on }: { on: boolean }) {
 export function Login() {
   const v = useVals();
   return (
-    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 32, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 32, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Image source={img('logo.png')} style={{ width: 46, height: 46, marginLeft: -4 }} resizeMode="contain" />
         <Text style={{ fontFamily: FONTS[700], fontSize: 15, color: C.ink }}>Lost Items Community</Text>
@@ -63,6 +62,6 @@ export function Login() {
           <Text style={{ fontFamily: FONTS[700], fontSize: 13, color: C.primary }}>Join free in 30 seconds</Text>
         </Press>
       </View>
-    </ScrollView></Backdrop>
+    </ScrollView>
   );
 }

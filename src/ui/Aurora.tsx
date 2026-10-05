@@ -23,7 +23,7 @@ function Orb({ color, size, left, top, dx, dy, ms }: {
 }
 
 /**
- * Soft drifting colour behind the sign-in screens, so the glass inputs have something to be glass over.
+ * Soft drifting colour behind every screen (mounted once in the Shell), so the glass surfaces have something to be glass over.
  * Only transforms animate (no blur), so it stays cheap on every platform.
  */
 export function Aurora({ tint = C.primary }: { tint?: string }) {
@@ -38,12 +38,3 @@ export function Aurora({ tint = C.primary }: { tint?: string }) {
   );
 }
 
-/** Full-screen aurora behind a sign-in style screen's content. */
-export function Backdrop({ children, tint }: { children: React.ReactNode; tint?: string }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <Aurora tint={tint} />
-      {children}
-    </View>
-  );
-}

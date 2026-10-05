@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Press } from './Press';
 import { Divider } from './bits';
 
@@ -16,7 +16,7 @@ export function SocialButtons() {
           <Press
             key={s.name}
             style={[{
-              flex: 1, minHeight: 64, borderRadius: 20, backgroundColor: C.white,
+              flex: 1, minHeight: 64, borderRadius: 20, ...GLASS,
               alignItems: 'center', justifyContent: 'center', gap: 7,
             }, SHADOW.tile]}
             scale={0.95} activeBg={C.fillSoft} onPress={s.go} accessibilityLabel={`Continue with ${s.name}`}

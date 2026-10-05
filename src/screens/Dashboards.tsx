@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useVals } from '../StoreProvider';
-import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
+import { C, FONTS, MONO, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Card } from '../ui/bits';
@@ -74,7 +74,7 @@ export function UserDash() {
       </View>
       {v.shortcuts.map((s, n) => (
         <Animated.View key={s.title} entering={rise(n + 3)}>
-        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 13, padding: 16, borderRadius: 24, ...GLASS }, SHADOW.card]}
           scale={0.98} onPress={s.go}>
           <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name={s.icon} size={21} color={C.primary} />
@@ -98,7 +98,7 @@ function SponsoredSlot() {
   const ad = v.adHome as { live: boolean; id?: string; icon?: string; size?: string; campaign?: string; advertiser?: string };
   if (!ad.live) return null;
   return (
-    <View style={[{ backgroundColor: C.white, borderRadius: 26, padding: 8 }, SHADOW.card]}>
+    <View style={[{ ...GLASS, borderRadius: 26, padding: 8 }, SHADOW.card]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 10, paddingTop: 8, paddingBottom: 10 }}>
         <Text style={{ fontFamily: MONO[600], fontSize: 10, letterSpacing: 1.4, color: C.lighter }}>SPONSORED</Text>
         <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.barIdle }}>{ad.id}</Text>
@@ -161,7 +161,7 @@ export function FreshDash() {
           title="Set up your account"
           badge={<Text style={{ fontFamily: MONO[600], fontSize: 11, color: C.subtle }}>{v.setupProgress}</Text>}
         />
-        <View style={[{ backgroundColor: C.white, borderRadius: 26, padding: 8 }, SHADOW.card]}>
+        <View style={[{ ...GLASS, borderRadius: 26, padding: 8 }, SHADOW.card]}>
           {v.setupSteps.map((s) => (
             <Press key={s.title} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 64, paddingVertical: 10, paddingHorizontal: 12 }}
               scale={1} onPress={s.go}>
@@ -184,7 +184,7 @@ export function FreshDash() {
 
       <SponsoredSlot />
 
-      <View style={[{ flexDirection: 'row', gap: 12, padding: 18, borderRadius: 26, backgroundColor: C.white }, SHADOW.card]}>
+      <View style={[{ flexDirection: 'row', gap: 12, padding: 18, borderRadius: 26, ...GLASS }, SHADOW.card]}>
         <View style={{ width: 40, height: 40, borderRadius: 14, backgroundColor: 'rgba(11,107,203,.1)', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="inbox" size={21} color={C.primary} />
         </View>
@@ -205,7 +205,7 @@ export function AdminDash() {
     <ScrollView contentContainerStyle={page}>
       {/* Ads are off until real campaigns exist: no entry point to an empty screen. */}
       {v.adSlots.length > 0 && (
-        <Press entering={rise(0)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+        <Press entering={rise(0)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, ...GLASS, borderRadius: 26 }, SHADOW.card]}
           scale={0.985} onPress={v.goAds}>
           <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="payments" size={23} color={C.success} />
@@ -238,7 +238,7 @@ export function AdminDash() {
       </View>
       </Hero>
 
-      <Press entering={rise(2)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 16, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+      <Press entering={rise(2)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, padding: 16, borderRadius: 24, ...GLASS }, SHADOW.card]}
         scale={0.985} onPress={v.goSupportInbox}>
         <Icon name="support_agent" size={22} color={C.primary} />
         <View style={{ flex: 1 }}>
@@ -256,7 +256,7 @@ export function AdminDash() {
         contentContainerStyle={{ gap: 12, paddingHorizontal: 20, paddingTop: 4, paddingBottom: 12 }}
       >
         {v.adminMetrics.map((m, n) => (
-          <Animated.View key={m.label} entering={rise(n + 3)} style={[{ width: 176, backgroundColor: C.white, borderRadius: 24, padding: 18 }, SHADOW.card]}>
+          <Animated.View key={m.label} entering={rise(n + 3)} style={[{ width: 176, ...GLASS, borderRadius: 24, padding: 18 }, SHADOW.card]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <Icon name={m.icon} size={16} color={m.iconColor} />
               <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle }}>{m.label}</Text>
@@ -267,7 +267,7 @@ export function AdminDash() {
         ))}
       </ScrollView>
 
-      <Press entering={rise(4)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, backgroundColor: C.white, borderRadius: 26 }, SHADOW.card]}
+      <Press entering={rise(4)} style={[{ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 76, paddingHorizontal: 18, ...GLASS, borderRadius: 26 }, SHADOW.card]}
         scale={0.985} onPress={v.goAnalysis}>
         <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(11,107,203,.1)', alignItems: 'center', justifyContent: 'center' }}>
           <Icon name="analytics" size={23} color={C.primary} />
@@ -289,7 +289,7 @@ export function AdminDash() {
         </View>
         <View style={{ gap: 8 }}>
           {v.flagged.map((f, n) => (
-            <Animated.View key={f.id} entering={rise(n)} style={[{ backgroundColor: C.white, borderRadius: 24, padding: 16 }, SHADOW.card]}>
+            <Animated.View key={f.id} entering={rise(n)} style={[{ ...GLASS, borderRadius: 24, padding: 16 }, SHADOW.card]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                 <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.subtle }}>{f.id}</Text>
                 <View style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(180,35,24,.1)' }}>
@@ -311,7 +311,7 @@ export function AdminDash() {
             </Animated.View>
           ))}
           {v.flaggedEmpty && (
-            <View style={{ backgroundColor: C.white, borderRadius: 24, paddingVertical: 40, paddingHorizontal: 24, alignItems: 'center', boxShadow: '0 1px 2px rgba(22,24,31,.05)' }}>
+            <View style={{ ...GLASS, borderRadius: 24, paddingVertical: 40, paddingHorizontal: 24, alignItems: 'center', boxShadow: '0 1px 2px rgba(22,24,31,.05)' }}>
               <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(15,123,61,.1)', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="task_alt" size={26} color={C.success} />
               </View>

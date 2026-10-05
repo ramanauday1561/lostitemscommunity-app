@@ -1,6 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useVals } from '../StoreProvider';
-import { C, FONTS, MONO, SHADOW } from '../theme/tokens';
+import { C, FONTS, MONO, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
@@ -260,7 +260,7 @@ export function Messages() {
       <LoadGate status={v.loads.conversations} onRetry={v.retry.conversations} what="conversations" hasData={v.conversations.length > 0} />
       {v.conversations.map((c, n) => (
         <Animated.View key={c.itemId} entering={rise(n)}>
-        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}
+        <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, ...GLASS }, SHADOW.card]}
           scale={0.98} onPress={c.open}>
           <Avatar text={c.ini} size={44} bg={C.bg} color={C.ink} />
           <View style={{ flex: 1, minWidth: 0 }}>

@@ -5,13 +5,12 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import { Cta, Notice, StrengthBars } from '../ui/bits';
-import { Backdrop } from '../ui/Aurora';
 import { SocialButtons } from '../ui/SocialButtons';
 
 export function Signup() {
   const v = useVals();
   return (
-    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 28, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 28, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <Press style={{ width: 44, height: 44, marginLeft: -10, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
         scale={0.92} activeBg="rgba(22,24,31,.06)" onPress={v.goLogin}>
         <Icon name="arrow_back" size={24} color={C.ink} />
@@ -64,6 +63,6 @@ export function Signup() {
           </Press>
         </View>
       </View>
-    </ScrollView></Backdrop>
+    </ScrollView>
   );
 }

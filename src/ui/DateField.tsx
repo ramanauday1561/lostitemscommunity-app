@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Icon } from './Icon';
 import { Press } from './Press';
 
@@ -36,7 +36,7 @@ export function DateField({ icon, value, onChange, placeholder }: {
   return (
     <View>
       <Press
-        style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.white, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 16, minHeight: 56 }, SHADOW.field]}
+        style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, ...GLASS, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 16, minHeight: 56 }, SHADOW.field]}
         scale={0.99}
         onPress={() => {
           if (Platform.OS === 'android') {
@@ -51,7 +51,7 @@ export function DateField({ icon, value, onChange, placeholder }: {
         <Icon name={open ? 'expand_less' : 'expand_more'} size={22} color={C.faint} />
       </Press>
       {open && Platform.OS === 'ios' && (
-        <View style={{ marginTop: 8, borderRadius: 18, backgroundColor: C.white, alignItems: 'center', paddingVertical: 6 }}>
+        <View style={{ marginTop: 8, borderRadius: 18, ...GLASS, alignItems: 'center', paddingVertical: 6 }}>
           <DateTimePicker value={fromIso(value)} mode="date" display="inline" maximumDate={max} onChange={onPicked} accentColor={C.primary} />
         </View>
       )}

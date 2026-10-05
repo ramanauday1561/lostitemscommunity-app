@@ -5,14 +5,13 @@ import { Icon } from '../ui/Icon';
 import { Press } from '../ui/Press';
 import { Field } from '../ui/Field';
 import Animated from 'react-native-reanimated';
-import { Backdrop } from '../ui/Aurora';
 import { pop } from '../ui/motion';
 import { Cta, Kicker, Notice, StrengthBars } from '../ui/bits';
 
 export function Forgot() {
   const v = useVals();
   return (
-    <Backdrop><ScrollView contentContainerStyle={{ padding: 24, paddingTop: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
       <Press style={{ width: 44, height: 44, marginLeft: -10, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
         scale={0.92} activeBg="rgba(22,24,31,.06)" onPress={v.fpBack}>
         <Icon name="arrow_back" size={24} color={C.ink} />
@@ -68,6 +67,6 @@ export function Forgot() {
           </View>
         )}
       </View>
-    </ScrollView></Backdrop>
+    </ScrollView>
   );
 }

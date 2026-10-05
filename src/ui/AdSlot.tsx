@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { C, FONTS, MONO } from '../theme/tokens';
+import { C, FONTS, MONO, GLASS } from '../theme/tokens';
 import { Icon } from './Icon';
 import { Press } from './Press';
 
@@ -9,7 +9,7 @@ export function AdSlot({ ad }: { ad: { live: boolean; campaign?: string; adverti
   return (
     <Press style={{
       flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 88, padding: 14,
-      borderRadius: 22, backgroundColor: C.white, boxShadow: '0 1px 2px rgba(22,24,31,.05)',
+      borderRadius: 22, ...GLASS, boxShadow: '0 1px 2px rgba(22,24,31,.05)',
     }} scale={0.99}>
       <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: C.fillSoft, alignItems: 'center', justifyContent: 'center' }}>
         <Icon name={ad.icon || 'campaign'} size={22} color={C.muted} />

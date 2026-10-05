@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useApp } from '../StoreProvider';
 import { rise } from '../ui/motion';
-import { C, FONTS, SHADOW } from '../theme/tokens';
+import { C, FONTS, SHADOW, GLASS } from '../theme/tokens';
 import { Field } from '../ui/Field';
 import { AdSlot } from '../ui/AdSlot';
 import { ItemCard } from '../ui/ItemCard';
@@ -57,7 +57,7 @@ export function Registry() {
           </Animated.View>
         ))}
         {!reloading && v.registryHasMore && (
-          <Press style={{ minHeight: 48, borderRadius: 24, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}
+          <Press style={{ minHeight: 48, borderRadius: 24, ...GLASS, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}
             scale={0.97} onPress={v.loadMoreRegistry}>
             {v.registryLoadingMore
               ? <Loader size={10} />
