@@ -142,11 +142,14 @@ export function Empty({ icon, title, body }: { icon: string; title: string; body
  * Loading / error state for a Supabase-backed list. Renders nothing when idle or ready, so
  * loaded lists are untouched; the genuine empty state is each screen's own
  * <Empty>, which the selectors only show once the list is 'ready'.
+ *
+ * `hasData`: rows from an earlier load are already on screen, so a refresh runs quietly instead of putting a spinner
+ * on top of a list that is already there. The spinner is for the first load, when there is nothing else to look at.
  */
-export function LoadGate({ status, onRetry, what }: {
-  status: 'idle' | 'loading' | 'ready' | 'error'; onRetry: () => void; what: string;
+export function LoadGate({ status, onRetry, what, hasData = false }: {
+  status: 'idle' | 'loading' | 'ready' | 'error'; onRetry: () => void; what: string; hasData?: boolean;
 }) {
-  if (status === 'loading') {
+  if (status === 'loading' && !hasData) {
     return (
       <View style={{ alignItems: 'center', paddingVertical: 24, gap: 0 }}>
         <Loader />

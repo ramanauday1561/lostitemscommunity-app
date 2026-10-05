@@ -32,7 +32,7 @@ export function Moderation() {
         ))}
       </View>
 
-      <LoadGate status={v.loads.moderation} onRetry={v.retry.moderation} what="the review queue" />
+      <LoadGate status={v.loads.moderation} onRetry={v.retry.moderation} what="the review queue" hasData={v.flagged.length > 0} />
       {v.flagged.map((f, n) => (
         <Card key={f.key} enter={n + 1}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -70,7 +70,7 @@ export function SupportInbox() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
-      <LoadGate status={v.loads.support} onRetry={v.retry.support} what="the support inbox" />
+      <LoadGate status={v.loads.support} onRetry={v.retry.support} what="the support inbox" hasData={v.supportInbox.length > 0} />
       {v.supportInbox.map((i, n) => (
         <Card key={i.id} enter={n}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -107,7 +107,7 @@ export function Analysis() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
-      <LoadGate status={v.loads.analysis} onRetry={v.retry.analysis} what="analysis" />
+      <LoadGate status={v.loads.analysis} onRetry={v.retry.analysis} what="analysis" hasData={v.bars.length > 0 || v.keywords.length > 0} />
       <Card enter={0}>
         <Kicker>Reports this week</Kicker>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 110, marginTop: 16, gap: 6 }}>
@@ -148,7 +148,7 @@ export function Members() {
         <Field icon="search" value={v.uq} onChange={v.onUserQuery} placeholder="Search members" compact />
       </View>
       <ScrollView contentContainerStyle={{ ...pad, paddingTop: 14 }}>
-        <LoadGate status={v.loads.members} onRetry={v.retry.members} what="members" />
+        <LoadGate status={v.loads.members} onRetry={v.retry.members} what="members" hasData={v.members.length > 0} />
         {v.members.map((m, n) => (
           <Card key={m.key} enter={n}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
@@ -199,7 +199,7 @@ export function Ads() {
         </View>
       </Card>
 
-      <LoadGate status={v.loads.ads} onRetry={v.retry.ads} what="ad placements" />
+      <LoadGate status={v.loads.ads} onRetry={v.retry.ads} what="ad placements" hasData={v.adSlots.length > 0} />
       {v.adSlots.map((a, n) => (
         <Card key={a.id} enter={n + 1}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
@@ -257,7 +257,7 @@ export function Messages() {
   const v = useVals();
   return (
     <ScrollView contentContainerStyle={pad}>
-      <LoadGate status={v.loads.conversations} onRetry={v.retry.conversations} what="conversations" />
+      <LoadGate status={v.loads.conversations} onRetry={v.retry.conversations} what="conversations" hasData={v.conversations.length > 0} />
       {v.conversations.map((c, n) => (
         <Animated.View key={c.itemId} entering={rise(n)}>
         <Press style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 24, backgroundColor: C.white }, SHADOW.card]}

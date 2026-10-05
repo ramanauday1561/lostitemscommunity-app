@@ -153,7 +153,7 @@ export function NotificationsSheet() {
       title="Notifications"
       footer={v.hasUnreadNotifs ? <Cta label="Mark all as read" on onPress={v.markAllRead} /> : undefined}
     >
-      <LoadGate status={v.loads.notifications} onRetry={v.retry.notifications} what="notifications" />
+      <LoadGate status={v.loads.notifications} onRetry={v.retry.notifications} what="notifications" hasData={v.notificationList.length > 0} />
       <View style={{ gap: 8 }}>
         {v.notificationList.map((n) => (
           <Press key={n.id} onPress={n.open}
