@@ -14,6 +14,7 @@ import { Registry } from './screens/Registry';
 import { Forum } from './screens/Forum';
 import { Ads, Analysis, Members, Messages, Moderation, SupportInbox } from './screens/Admin';
 import { DetailSheet } from './sheets/Detail';
+import { FiltersSheet } from './sheets/Filters';
 import { ReportSheet, SentSheet } from './sheets/Report';
 import { ChatSheet, SupportReplySheet, SupportSheet, ThreadSheet } from './sheets/Chat';
 import { AdSheet, GuidelinesSheet, NewThreadSheet, NotificationsSheet, ProfileSheet } from './sheets/Misc';
@@ -48,6 +49,7 @@ function Screen() {
 function Sheets() {
   const v = useVals();
   if (v.sheetDetail) return <DetailSheet />;
+  if (v.sheetFilters) return <FiltersSheet />;
   if (v.sheetReport) return <ReportSheet />;
   if (v.sheetSent) return <SentSheet />;
   if (v.sheetChat) return <ChatSheet />;

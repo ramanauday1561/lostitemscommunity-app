@@ -13,6 +13,21 @@ import { Icon } from '../ui/Icon';
 import { Loader } from '../ui/Loader';
 import { ItemsMap } from '../ui/ItemsMap';
 
+/** 46px round icon button; `badge` shows a count when something is switched on. */
+function RoundButton({ icon, label, onPress, badge = 0 }: { icon: string; label: string; onPress: () => void; badge?: number }) {
+  return (
+    <Press style={[{ width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center', ...GLASS }, SHADOW.card]}
+      scale={0.93} onPress={onPress} accessibilityLabel={label}>
+      <Icon name={icon} size={22} color={C.ink} />
+      {badge > 0 && (
+        <View style={{ position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, paddingHorizontal: 5, borderRadius: 9, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontFamily: FONTS[700], fontSize: 10, color: C.white }}>{badge}</Text>
+        </View>
+      )}
+    </Press>
+  );
+}
+
 export function Registry() {
   const { store, vals: v } = useApp();
   const st = store.state;
@@ -39,58 +54,33 @@ export function Registry() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+      <View style={{ paddingHorizontal: 20, gap: 10, paddingBottom: 10 }}>
         <View style={[{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 24, backgroundColor: C.fill }]}>
           <Seg label="Lost" on={v.regIsLost} onPress={v.goLost} />
           <Seg label="Found" on={v.regIsFound} onPress={v.goFound} />
         </View>
-        <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 24, backgroundColor: C.fill }}>
-          <Seg label="List" on={!v.isMapView} onPress={v.showList} />
-          <Seg label="Map" on={v.isMapView} onPress={v.showMap} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Field icon="search" value={v.q} onChange={v.onQuery} placeholder="Search items or places" compact />
+          </View>
+          <RoundButton icon="tune" label="Filters" onPress={v.openFilters} badge={v.filterCount} />
+          <RoundButton icon={v.isMapView ? 'view_list' : 'map'} label={v.isMapView ? 'Show list' : 'Show map'} onPress={v.isMapView ? v.showList : v.showMap} />
         </View>
-        <Field icon="search" value={v.q} onChange={v.onQuery} placeholder="Search title, place or reference" />
-        {v.nearAvailable && (
-          <>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2 }}>
-              <Pill label="Anywhere" on={!v.nearActive} onPress={v.nearAnywhere} />
-              <Pill label={v.nearLocating ? 'Locating…' : 'Near me'} on={v.nearActive && v.nearIsMe} onPress={v.nearMe} />
-              <Pill label="Search a place" on={v.nearPanel || (v.nearActive && !v.nearIsMe)} onPress={v.toggleNearPanel} />
-            </ScrollView>
-            {v.nearPanel && (
-              <View style={{ gap: 8 }}>
-                <Field icon="place" value={v.nearQuery} onChange={v.onNearQuery} onSubmit={v.searchNear} placeholder="Street, landmark or area" compact />
-                {v.nearSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle }}>Searching…</Text>}
-                {v.nearResults.length > 0 && (
-                  <View style={{ borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
-                    {v.nearResults.map((r) => (
-                      <Press key={r.key} style={{ minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' }} scale={0.99} onPress={r.pick}>
-                        <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.ink }}>{r.label}</Text>
-                      </Press>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
-            {v.nearRadiusShown && (
-              <>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  {v.nearRadii.map((r) => <Pill key={r.name} label={r.name} on={r.on} onPress={r.pick} />)}
-                </ScrollView>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Icon name="near_me" size={14} color={C.primary} />
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: FONTS[600], fontSize: 12, color: C.muted }}>{v.nearSummary}</Text>
-                </View>
-              </>
-            )}
-          </>
+        {v.filterChips.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {v.filterChips.map((c) => (
+              <Press key={c.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 34, paddingLeft: 14, paddingRight: 10, borderRadius: 17, backgroundColor: 'rgba(11,107,203,.1)' }}
+                scale={0.96} onPress={c.clear} accessibilityLabel={`Remove filter ${c.label}`}>
+                <Text numberOfLines={1} style={{ maxWidth: 220, fontFamily: FONTS[600], fontSize: 12.5, color: C.primary }}>{c.label}</Text>
+                <Icon name="close" size={15} color={C.primary} />
+              </Press>
+            ))}
+          </ScrollView>
         )}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 10 }}>
-          {v.filters.map((f) => <Pill key={f.name} label={f.name} on={f.on} onPress={f.pick} />)}
-        </ScrollView>
       </View>
 
       {v.isMapView ? (
-        <View style={{ flex: 1, margin: 20, marginTop: 2, borderRadius: 24, overflow: 'hidden' }}>
+        <View style={{ flex: 1, minHeight: 0, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' }}>
           <ItemsMap
             pins={v.mapPins} selectedKey={v.mapSelectedKey} color={v.mapColor} center={v.mapCenter}
             onSelect={v.mapSelect} onBoundsChange={v.mapMoved} onLocate={v.nearMe} locating={v.nearLocating}

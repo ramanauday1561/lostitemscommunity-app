@@ -64,7 +64,7 @@ test('pin a place on the map, submit, and see the pin on the post', async ({ pag
   await page.getByText('View it in the registry', { exact: true }).click();
 
   // The post's own sheet shows a read-only map with the pin.
-  await page.getByPlaceholder('Search title, place or reference').fill(TITLE);
+  await page.getByPlaceholder('Search items or places').fill(TITLE);
   await page.getByText(TITLE).first().click();
   await expect(page.locator('.maplibregl-marker')).toHaveCount(1, { timeout: 15000 });
   await expect(page.locator('[data-map-ready="1"]')).toHaveCount(1, { timeout: 15000 });

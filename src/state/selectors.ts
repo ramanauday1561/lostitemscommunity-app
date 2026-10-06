@@ -215,6 +215,8 @@ export function buildVals(store: Store) {
     isModeration: sc === 'moderation', isSupportInbox: sc === 'supportInbox' && admin, isAnalysis: sc === 'analysis',
     isMembers: sc === 'members', isAds: sc === 'ads' && admin,
     isAdmin: admin, isSimple: !admin && sc !== 'login',
+    // The registry gives the space to the list/map: one-line title, no kicker.
+    compactHeader: sc === 'lost' || sc === 'found',
     showHeader: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
     showNav: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
     showBack: ['moderation', 'supportInbox', 'analysis', 'members', 'messages'].includes(sc),
@@ -444,8 +446,19 @@ export function buildVals(store: Store) {
     nearAnywhere: () => store.setNearCenter(null),
     nearMe: store.nearUseMyLocation,
     nearLocating: st.nearLocating,
-    nearPanel: st.nearPanel,
-    toggleNearPanel: () => store.setState((s) => ({ nearPanel: !s.nearPanel })),
+    openFilters: () => store.setState({ sheet: 'filters', toast: '' }),
+    filterCount: (st.filter !== 'All' ? 1 : 0) + (st.nearCenter ? 1 : 0),
+    filterChips: [
+      ...(st.filter !== 'All' ? [{ key: 'status', label: st.filter, clear: () => store.setState({ filter: 'All' }) }] : []),
+      ...(st.nearCenter ? [{
+        key: 'near',
+        label: st.registryView === 'list' && st.filter !== 'My posts' ? `${st.nearCenter.label} · ${formatRadius(st.nearRadius)}` : st.nearCenter.label,
+        clear: () => store.setNearCenter(null),
+      }] : []),
+    ],
+    resetFilters: () => { store.setState({ filter: 'All' }); if (st.nearCenter) store.setNearCenter(null); },
+    statusFilters: (admin ? ['All', 'Active', 'Resolved', 'Reunited', 'Flagged'] : ['All', 'My posts', 'Active', 'Reunited', 'Resolved'])
+      .map((f) => ({ name: f, on: st.filter === f, pick: () => store.setState({ filter: f }) })),
     nearQuery: st.nearQuery,
     onNearQuery: (q: string) => store.setState({ nearQuery: q }),
     searchNear: store.searchNearPlace,
@@ -574,7 +587,7 @@ export function buildVals(store: Store) {
       { icon: 'payments', title: 'No money changes hands', body: "Returns are free. Rewards, deposits and 'shipping fees' are the most common scam on the platform — report anyone who asks." },
       { icon: 'chat', title: 'Be decent in the forum', body: 'No accusations, doxxing or pile-ons. Posts that break this are suspended by Super Admins and repeat accounts are removed.' },
     ],
-    sheetDetail: sh === 'detail', sheetReport: sh === 'report',
+    sheetDetail: sh === 'detail', sheetFilters: sh === 'filters', sheetReport: sh === 'report',
     sheetSent: sh === 'sent', sheetProfile: sh === 'profile',
 
     showBell: true,
@@ -722,7 +735,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: [], activeConvo: null, draft: '',
-        profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, nearCenter: null, nearPanel: false, registryHasMore: false, registryLoadingMore: false,
+        profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, nearCenter: null, registryHasMore: false, registryLoadingMore: false,
         // Every cached server list: another account signing in on this device must not see the last user's data.
         dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
         dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,

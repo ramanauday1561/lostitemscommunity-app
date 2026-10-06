@@ -13,7 +13,7 @@ export function Header() {
   const v = useVals();
   if (!v.showHeader) return null;
   return (
-    <Animated.View entering={FadeInDown.duration(280)} style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
+    <Animated.View entering={FadeInDown.duration(280)} style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 8, paddingBottom: v.compactHeader ? 10 : 16 }}>
       {v.showBack && (
         <Press style={{ width: 44, height: 44, marginLeft: -10, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
           scale={0.92} activeBg="rgba(22,24,31,.06)" onPress={v.back}>
@@ -21,8 +21,8 @@ export function Header() {
         </Press>
       )}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Kicker>{v.headerKicker}</Kicker>
-        <Text style={{ fontFamily: FONTS[800], fontSize: 26, lineHeight: 29, letterSpacing: -0.8, color: C.ink, marginTop: 4 }}>
+        {!v.compactHeader && <Kicker>{v.headerKicker}</Kicker>}
+        <Text numberOfLines={1} style={{ fontFamily: FONTS[800], fontSize: v.compactHeader ? 22 : 26, lineHeight: v.compactHeader ? 26 : 29, letterSpacing: -0.8, color: C.ink, marginTop: v.compactHeader ? 0 : 4 }}>
           {v.headerTitle}
         </Text>
       </View>
