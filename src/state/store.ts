@@ -4,6 +4,7 @@ import { type ChatMsg, type Convo, type Item, type Status } from '../data/consta
 import { initials } from '../theme/tokens';
 import type { Place } from '../api/places';
 import { coord, DEFAULT_NEAR_RADIUS, type LatLng } from '../lib/geo';
+import type { PlaceArea } from '../api/places';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the Node
@@ -23,6 +24,9 @@ export type Role = 'admin' | 'user' | 'new' | null;
 export type Sheet =
   | 'detail' | 'filters' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
   | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | 'supportReply' | null;
+
+/** The registry's search centre: a spot (radius chips apply) or a region with its `area` (the whole region applies). */
+export interface NearCenter extends LatLng { label: string; area?: PlaceArea }
 
 export interface Pin { x: number; y: number; lat: string; lng: string }
 
@@ -76,7 +80,7 @@ export interface AppState {
   /** Report sheet's place search (live mode): the box text, last results and whether a search is running. */
   placeQuery: string; placeResults: Place[]; placeSearching: boolean;
   /** Registry "near" search: the centre (null = everywhere), its label, radius in metres, and the place-search panel. */
-  nearCenter: (LatLng & { label: string }) | null; nearRadius: number;
+  nearCenter: NearCenter | null; nearRadius: number;
   /** Registry view: the paged list, or a map of the items in view with a bottom drawer for the tapped pin. */
   registryView: 'list' | 'map'; mapItems: Item[]; mapBounds: MapBounds | null; mapSelected: string | null; mapLoading: boolean;
   nearQuery: string; nearResults: Place[]; nearSearching: boolean; nearLocating: boolean;
@@ -324,11 +328,11 @@ export class Store {
 
   private nearParam() {
     const { nearCenter, nearRadius } = this.state;
-    return nearCenter ? { center: nearCenter, radiusM: nearRadius } : null;
+    return nearCenter ? { center: nearCenter, radiusM: nearCenter.area?.radiusM ?? nearRadius } : null;
   }
 
   /** Centres the registry on a place (or clears it with null) and reloads. */
-  setNearCenter = (center: (LatLng & { label: string }) | null) => {
+  setNearCenter = (center: NearCenter | null) => {
     this.setState({ nearCenter: center, nearResults: [], nearQuery: '', dbItems: null, registryHasMore: false, sheet: this.state.sheet === 'filters' ? null : this.state.sheet });
     this.loadRegistry();
   };

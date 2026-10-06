@@ -34,3 +34,11 @@ export function formatDistance(m: number): string {
   if (m < 1000) return `${Math.max(10, Math.round(m / 10) * 10)} m away`;
   return `${Number((m / 1000).toFixed(1))} km away`;
 }
+
+/** Great-circle distance in metres. */
+export function distanceM(a: LatLng, b: LatLng): number {
+  const rad = Math.PI / 180;
+  const h = Math.sin(((b.lat - a.lat) * rad) / 2) ** 2
+    + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(((b.lng - a.lng) * rad) / 2) ** 2;
+  return 6371000 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+}

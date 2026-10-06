@@ -11,7 +11,7 @@ export interface ItemsMapProps {
   /** Pin colour: lost and found use different ones. */
   color: string;
   /** Flies the camera here whenever it changes (a searched place, "my location"). Null keeps the user's own view. */
-  center: LatLng | null;
+  center: (LatLng & { bounds?: [number, number, number, number] }) | null;
   onSelect: (key: string | null) => void;
   /** Fired once the map is ready and after every pan/zoom, so the app can load the pins in view. */
   onBoundsChange: (b: MapBounds) => void;
