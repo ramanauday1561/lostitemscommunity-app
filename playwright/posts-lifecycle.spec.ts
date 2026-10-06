@@ -2,6 +2,13 @@ import { test, expect, Browser, Page } from '@playwright/test';
 import { attachPhoto } from './photo';
 import { loginAs, pickDate, TEST_USERS, TestUser } from './helpers';
 
+/** The registry's status filters live in the Filters sheet (the Filters button next to the search box). */
+async function filterRegistryBy(page: import('@playwright/test').Page, status: string) {
+  await page.getByLabel('Filters').click();
+  await page.getByText(status, { exact: true }).last().click();
+  await page.getByText('Show results', { exact: true }).click();
+}
+
 /**
  * End-to-end lifecycle of several posts, with three real accounts:
  *   member 1 (E2E_USER_*)   reports four posts, hands one over, closes one, withdraws the rest
@@ -39,7 +46,7 @@ const closeSheet = (page: Page) => page.mouse.click(195, 18);
 async function openPost(page: Page, name: PostName) {
   const p = POSTS[name];
   await tab(page, p.kind === 'lost' ? 'Lost' : 'Found');
-  await page.getByPlaceholder('Search title, place or reference').fill(RUN);
+  await page.getByPlaceholder('Search items or places').fill(RUN);
   await page.getByText(p.title).first().click();
   await expect(page.getByText(p.place).first()).toBeVisible({ timeout: 15000 });
 }
@@ -71,12 +78,12 @@ test.describe('post lifecycle with three accounts', () => {
     for (const name of Object.keys(POSTS) as PostName[]) await reportPost(a, name);
 
     await tab(a, 'Lost');
-    await a.getByPlaceholder('Search title, place or reference').fill(RUN);
+    await a.getByPlaceholder('Search items or places').fill(RUN);
     await expect(a.getByText(POSTS.umbrella.title)).toBeVisible({ timeout: 15000 });
     await expect(a.getByText(POSTS.scarf.title)).toBeVisible();
     await expect(a.getByText(POSTS.wallet.title)).toHaveCount(0);
     await tab(a, 'Found');
-    await a.getByPlaceholder('Search title, place or reference').fill(RUN);
+    await a.getByPlaceholder('Search items or places').fill(RUN);
     await expect(a.getByText(POSTS.wallet.title)).toBeVisible({ timeout: 15000 });
     await expect(a.getByText(POSTS.keys.title)).toBeVisible();
     await expect(a.getByText(POSTS.umbrella.title)).toHaveCount(0);
@@ -90,7 +97,7 @@ test.describe('post lifecycle with three accounts', () => {
     await expect(a.getByText('Reopen this post')).toBeVisible({ timeout: 15000 });
     await expect(a.getByText(/marked as handed over/)).toBeVisible({ timeout: 15000 });
     await closeSheet(a);
-    await a.getByText('Reunited', { exact: true }).first().click();   // registry filter pill
+    await filterRegistryBy(a, 'Reunited');
     await expect(a.getByText(POSTS.umbrella.title)).toBeVisible({ timeout: 15000 });
     await expect(a.getByText(POSTS.scarf.title)).toHaveCount(0);
   });
@@ -139,7 +146,7 @@ test.describe('post lifecycle with three accounts', () => {
     await a.getByText('Resolved', { exact: true }).last().click();
     await expect(a.getByText(/ closed\./)).toBeVisible({ timeout: 15000 });   // the confirmation toast: the update has landed
     await closeSheet(a);
-    await a.getByText('Resolved', { exact: true }).first().click();   // registry filter pill
+    await filterRegistryBy(a, 'Resolved');
     await expect(a.getByText(POSTS.scarf.title)).toBeVisible({ timeout: 15000 });
   });
 
@@ -166,7 +173,7 @@ test.describe('post lifecycle with three accounts', () => {
     // the keys are gone for good; the wallet is open again
     const a = await as(browser, TEST_USERS.regularUser);
     await tab(a, 'Found');
-    await a.getByPlaceholder('Search title, place or reference').fill(RUN);
+    await a.getByPlaceholder('Search items or places').fill(RUN);
     await expect(a.getByText(POSTS.wallet.title)).toBeVisible({ timeout: 15000 });
     await expect(a.getByText(POSTS.keys.title)).toHaveCount(0);
   });
@@ -181,12 +188,12 @@ test.describe('post lifecycle with three accounts', () => {
     }
     for (const name of ['umbrella', 'scarf'] as const) {
       await tab(a, 'Lost');
-      await a.getByPlaceholder('Search title, place or reference').fill(RUN);
+      await a.getByPlaceholder('Search items or places').fill(RUN);
       await a.waitForTimeout(1200);
       await expect(a.getByText(POSTS[name].title)).toHaveCount(0);
     }
     await tab(a, 'Found');
-    await a.getByPlaceholder('Search title, place or reference').fill(RUN);
+    await a.getByPlaceholder('Search items or places').fill(RUN);
     await a.waitForTimeout(1200);
     await expect(a.getByText(POSTS.wallet.title)).toHaveCount(0);
   });

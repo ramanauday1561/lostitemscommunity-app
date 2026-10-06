@@ -87,7 +87,7 @@ async function report(page: Page, p: Post) {
 
 async function open(page: Page, p: Post) {
   await tab(page, p.kind === 'lost' ? 'Lost' : 'Found');
-  await page.getByPlaceholder('Search title, place or reference').fill(p.title);
+  await page.getByPlaceholder('Search items or places').fill(p.title);
   await page.getByText(p.title).first().click();
   await expect(page.getByText(p.place).first()).toBeVisible({ timeout: 15000 });
 }
