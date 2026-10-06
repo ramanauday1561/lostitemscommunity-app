@@ -97,3 +97,33 @@ describe('list load states (13.3)', () => {
     } finally { console.error = orig; }
   });
 });
+
+describe('superadmin dashboard tiles', () => {
+  beforeEach(() => fake.reset());
+  const admin = { id: 'a1', role: 'superadmin', display_name: 'Root', handle: 'root', username: 'root', post_count: 0, is_suspended: false, created_at: '2026-01-01T00:00:00Z' } as any;
+
+  test('show a pending state (not 0) until the stats arrive', async () => {
+    const store = supabaseStore({ screen: 'dash', role: 'superadmin', profile: admin });
+    assert.equal(buildVals(store).adminStatsPending, true);
+    assert.equal(buildVals(store).modStatsPending, true);
+    // loadDashboardStats also fetches the account email, which shares the fake's response queue.
+    const stats = { data: { active_lost: 4, recovered: 2, active_members: 9 } };
+    fake.queue(stats, stats);
+    await store.loadDashboardStats(admin);
+    const v = buildVals(store);
+    assert.equal(store.state.loads.dashboard, 'ready');
+    assert.equal(v.adminStatsPending, false);
+    assert.equal(v.adminMetrics[0].value, '4');
+  });
+
+  test('a failed fetch ends in error so the tiles stop spinning', async () => {
+    const store = supabaseStore({ screen: 'dash', role: 'superadmin', profile: admin });
+    const orig = console.error; console.error = () => {};
+    try {
+      fake.queue({ error: { message: 'boom' } });
+      await store.loadDashboardStats(admin);
+    } finally { console.error = orig; }
+    assert.equal(store.state.loads.dashboard, 'error');
+    assert.equal(buildVals(store).adminStatsPending, false);
+  });
+});

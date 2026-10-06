@@ -44,7 +44,7 @@ export function ReportSheet() {
             <DateField icon="event" value={v.rDate} onChange={v.onRDate} placeholder="When? Pick a date" />
           </View>
 
-          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Pin the spot</Text>
+          <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.muted, marginTop: 18, marginBottom: 8 }}>Pin the spot (required)</Text>
           <Field icon="search" value={v.placeQuery} onChange={v.onPlaceQuery} onSubmit={v.searchPlace} placeholder="Search a street or landmark" compact />
           {v.placeSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 8 }}>Searching…</Text>}
           {v.placeResults.length > 0 && (

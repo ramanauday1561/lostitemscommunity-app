@@ -9,6 +9,7 @@ import { Press } from '../ui/Press';
 import { Card } from '../ui/bits';
 import { AdSlot } from '../ui/AdSlot';
 import { Glass } from '../ui/Glass';
+import { Loader } from '../ui/Loader';
 import { rise } from '../ui/motion';
 
 const page = { paddingHorizontal: 20, paddingBottom: 32, gap: 16 };
@@ -221,14 +222,16 @@ export function AdminDash() {
       <Hero glow="rgba(255,138,128,.2)" enter={1}>
       <View style={{ padding: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {v.flaggedCount > 0 ? <Pulse color="#FF8A80" /> : null}
+          {!v.modStatsPending && v.flaggedCount > 0 ? <Pulse color="#FF8A80" /> : null}
           <Icon name="flag" size={16} color="#FF8A80" />
           <Text style={{ fontFamily: MONO[600], fontSize: 10, letterSpacing: 1.4, color: 'rgba(255,255,255,.5)' }}>NEEDS MODERATION</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
-            <Text style={{ fontFamily: FONTS[800], fontSize: 46, letterSpacing: -2.3, color: C.white }}>{v.flaggedCount}</Text>
-            <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: 'rgba(255,255,255,.55)' }}>flagged posts</Text>
+            {v.modStatsPending
+              ? <View style={{ height: 56, justifyContent: 'center' }}><Loader size={12} color={C.white} /></View>
+              : <Text style={{ fontFamily: FONTS[800], fontSize: 46, letterSpacing: -2.3, color: C.white }}>{v.flaggedCount}</Text>}
+            <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: 'rgba(255,255,255,.55)' }}>{v.modStatsPending ? 'checking flagged posts…' : 'flagged posts'}</Text>
           </View>
           <Press style={[{ minHeight: 44, paddingHorizontal: 20, borderRadius: 22, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }, SHADOW.send]}
             scale={0.96} onPress={v.goModeration}>
@@ -244,7 +247,7 @@ export function AdminDash() {
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: FONTS[700], fontSize: 14, color: C.ink }}>Support inbox</Text>
           <Text style={{ fontFamily: FONTS[400], fontSize: 12, color: C.subtle, marginTop: 2 }}>
-            {v.supportOpenCount ? `${v.supportOpenCount} waiting on a person` : 'Nobody is waiting'}
+            {v.supportPending ? 'Checking…' : v.supportOpenCount ? `${v.supportOpenCount} waiting on a person` : 'Nobody is waiting'}
           </Text>
         </View>
         <Icon name="chevron_right" size={21} color={C.barIdle} />
@@ -261,7 +264,9 @@ export function AdminDash() {
               <Icon name={m.icon} size={16} color={m.iconColor} />
               <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.subtle }}>{m.label}</Text>
             </View>
-            <Text style={{ fontFamily: FONTS[800], fontSize: 28, letterSpacing: -1.1, color: m.color, marginTop: 12 }}>{m.value}</Text>
+            {v.adminStatsPending
+              ? <View style={{ height: 34, justifyContent: 'center', marginTop: 12 }}><Loader size={8} /></View>
+              : <Text style={{ fontFamily: FONTS[800], fontSize: 28, letterSpacing: -1.1, color: m.color, marginTop: 12 }}>{m.value}</Text>}
             <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: m.deltaColor, marginTop: 6 }}>{m.delta}</Text>
           </Animated.View>
         ))}
@@ -284,7 +289,7 @@ export function AdminDash() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 8, marginBottom: 12 }}>
           <Text style={{ fontFamily: FONTS[800], fontSize: 18, letterSpacing: -0.45, color: C.ink }}>Flagged content</Text>
           <View style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: 'rgba(180,35,24,.1)' }}>
-            <Text style={{ fontFamily: FONTS[700], fontSize: 11, color: C.danger }}>{v.flaggedCount} pending</Text>
+            <Text style={{ fontFamily: FONTS[700], fontSize: 11, color: C.danger }}>{v.modStatsPending ? 'loading…' : `${v.flaggedCount} pending`}</Text>
           </View>
         </View>
         <View style={{ gap: 8 }}>

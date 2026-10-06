@@ -3,7 +3,7 @@ import type { ScrollView } from 'react-native';
 import { type ChatMsg, type Convo, type Item, type Status } from '../data/constants';
 import { initials } from '../theme/tokens';
 import type { Place } from '../api/places';
-import { coord, type LatLng } from '../lib/geo';
+import { coord, DEFAULT_NEAR_RADIUS, type LatLng } from '../lib/geo';
 // Type-only import: the real module (which pulls in react-native-url-polyfill
 // and other RN-only code) is loaded lazily inside each method below via
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the Node
@@ -27,10 +27,10 @@ export interface Pin { x: number; y: number; lat: string; lng: string }
 
 /** Mirrors `state` in the prototype's Component class (line 1404). */
 /** Lists that load from Supabase. */
-export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications' | 'support';
+export type LoadKey = 'registry' | 'forum' | 'conversations' | 'moderation' | 'members' | 'analysis' | 'ads' | 'notifications' | 'support' | 'dashboard';
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error';
 export const IDLE_LOADS: Record<LoadKey, LoadState> = {
-  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle', notifications: 'idle', support: 'idle',
+  registry: 'idle', forum: 'idle', conversations: 'idle', moderation: 'idle', members: 'idle', analysis: 'idle', ads: 'idle', notifications: 'idle', support: 'idle', dashboard: 'idle',
 };
 
 export interface AppState {
@@ -74,6 +74,9 @@ export interface AppState {
   rPlace: string; rDate: string; rDesc: string; pin: Pin | null;
   /** Report sheet's place search (live mode): the box text, last results and whether a search is running. */
   placeQuery: string; placeResults: Place[]; placeSearching: boolean;
+  /** Registry "near" search: the centre (null = everywhere), its label, radius in metres, and the place-search panel. */
+  nearCenter: (LatLng & { label: string }) | null; nearRadius: number;
+  nearPanel: boolean; nearQuery: string; nearResults: Place[]; nearSearching: boolean; nearLocating: boolean;
   /** A photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
   rPhotoBlob: Blob | ArrayBuffer | null; rPhotoName: string; rPhotoType: string; rPhotoPreview: string;
@@ -121,6 +124,7 @@ export const initialState: AppState = {
   adEditId: 'AD-01', adDraft: null,
   q: '', uq: '', filter: 'All', sel: null, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
+  nearCenter: null, nearRadius: DEFAULT_NEAR_RADIUS, nearPanel: false, nearQuery: '', nearResults: [], nearSearching: false, nearLocating: false,
   rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
   dbMembers: null, memberSearchQuery: '',
@@ -225,19 +229,22 @@ export class Store {
     }
   };
 
-  /** Fetches the dashboard stat tiles for whichever role just signed in. Fire-and-forget:
-   *  the dashboard renders zeros until this resolves, same as a fresh/new account would show. */
+  /** Fetches the dashboard stat tiles for whichever role just signed in. Fire-and-forget; the tiles show a
+   *  loader (loads.dashboard) until it resolves, then the real numbers, or an error state with retry. */
   loadDashboardStats = async (p: AuthApi.Profile) => {
     // Also the one async hook all three auth entry points share: fetch the account email for the Profile sheet.
     import('../api/auth').then((a) => a.getMyEmail()).then((authEmail) => this.setState({ authEmail })).catch(() => {});
-    const dashboard = await import('../api/dashboard');
-    if (p.role === 'superadmin') {
-      const adminDashStats = await dashboard.getAdminDashboardStats();
-      this.setState({ adminDashStats });
-    } else {
-      const myDashStats = await dashboard.getMyDashboardStats(p.id);
-      this.setState({ myDashStats });
-    }
+    await this.track('dashboard', async () => {
+      const dashboard = await import('../api/dashboard');
+      if (p.role === 'superadmin') {
+        const adminDashStats = await dashboard.getAdminDashboardStats();
+        if (!adminDashStats) throw new Error('Could not load the admin dashboard stats.');
+        this.setState({ adminDashStats });
+      } else {
+        const myDashStats = await dashboard.getMyDashboardStats(p.id);
+        this.setState({ myDashStats });
+      }
+    });
   };
 
   /** Runs a list loader and records loading -> ready | error for `key`, so screens can show a
@@ -265,7 +272,7 @@ export class Store {
     await this.track('registry', async () => {
       const items = await import('../api/items');
       const page = await items.listItems({
-        kind, filter: st.filter, query: st.q, userId: st.profile?.id,
+        kind, filter: st.filter, query: st.q, userId: st.profile?.id, near: this.nearParam(),
       });
       if (req !== this.registryReq) return;
       this.setState({ dbItems: page.items, registryHasMore: page.hasMore, registryLoadingMore: false });
@@ -273,6 +280,51 @@ export class Store {
   };
 
   private registryReq = 0;
+
+  private nearParam() {
+    const { nearCenter, nearRadius } = this.state;
+    return nearCenter ? { center: nearCenter, radiusM: nearRadius } : null;
+  }
+
+  /** Centres the registry on a place (or clears it with null) and reloads. */
+  setNearCenter = (center: (LatLng & { label: string }) | null) => {
+    this.setState({ nearCenter: center, nearResults: [], nearQuery: '', nearPanel: false, dbItems: null, registryHasMore: false });
+    this.loadRegistry();
+  };
+
+  setNearRadius = (m: number) => {
+    this.setState({ nearRadius: m });
+    if (this.state.nearCenter) this.loadRegistry();
+  };
+
+  nearUseMyLocation = async () => {
+    if (this.state.nearLocating) return;
+    this.setState({ nearLocating: true });
+    try {
+      const { getDeviceLocation } = await import('../lib/location');
+      const at = await getDeviceLocation();
+      this.setNearCenter({ ...at, label: 'your location' });
+    } catch (e) {
+      this.flash(e instanceof Error ? e.message : 'Could not get your location.');
+    } finally {
+      this.setState({ nearLocating: false });
+    }
+  };
+
+  searchNearPlace = async () => {
+    const q = this.state.nearQuery.trim();
+    if (q.length < 3) { this.flash('Type at least 3 letters to search.'); return; }
+    this.setState({ nearSearching: true });
+    try {
+      const places = await import('../api/places');
+      const found = await places.searchPlaces(q);
+      this.setState({ nearResults: found, nearSearching: false });
+      if (!found.length) this.flash('No places found — try a street or landmark name.');
+    } catch (e) {
+      this.setState({ nearSearching: false });
+      this.flash(e instanceof Error ? e.message : 'Place search is unavailable right now.');
+    }
+  };
 
   /** Appends the next page (3.4). No-op unless the server said more exists and nothing is in flight. */
   loadMoreRegistry = async () => {
@@ -285,7 +337,7 @@ export class Store {
     try {
       const items = await import('../api/items');
       const page = await items.listItems({
-        kind, filter: st.filter, query: st.q, userId: st.profile?.id, offset: (st.dbItems ?? []).length,
+        kind, filter: st.filter, query: st.q, userId: st.profile?.id, offset: (st.dbItems ?? []).length, near: this.nearParam(),
       });
       if (req !== this.registryReq) return; // filter/search changed meanwhile; the new load owns the list
       this.setState((s) => {
@@ -317,6 +369,7 @@ export class Store {
       return;
     }
     if (!s.rPlace.trim() || !s.profile) return;
+    if (!s.pin) { this.flash('Pin the spot on the map (or search a place) before submitting.'); return; }
     if (!s.rPhotoBlob) { this.flash('Add a photo of the item before submitting.'); return; }
     this.setState({ busy: true });
     try {
@@ -326,8 +379,8 @@ export class Store {
         category: s.rCat,
         title: s.rTitle.trim(),
         locationText: s.rPlace.trim(),
-        lat: s.pin ? Number(s.pin.lat) : null,
-        lng: s.pin ? Number(s.pin.lng) : null,
+        lat: Number(s.pin.lat),
+        lng: Number(s.pin.lng),
         occurredOn: s.rDate.trim() || null,
         description: s.rDesc.trim() || null,
         reporterId: s.profile.id,

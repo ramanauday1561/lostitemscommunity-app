@@ -19,3 +19,18 @@ export const WORLD_VIEW = { center: { lat: 20, lng: 0 }, zoom: 1.4 };
 export const PIN_ZOOM = 15;
 /** OpenFreeMap: free vector tiles built on OpenStreetMap data, no key or account. */
 export const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+
+/** Search radii offered on the registry, in metres. */
+export const NEAR_RADII = [500, 1000, 2000, 5000, 10000] as const;
+export const DEFAULT_NEAR_RADIUS = 2000;
+
+/** 500 -> "500 m", 2000 -> "2 km", 1500 -> "1.5 km". */
+export function formatRadius(m: number): string {
+  return m < 1000 ? `${m} m` : `${Number((m / 1000).toFixed(1))} km`;
+}
+
+/** Distance label for a result card: "320 m away", "1.4 km away". Rounds metres to the nearest 10. */
+export function formatDistance(m: number): string {
+  if (m < 1000) return `${Math.max(10, Math.round(m / 10) * 10)} m away`;
+  return `${Number((m / 1000).toFixed(1))} km away`;
+}

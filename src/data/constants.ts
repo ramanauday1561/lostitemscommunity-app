@@ -14,6 +14,8 @@ export interface Item {
   reporterId?: string;
   /** Public URL of the post's first photo (list rows show it instead of the category icon). */
   photo?: string;
+  /** Metres from the search centre; only set on results of a nearby search. */
+  distanceM?: number;
 }
 export interface Campaign {
   key: string; campaign: string; advertiser: string; icon: string; rate: string; cpm: number;

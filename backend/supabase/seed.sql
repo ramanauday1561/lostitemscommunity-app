@@ -44,48 +44,48 @@ update public.profiles set guidelines_accepted_at = now() where handle = 'simple
 update public.profiles set is_suspended = true where handle = 'subway.finder';
 
 -- 2. items -------------------------------------------------------------
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'lost', 'flagged', 'Samsung Galaxy S24', 'Electronics', 'smartphone', 'Bus 14, evening route', '2024-06-05',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'lost', 'flagged', 'Samsung Galaxy S24', 'Electronics', 'smartphone', 'Bus 14, evening route', 40.716800, -73.991000, '2024-06-05',
   'Left on the rack above the seat. Black case, cracked corner.', id
 from public.profiles where handle = 'alex.j';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'lost', 'active', 'Prescription glasses', 'Other', 'visibility', 'City library, 2nd floor', '2024-06-04',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'lost', 'active', 'Prescription glasses', 'Other', 'visibility', 'City library, 2nd floor', 40.720800, -73.986000, '2024-06-04',
   'Tortoise frames in a hard black case.', id
 from public.profiles where handle = 'm.okafor';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'lost', 'active', 'Blue Jansport backpack', 'Bags', 'backpack', 'Central Station platform 3', '2024-06-02',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'lost', 'active', 'Blue Jansport backpack', 'Bags', 'backpack', 'Central Station platform 3', 40.712800, -73.981000, '2024-06-02',
   'Notebook and a grey hoodie inside.', id
 from public.profiles where handle = 'simple.user';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'lost', 'reunited', 'Grey tabby cat, no collar', 'Pets', 'pets', 'Oak Street', '2024-05-29',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'lost', 'reunited', 'Grey tabby cat, no collar', 'Pets', 'pets', 'Oak Street', 40.716800, -73.996000, '2024-05-29',
   'Answers to Miso. Found by a neighbour two streets away.', id
 from public.profiles where handle = 'd.pham';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'found', 'active', 'Black Wallet', 'Wallets', 'account_balance_wallet', 'Riverside Park bench', '2024-06-11',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'found', 'active', 'Black Wallet', 'Wallets', 'account_balance_wallet', 'Riverside Park bench', 40.720800, -73.991000, '2024-06-11',
   'Handed in at the park office. Cards inside, no cash. Owner name partially legible.', id
 from public.profiles where handle = 'j.rivera';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'found', 'active', 'Silver Watch', 'Other', 'watch', 'Coffee shop on 5th Ave', '2024-06-09',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'found', 'active', 'Silver Watch', 'Other', 'watch', 'Coffee shop on 5th Ave', 40.712800, -73.986000, '2024-06-09',
   'Left on a window table. Metal strap, small scratch on the clasp.', id
 from public.profiles where handle = 'cafe.5th';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'found', 'active', 'iPhone 15', 'Electronics', 'smartphone', 'Union Square subway station', '2024-06-06',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'found', 'active', 'iPhone 15', 'Electronics', 'smartphone', 'Union Square subway station', 40.716800, -73.981000, '2024-06-06',
   'Locked screen, blue case. Held at the station desk pending verification.', id
 from public.profiles where handle = 'subway.finder';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'found', 'resolved', 'Car Keys with Fob', 'Keys', 'key', 'Parking lot B', '2024-05-31',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'found', 'resolved', 'Car Keys with Fob', 'Keys', 'key', 'Parking lot B', 40.720800, -73.996000, '2024-05-31',
   'Returned to owner after fob serial matched the report.', id
 from public.profiles where handle = 'lotb.security';
 
-insert into public.items (kind, status, title, category, icon, location_text, occurred_on, description, reporter_id)
-select 'found', 'active', 'Student ID Card', 'Documents', 'badge', 'City College cafeteria', '2024-05-28',
+insert into public.items (kind, status, title, category, icon, location_text, location_lat, location_lng, occurred_on, description, reporter_id)
+select 'found', 'active', 'Student ID Card', 'Documents', 'badge', 'City College cafeteria', 40.712800, -73.991000, '2024-05-28',
   'Card is intact. Waiting for the registered student to claim it.', id
 from public.profiles where handle = 'campus.desk';
 

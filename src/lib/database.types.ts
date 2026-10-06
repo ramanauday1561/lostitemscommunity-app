@@ -440,8 +440,8 @@ export type Database = {
           icon: string
           id: string
           kind: Database["public"]["Enums"]["item_kind"]
-          location_lat: number | null
-          location_lng: number | null
+          location_lat: number
+          location_lng: number
           location_text: string
           occurred_on: string | null
           reporter_id: string
@@ -457,8 +457,8 @@ export type Database = {
           icon?: string
           id?: string
           kind: Database["public"]["Enums"]["item_kind"]
-          location_lat?: number | null
-          location_lng?: number | null
+          location_lat: number
+          location_lng: number
           location_text: string
           occurred_on?: string | null
           reporter_id: string
@@ -474,8 +474,8 @@ export type Database = {
           icon?: string
           id?: string
           kind?: Database["public"]["Enums"]["item_kind"]
-          location_lat?: number | null
-          location_lng?: number | null
+          location_lat?: number
+          location_lng?: number
           location_text?: string
           occurred_on?: string | null
           reporter_id?: string
@@ -869,6 +869,19 @@ export type Database = {
         Returns: Record<string, unknown>
       }
       is_superadmin: { Args: never; Returns: boolean }
+      items_near: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["item_kind"]
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_offset?: number
+          p_query?: string
+          p_radius_m: number
+          p_status?: Database["public"]["Enums"]["item_status"]
+        }
+        Returns: { id: string; distance_m: number }[]
+      }
       resolve_moderation_flag: {
         Args: { approve: boolean; flag_id: string }
         Returns: undefined

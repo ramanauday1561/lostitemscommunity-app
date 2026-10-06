@@ -5,7 +5,7 @@ import { Press } from './Press';
 import { Chip } from './bits';
 
 export function ItemCard({ item, onPress }: {
-  item: { id: string; title: string; location: string; date: string; status: string; icon: string; by: string; photo?: string };
+  item: { id: string; title: string; location: string; date: string; status: string; icon: string; by: string; photo?: string; distance?: string };
   onPress: () => void;
 }) {
   return (
@@ -18,6 +18,7 @@ export function ItemCard({ item, onPress }: {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 5 }}>
           <Text style={{ fontFamily: MONO[500], fontSize: 10, color: C.lighter }}>{item.id}</Text>
           <Text style={{ fontFamily: FONTS[400], fontSize: 11, color: C.lighter }}>· {item.date}</Text>
+          {!!item.distance && <Text style={{ fontFamily: FONTS[600], fontSize: 11, color: C.primary }}>· {item.distance}</Text>}
         </View>
       </View>
       <Chip status={item.status} />

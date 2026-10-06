@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCoords, coord } from '../../src/lib/geo';
+import { parseCoords, coord, formatDistance, formatRadius } from '../../src/lib/geo';
 import { shortLabel, toPlaces } from '../../src/api/places';
 
 test('parseCoords reads a "lat, lng" pair and rejects junk', () => {
@@ -26,4 +26,13 @@ test('toPlaces drops hits without a name or a usable position', () => {
     { lat: '1', lon: '2' },
   ]);
   assert.deepEqual(places, [{ label: 'Central Station, Sydney', lat: -33.88, lng: 151.2 }]);
+});
+
+test('formatRadius and formatDistance read naturally', () => {
+  assert.equal(formatRadius(500), '500 m');
+  assert.equal(formatRadius(2000), '2 km');
+  assert.equal(formatRadius(1500), '1.5 km');
+  assert.equal(formatDistance(3), '10 m away');
+  assert.equal(formatDistance(324), '320 m away');
+  assert.equal(formatDistance(1449), '1.4 km away');
 });

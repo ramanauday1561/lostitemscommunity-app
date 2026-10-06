@@ -3,7 +3,7 @@ import {
 } from '../data/constants';
 import { compact, initials, money } from '../theme/tokens';
 import { formatTime } from '../lib/time';
-import { parseCoords, type LatLng } from '../lib/geo';
+import { parseCoords, formatDistance, formatRadius, NEAR_RADII, type LatLng } from '../lib/geo';
 import { IDLE_LOADS, type AppState, type Store, type LoadKey } from './store';
 
 /** 'Mar 2024' from an ISO timestamp ('' when missing). */
@@ -244,6 +244,7 @@ export function buildVals(store: Store) {
       ads: () => store.loadAdsSupabase(),
       notifications: () => store.loadNotificationsSupabase(),
       support: () => store.loadSupportInboxSupabase(),
+      dashboard: () => { if (st.profile) store.loadDashboardStats(st.profile); },
     },
     setupSteps: (() => {
       const done1 = !!st.suTerms;
@@ -297,6 +298,11 @@ export function buildVals(store: Store) {
       approve: () => store.takeModActionSupabase(f.id, 'approve'),
       remove: () => store.takeModActionSupabase(f.id, 'remove'),
     })),
+    // Until the first response lands the tiles show a loader, not 0 (idle = bootstrap hasn't kicked off yet).
+    adminStatsPending: !st.adminDashStats && st.loads.dashboard !== 'error',
+    modStatsPending: !st.dbModerationStats && st.loads.moderation !== 'error',
+    supportPending: !st.dbSupportInbox && st.loads.support !== 'error',
+    retryDashboard: () => { if (st.profile) store.loadDashboardStats(st.profile); },
     adminMetrics: [
       { label: 'Active lost', value: String(st.adminDashStats?.activeLost ?? 0), color: '#16181F', delta: '', deltaColor: '#0F7B3D', icon: 'person_search', iconColor: '#B42318' },
       { label: 'Recovered', value: String(st.adminDashStats?.recovered ?? 0), color: '#0B6BCB', delta: '', deltaColor: '#0F7B3D', icon: 'inventory_2', iconColor: '#0F7B3D' },
@@ -405,13 +411,29 @@ export function buildVals(store: Store) {
     filters: (admin ? ['All', 'Active', 'Resolved', 'Reunited', 'Flagged'] : ['All', 'My posts', 'Active', 'Reunited', 'Resolved'])
       .map((f) => ({ name: f, on: st.filter === f, pick: () => store.setState({ filter: f }) })),
     registry: registry.map((i, ix) => ({
-      ...i, open: openItem(i),
+      ...i, open: openItem(i), distance: i.distanceM != null ? formatDistance(i.distanceM) : '',
       adAfter: !admin && ix === 3 && registry.length > 4 && store.slotFor('Registry', fresh, st).live,
     })),
     registryHasMore: st.registryHasMore,
     registryLoadingMore: st.registryLoadingMore,
     loadMoreRegistry: store.loadMoreRegistry,
     myPostsEmpty: settled('registry') && st.filter === 'My posts' && registry.length === 0,
+    // Registry "near" search. 'My posts' is never location-filtered, so the controls hide while it is selected.
+    nearAvailable: st.filter !== 'My posts',
+    nearActive: !!st.nearCenter && st.filter !== 'My posts',
+    nearIsMe: st.nearCenter?.label === 'your location',
+    nearSummary: st.nearCenter ? `Within ${formatRadius(st.nearRadius)} of ${st.nearCenter.label}` : '',
+    nearRadii: NEAR_RADII.map((m) => ({ name: formatRadius(m), on: st.nearRadius === m, pick: () => store.setNearRadius(m) })),
+    nearAnywhere: () => store.setNearCenter(null),
+    nearMe: store.nearUseMyLocation,
+    nearLocating: st.nearLocating,
+    nearPanel: st.nearPanel,
+    toggleNearPanel: () => store.setState((s) => ({ nearPanel: !s.nearPanel })),
+    nearQuery: st.nearQuery,
+    onNearQuery: (q: string) => store.setState({ nearQuery: q }),
+    searchNear: store.searchNearPlace,
+    nearSearching: st.nearSearching,
+    nearResults: st.nearResults.map((r) => ({ key: `${r.lat},${r.lng}`, label: r.label, pick: () => store.setNearCenter(r) })),
     registryEmpty: settled('registry') && registry.length === 0 && st.filter !== 'My posts',
 
     topics: ['All', 'Sighting', 'Reunited', 'Question'].map((name) => ({
@@ -628,7 +650,7 @@ export function buildVals(store: Store) {
     onRDesc: (v: string) => store.setState({ rDesc: v }),
     categories: CATS.map((c) => ({ name: c, on: st.rCat === c, pick: () => store.setState({ rCat: c }) })),
     reportBtnLabel: st.step === 1 ? 'Continue' : 'Submit to registry',
-    reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim() && !!st.rPhotoBlob,
+    reportBtnEnabled: st.step === 1 ? !!(st.rTitle.trim() && st.rCat) : !!st.rPlace.trim() && !!st.pin && !!st.rPhotoBlob,
     photoRequired: true,
     photoPreview: st.rPhotoPreview,
     removePhoto: store.removePhoto,
@@ -683,7 +705,7 @@ export function buildVals(store: Store) {
       store.setState({
         screen: 'login', role: null, username: '', password: '', sheet: null, toast: '',
         convos: [], activeConvo: null, draft: '',
-        profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, registryHasMore: false, registryLoadingMore: false,
+        profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, nearCenter: null, nearPanel: false, registryHasMore: false, registryLoadingMore: false,
         // Every cached server list: another account signing in on this device must not see the last user's data.
         dbItems: null, dbThreads: null, dbReplies: null, dbMembers: null, memberSearchQuery: '', dbModerationQueue: null,
         dbModerationStats: null, dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,

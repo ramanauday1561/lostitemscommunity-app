@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { Database } from '../lib/database.types';
 import type { Item, Kind, Status } from '../data/constants';
 import { itemPhotoUrl } from '../lib/photoUrl';
+import type { LatLng } from '../lib/geo';
 
 type ItemRow = Database['public']['Tables']['items']['Row'] & {
   reporter: { handle: string } | { handle: string }[] | null;
@@ -70,6 +71,35 @@ export interface ListItemsParams {
   /** Rows to skip (0 for the first page). */
   offset?: number;
   pageSize?: number;
+  /** Only items within `radiusM` metres of `center`, nearest first. Ignored for 'My posts'. */
+  near?: { center: LatLng; radiusM: number } | null;
+}
+
+const PHOTO_SELECT = '*, reporter:profiles!items_reporter_id_fkey(handle), photos:item_photos(storage_path, position, created_at)';
+
+/** Nearby search: `items_near` (0030 migration) returns one page of ids + distances, nearest first;
+ *  the rows themselves are then loaded with the same embeds the normal list uses. */
+async function listItemsNear(params: ListItemsParams, near: NonNullable<ListItemsParams['near']>, offset: number, pageSize: number): Promise<ItemsPage> {
+  const status = params.filter === 'All' ? undefined : (params.filter.toLowerCase() as Database['public']['Enums']['item_status']);
+  const term = params.query?.trim().replace(/[%,]/g, '');
+  const { data: hits, error } = await supabase.rpc('items_near', {
+    p_lat: near.center.lat, p_lng: near.center.lng, p_radius_m: near.radiusM, p_kind: params.kind,
+    p_status: status, p_query: term || undefined, p_limit: pageSize + 1, p_offset: offset,
+  });
+  if (error) throw new Error(error.message);
+  const ranked = hits ?? [];
+  const pageHits = ranked.slice(0, pageSize);
+  if (!pageHits.length) return { items: [], hasMore: false };
+
+  const { data, error: rowsError } = await supabase.from('items').select(PHOTO_SELECT).in('id', pageHits.map((h) => h.id));
+  if (rowsError) throw new Error(rowsError.message);
+  const byId = new Map(((data ?? []) as ItemRow[]).map((r) => [r.id, r]));
+  const items: Item[] = [];
+  for (const h of pageHits) {
+    const row = byId.get(h.id);
+    if (row) items.push({ ...toFrontendItem(row), distanceM: h.distance_m });
+  }
+  return { items, hasMore: ranked.length > pageSize };
 }
 
 /** Powers the Lost/Found registry. RLS already scopes flagged items to their
@@ -77,9 +107,10 @@ export interface ListItemsParams {
 export async function listItems(params: ListItemsParams): Promise<ItemsPage> {
   const offset = params.offset ?? 0;
   const pageSize = params.pageSize ?? REGISTRY_PAGE_SIZE;
+  if (params.near && params.filter !== 'My posts') return listItemsNear(params, params.near, offset, pageSize);
   let q = supabase
     .from('items')
-    .select('*, reporter:profiles!items_reporter_id_fkey(handle), photos:item_photos(storage_path, position, created_at)')
+    .select(PHOTO_SELECT)
     .eq('kind', params.kind)
     .order('created_at', { ascending: false })
     // Tie-break so rows with the same timestamp never swap places between pages.
@@ -110,8 +141,8 @@ export interface CreateItemInput {
   category: string;
   title: string;
   locationText: string;
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
   /** Free-text from the report form; parsed loosely, falls back to today. */
   occurredOn: string | null;
   description: string | null;

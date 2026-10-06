@@ -18,7 +18,7 @@ describe('rate-limit errors reach the user', () => {
   beforeEach(() => fake.reset());
 
   const cases: [string, () => Promise<unknown>][] = [
-    ['create a report', () => items.createItem({ kind: 'lost', category: 'Other', title: 't', locationText: 'l', lat: null, lng: null, occurredOn: null, description: null, reporterId: 'u1' })],
+    ['create a report', () => items.createItem({ kind: 'lost', category: 'Other', title: 't', locationText: 'l', lat: 40.7, lng: -73.9, occurredOn: null, description: null, reporterId: 'u1' })],
     ['claim an item', () => items.claimItem('i1', 'r1', 'u1')],
     ['flag an item', () => items.flagItem('i1', 'spam', 'u1')],
     ['send a chat message', () => conv.sendMessage('c1', 'u1', 'hi')],

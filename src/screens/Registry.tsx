@@ -9,6 +9,7 @@ import { AdSlot } from '../ui/AdSlot';
 import { ItemCard } from '../ui/ItemCard';
 import { Press } from '../ui/Press';
 import { Empty, LoadGate, Pill, Seg } from '../ui/bits';
+import { Icon } from '../ui/Icon';
 import { Loader } from '../ui/Loader';
 
 export function Registry() {
@@ -43,6 +44,41 @@ export function Registry() {
           <Seg label="Found" on={v.regIsFound} onPress={v.goFound} />
         </View>
         <Field icon="search" value={v.q} onChange={v.onQuery} placeholder="Search title, place or reference" />
+        {v.nearAvailable && (
+          <>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2 }}>
+              <Pill label="Anywhere" on={!v.nearActive} onPress={v.nearAnywhere} />
+              <Pill label={v.nearLocating ? 'Locating…' : 'Near me'} on={v.nearActive && v.nearIsMe} onPress={v.nearMe} />
+              <Pill label="Search a place" on={v.nearPanel || (v.nearActive && !v.nearIsMe)} onPress={v.toggleNearPanel} />
+            </ScrollView>
+            {v.nearPanel && (
+              <View style={{ gap: 8 }}>
+                <Field icon="place" value={v.nearQuery} onChange={v.onNearQuery} onSubmit={v.searchNear} placeholder="Street, landmark or area" compact />
+                {v.nearSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle }}>Searching…</Text>}
+                {v.nearResults.length > 0 && (
+                  <View style={{ borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
+                    {v.nearResults.map((r) => (
+                      <Press key={r.key} style={{ minHeight: 44, paddingHorizontal: 14, paddingVertical: 10, justifyContent: 'center' }} scale={0.99} onPress={r.pick}>
+                        <Text style={{ fontFamily: FONTS[600], fontSize: 12.5, color: C.ink }}>{r.label}</Text>
+                      </Press>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+            {v.nearActive && (
+              <>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {v.nearRadii.map((r) => <Pill key={r.name} label={r.name} on={r.on} onPress={r.pick} />)}
+                </ScrollView>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Icon name="near_me" size={14} color={C.primary} />
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: FONTS[600], fontSize: 12, color: C.muted }}>{v.nearSummary}</Text>
+                </View>
+              </>
+            )}
+          </>
+        )}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 2, paddingBottom: 10 }}>
           {v.filters.map((f) => <Pill key={f.name} label={f.name} on={f.on} onPress={f.pick} />)}
         </ScrollView>
@@ -69,8 +105,8 @@ export function Registry() {
             body="Anything you report will show up here so you can track and close it." />
         )}
         {v.registryEmpty && (
-          <Empty icon="search_off" title="Nothing matches that"
-            body="Try a different word, or clear the filter to see the whole registry." />
+          <Empty icon="search_off" title={v.nearActive ? `Nothing ${v.nearSummary.toLowerCase()}` : 'Nothing matches that'}
+            body={v.nearActive ? 'Try a bigger radius, another place, or switch to Anywhere.' : 'Try a different word, or clear the filter to see the whole registry.'} />
         )}
       </ScrollView>
     </View>

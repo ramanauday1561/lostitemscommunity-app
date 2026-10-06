@@ -152,10 +152,44 @@ describe('items api', () => {
     });
   });
 
+  describe('listItems near', () => {
+    const near = { center: { lat: 40.7, lng: -73.9 }, radiusM: 2000 };
+
+    test('asks items_near for a page, then loads those rows in distance order', async () => {
+      fake.queue({ data: [{ id: 'uuid-2', distance_m: 120 }, { id: 'uuid-1', distance_m: 900 }] });
+      fake.queue({ data: [row({ id: 'uuid-1', display_id: 'LOST-1' }), row({ id: 'uuid-2', display_id: 'LOST-2' })] });
+      const page = await items.listItems({ kind: 'lost', filter: 'Active', query: ' bag ', near });
+      assert.equal(fake.calls[0].name, 'items_near');
+      assert.deepEqual((fake.args('args', 0) as any[])[0], {
+        p_lat: 40.7, p_lng: -73.9, p_radius_m: 2000, p_kind: 'lost', p_status: 'active', p_query: 'bag', p_limit: 21, p_offset: 0,
+      });
+      assert.deepEqual(page.items.map((i) => [i.id, i.distanceM]), [['LOST-2', 120], ['LOST-1', 900]]);
+      assert.equal(page.hasMore, false);
+    });
+
+    test('an empty result skips the second query', async () => {
+      fake.queue({ data: [] });
+      const page = await items.listItems({ kind: 'found', filter: 'All', near });
+      assert.deepEqual(page, { items: [], hasMore: false });
+      assert.equal(fake.calls.length, 1);
+    });
+
+    test('My posts ignores the location filter', async () => {
+      fake.queue({ data: [] });
+      await items.listItems({ kind: 'lost', filter: 'My posts', userId: 'u1', near });
+      assert.equal(fake.calls[0].name, 'items');
+    });
+
+    test('surfaces an rpc error', async () => {
+      fake.queue({ error: { message: 'boom' } });
+      await assert.rejects(items.listItems({ kind: 'lost', filter: 'All', near }), /boom/);
+    });
+  });
+
   describe('createItem', () => {
     const input = {
       kind: 'lost' as const, category: 'Bags', title: 'Backpack', locationText: 'Station',
-      lat: null, lng: null, occurredOn: '2026-09-20', description: null, reporterId: 'u1',
+      lat: 40.7, lng: -73.9, occurredOn: '2026-09-20', description: null, reporterId: 'u1',
     };
 
     test('sends display_id null so the trigger assigns it, and returns the mapped item', async () => {
