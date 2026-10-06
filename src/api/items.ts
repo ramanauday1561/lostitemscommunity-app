@@ -3,6 +3,7 @@ import type { Database } from '../lib/database.types';
 import type { Item, Kind, Status } from '../data/constants';
 import { itemPhotoUrl } from '../lib/photoUrl';
 import type { LatLng } from '../lib/geo';
+import type { MapBounds } from '../ui/ItemsMap.types';
 
 type ItemRow = Database['public']['Tables']['items']['Row'] & {
   reporter: { handle: string } | { handle: string }[] | null;
@@ -134,6 +135,39 @@ export async function listItems(params: ListItemsParams): Promise<ItemsPage> {
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as ItemRow[];
   return { items: rows.slice(0, pageSize).map(toFrontendItem), hasMore: rows.length > pageSize };
+}
+
+/** Most pins one map view will draw; zoom in to see the rest. */
+export const MAP_PIN_LIMIT = 200;
+
+/** Items whose pin falls inside the visible map, newest first. Same filters as the list (status, My posts, search). */
+export async function listItemsInBounds(params: Omit<ListItemsParams, 'offset' | 'pageSize' | 'near'> & { bounds: MapBounds }): Promise<Item[]> {
+  const { bounds: b } = params;
+  let q = supabase
+    .from('items')
+    .select(PHOTO_SELECT)
+    .eq('kind', params.kind)
+    .gte('location_lat', b.south).lte('location_lat', b.north)
+    .order('created_at', { ascending: false })
+    .limit(MAP_PIN_LIMIT);
+  // A view that crosses the antimeridian has west > east; skip the longitude bound rather than return nothing.
+  if (b.west <= b.east) q = q.gte('location_lng', b.west).lte('location_lng', b.east);
+
+  if (params.filter === 'My posts') {
+    if (!params.userId) return [];
+    q = q.eq('reporter_id', params.userId);
+  } else if (params.filter !== 'All') {
+    q = q.eq('status', params.filter.toLowerCase() as Database['public']['Enums']['item_status']);
+  }
+  const term = params.query?.trim();
+  if (term) {
+    const escaped = term.replace(/[%,]/g, '');
+    q = q.or(`title.ilike.%${escaped}%,location_text.ilike.%${escaped}%,display_id.ilike.%${escaped}%`);
+  }
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as ItemRow[]).map(toFrontendItem);
 }
 
 export interface CreateItemInput {

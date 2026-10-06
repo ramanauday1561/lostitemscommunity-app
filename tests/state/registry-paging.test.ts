@@ -124,3 +124,31 @@ describe('registry paging (3.4)', () => {
     assert.equal(store.state.dbItems![0].id, 'LOST-50');
   });
 });
+
+describe('registry map view', () => {
+  beforeEach(() => fake.reset());
+
+  test('toggling to the map loads pins for the reported bounds, and selecting a pin exposes the drawer card', async () => {
+    const store = registryStore();
+    store.setRegistryView('map');
+    fake.queue({ data: [{ ...itemRow(1), location_lat: 40.7, location_lng: -73.9 }] });
+    await store.mapMoved({ south: 40, west: -74, north: 41, east: -73 });
+    let v = buildVals(store);
+    assert.deepEqual(v.mapPins, [{ key: 'LOST-1', lat: 40.7, lng: -73.9 }]);
+    assert.equal(v.mapCard, null);
+    v.mapSelect('LOST-1');
+    v = buildVals(store);
+    assert.equal(v.mapCard?.title, 'Item 1');
+  });
+
+  test('a reload that no longer contains the selected pin clears the drawer', async () => {
+    const store = registryStore();
+    store.setRegistryView('map');
+    fake.queue({ data: [{ ...itemRow(1), location_lat: 40.7, location_lng: -73.9 }] });
+    await store.mapMoved({ south: 40, west: -74, north: 41, east: -73 });
+    store.setState({ mapSelected: 'LOST-1' } as any);
+    fake.queue({ data: [] });
+    await store.mapMoved({ south: 10, west: 10, north: 11, east: 11 });
+    assert.equal(store.state.mapSelected, null);
+  });
+});

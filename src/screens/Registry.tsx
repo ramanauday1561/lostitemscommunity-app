@@ -11,6 +11,7 @@ import { Press } from '../ui/Press';
 import { Empty, LoadGate, Pill, Seg } from '../ui/bits';
 import { Icon } from '../ui/Icon';
 import { Loader } from '../ui/Loader';
+import { ItemsMap } from '../ui/ItemsMap';
 
 export function Registry() {
   const { store, vals: v } = useApp();
@@ -43,6 +44,10 @@ export function Registry() {
           <Seg label="Lost" on={v.regIsLost} onPress={v.goLost} />
           <Seg label="Found" on={v.regIsFound} onPress={v.goFound} />
         </View>
+        <View style={{ flexDirection: 'row', gap: 4, padding: 4, borderRadius: 24, backgroundColor: C.fill }}>
+          <Seg label="List" on={!v.isMapView} onPress={v.showList} />
+          <Seg label="Map" on={v.isMapView} onPress={v.showMap} />
+        </View>
         <Field icon="search" value={v.q} onChange={v.onQuery} placeholder="Search title, place or reference" />
         {v.nearAvailable && (
           <>
@@ -66,7 +71,7 @@ export function Registry() {
                 )}
               </View>
             )}
-            {v.nearActive && (
+            {v.nearRadiusShown && (
               <>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
                   {v.nearRadii.map((r) => <Pill key={r.name} label={r.name} on={r.on} onPress={r.pick} />)}
@@ -84,6 +89,29 @@ export function Registry() {
         </ScrollView>
       </View>
 
+      {v.isMapView ? (
+        <View style={{ flex: 1, margin: 20, marginTop: 2, borderRadius: 24, overflow: 'hidden' }}>
+          <ItemsMap
+            pins={v.mapPins} selectedKey={v.mapSelectedKey} color={v.mapColor} center={v.mapCenter}
+            onSelect={v.mapSelect} onBoundsChange={v.mapMoved} onLocate={v.nearMe} locating={v.nearLocating}
+          />
+          <View pointerEvents="none" style={{ position: 'absolute', left: 12, top: 12, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, ...GLASS }}>
+            <Text style={{ fontFamily: FONTS[700], fontSize: 11.5, color: C.ink }}>
+              {v.mapLoading ? 'Loading…' : `${v.mapCount}${v.mapCount >= 200 ? '+' : ''} in view${v.mapCount >= 200 ? ' · zoom in for more' : ''}`}
+            </Text>
+          </View>
+          {v.mapCard && (
+            <Animated.View entering={rise(0)} style={[{ position: 'absolute', left: 12, right: 12, bottom: 12, padding: 12, paddingTop: 8, borderRadius: 28, ...GLASS, backgroundColor: 'rgba(255,255,255,.96)' }, SHADOW.card]}>
+              <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: C.fill, marginBottom: 8 }} />
+              <ItemCard item={v.mapCard} onPress={v.mapCard.open} />
+              <Press style={{ minHeight: 46, borderRadius: 23, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginTop: 10 }}
+                scale={0.97} onPress={v.mapCard.open}>
+                <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white }}>View details</Text>
+              </Press>
+            </Animated.View>
+          )}
+        </View>
+      ) : (
       <ScrollView contentContainerStyle={{ padding: 20, paddingTop: 2, paddingBottom: 28, gap: 10 }}>
         <LoadGate status={v.loads.registry} onRetry={v.retry.registry} what="items" />
         {!reloading && v.registry.map((it, n) => (
@@ -109,6 +137,7 @@ export function Registry() {
             body={v.nearActive ? 'Try a bigger radius, another place, or switch to Anywhere.' : 'Try a different word, or clear the filter to see the whole registry.'} />
         )}
       </ScrollView>
+      )}
     </View>
   );
 }
