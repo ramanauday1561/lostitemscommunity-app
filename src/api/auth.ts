@@ -86,6 +86,8 @@ export async function signUp(username: string, email: string, password: string):
     password,
     options: {
       data: { username: trimmedUsername, handle: trimmedUsername, display_name: trimmedUsername },
+      // Without this the confirmation link lands on the Supabase project's Site URL (localhost in dev setups).
+      emailRedirectTo: appUrl(),
     },
   });
   if (error) throw new AuthApiError(mapAuthError(error.message));
