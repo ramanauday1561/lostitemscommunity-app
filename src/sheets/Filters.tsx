@@ -36,10 +36,17 @@ export function FiltersSheet() {
             <Pill label="Anywhere" on={!v.nearActive} onPress={v.nearAnywhere} />
             <Pill label={v.nearLocating ? 'Locating…' : 'Near me'} on={v.nearActive && v.nearIsMe} onPress={v.nearMe} />
           </View>
-          <View style={{ marginTop: 10 }}>
-            <Field icon="place" value={v.nearQuery} onChange={v.onNearQuery} onSubmit={v.searchNear} placeholder="Or search a street, landmark or area" compact />
+          <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Field icon="place" value={v.nearQuery} onChange={v.onNearQuery} onSubmit={v.searchNear} placeholder="Or search a place, e.g. India" compact />
+            </View>
+            <Press style={{ minHeight: 46, paddingHorizontal: 18, borderRadius: 23, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}
+              scale={0.96} onPress={v.searchNear} accessibilityLabel="Search places">
+              <Text style={{ fontFamily: FONTS[700], fontSize: 13.5, color: C.white }}>{v.nearSearching ? '…' : 'Search'}</Text>
+            </Press>
           </View>
           {v.nearSearching && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 8 }}>Searching…</Text>}
+          {v.nearActive && !v.nearRadiusShown && !v.isMapView && <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 10 }}>{v.nearSummary}</Text>}
           {v.nearResults.length > 0 && (
             <View style={{ marginTop: 8, borderRadius: 16, backgroundColor: C.fillSoft, overflow: 'hidden' }}>
               {v.nearResults.map((r) => (
@@ -60,7 +67,7 @@ export function FiltersSheet() {
           )}
           {v.nearActive && !v.nearRadiusShown && v.isMapView && (
             <Text style={{ fontFamily: FONTS[500], fontSize: 12, color: C.subtle, marginTop: 10 }}>
-              The map is centred on {v.nearSummary.replace(/^Within [^ ]+ [^ ]+ of /, '')}. Distance applies in list view.
+              The map is centred on {v.nearLabel}. Distance applies in list view.
             </Text>
           )}
         </>

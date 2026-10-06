@@ -36,3 +36,13 @@ test('formatRadius and formatDistance read naturally', () => {
   assert.equal(formatDistance(324), '320 m away');
   assert.equal(formatDistance(1449), '1.4 km away');
 });
+
+test('a country search becomes an area covering the whole region, a street stays a spot', () => {
+  const [india, street] = toPlaces([
+    { display_name: 'India', lat: '22.35', lon: '78.67', boundingbox: ['6.5', '35.7', '68.1', '97.4'] },
+    { display_name: 'Union Square, Manhattan, New York', lat: '40.7359', lon: '-73.9911', boundingbox: ['40.7345', '40.7372', '-73.9925', '-73.9898'] },
+  ]);
+  assert.ok(india.area && india.area.radiusM > 1_000_000);
+  assert.deepEqual(india.area!.bounds, [68.1, 6.5, 97.4, 35.7]);
+  assert.equal(street.area, undefined);
+});

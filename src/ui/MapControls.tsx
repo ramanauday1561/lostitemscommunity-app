@@ -1,5 +1,6 @@
-import { View } from 'react-native';
-import { C, GLASS, SHADOW } from '../theme/tokens';
+import { Text, View } from 'react-native';
+import { C, FONTS, GLASS, SHADOW } from '../theme/tokens';
+import { Loader } from './Loader';
 import { Icon } from './Icon';
 import { Press } from './Press';
 
@@ -24,6 +25,16 @@ export function MapControls({ onZoomIn, onZoomOut, onLocate, locating }: {
           <Icon name={locating ? 'hourglass_top' : 'my_location'} size={21} color={C.primary} />
         </Press>
       </View>
+    </View>
+  );
+}
+
+/** Covers the map until its first frame is drawn, so users see a loader instead of a blank box. */
+export function MapLoadingOverlay() {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E9EEF3' } as object}>
+      <Loader />
+      <Text style={{ fontFamily: FONTS[500], fontSize: 13, color: C.muted }}>Loading map…</Text>
     </View>
   );
 }

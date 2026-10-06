@@ -4,7 +4,7 @@ import type { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MAP_STYLE_URL, WORLD_VIEW } from '../lib/geo';
 import { MAP_ITEM_ZOOM, type ItemsMapProps, type MapBounds } from './ItemsMap.types';
-import { MapControls } from './MapControls';
+import { MapControls, MapLoadingOverlay } from './MapControls';
 import { Press } from './Press';
 import { C, FONTS } from '../theme/tokens';
 
@@ -25,6 +25,7 @@ export function ItemsMap(props: ItemsMapProps) {
   const fitted = useRef(false);
   const styleReady = useRef(false);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const styleDot = (el: HTMLDivElement, selected: boolean) => {
     const size = selected ? 30 : 22;
@@ -78,6 +79,9 @@ export function ItemsMap(props: ItemsMapProps) {
       m.on('click', () => latest.current.onSelect(null));
       m.on('moveend', () => latest.current.onBoundsChange(boundsOf(m)));
       m.on('load', () => { styleReady.current = true; setFailed(false); });
+      // Never leave the loader up for ever if a slow tile keeps the map from going idle.
+      const readyTimer = setTimeout(() => setReady(true), 12000);
+      m.once('idle', () => clearTimeout(readyTimer));
       // Only a style that never loaded is fatal; a single missing tile is not worth an error screen.
       m.on('error', (e) => { console.warn('map error:', e.error?.message ?? e); if (!styleReady.current) setFailed(true); });
       // The box can be laid out after the map starts (flex layout, the screen's fade-in): follow its size, or the
@@ -86,7 +90,7 @@ export function ItemsMap(props: ItemsMapProps) {
         resizer = new ResizeObserver(() => m.resize());
         resizer.observe(box.current);
       }
-      m.on('idle', () => box.current?.setAttribute('data-map-ready', '1'));
+      m.on('idle', () => { box.current?.setAttribute('data-map-ready', '1'); setReady(true); });
       latest.current.onBoundsChange(boundsOf(m));
       sync();
     })();
@@ -112,12 +116,17 @@ export function ItemsMap(props: ItemsMapProps) {
   }, [props.pins]);
 
   useEffect(() => {
-    if (props.center) map.current?.flyTo({ center: [props.center.lng, props.center.lat], zoom: Math.max(map.current.getZoom(), MAP_ITEM_ZOOM) });
+    const c = props.center; const m = map.current;
+    if (!c || !m) return;
+    // A region (a country, a city) is framed whole; a spot is flown to at street zoom.
+    if (c.bounds) m.fitBounds([[c.bounds[0], c.bounds[1]], [c.bounds[2], c.bounds[3]]], { padding: 30, duration: 800 });
+    else m.flyTo({ center: [c.lng, c.lat], zoom: Math.max(m.getZoom(), MAP_ITEM_ZOOM) });
   }, [props.center?.lat, props.center?.lng]);
 
   return (
     <View style={{ flex: 1, minHeight: 360 }}>
       <div ref={box} style={{ position: 'absolute', inset: 0, background: '#E4E9EF' }} />
+      {!ready && !failed && <MapLoadingOverlay />}
       {failed && (
         <View style={{ position: 'absolute', left: 24, right: 24, top: '40%', alignItems: 'center', padding: 18, borderRadius: 20, backgroundColor: 'rgba(255,255,255,.95)', gap: 10 }}>
           <Text style={{ fontFamily: FONTS[700], fontSize: 14, color: C.ink, textAlign: 'center' }}>Couldn't load the map</Text>

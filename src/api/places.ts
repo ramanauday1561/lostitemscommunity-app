@@ -1,8 +1,21 @@
-import type { LatLng } from '../lib/geo';
+import { distanceM, type LatLng } from '../lib/geo';
 
-export interface Place extends LatLng { label: string }
+/** A region (country, state, city) rather than a spot: `bounds` is [west, south, east, north] and `radiusM` reaches
+ *  from its centre to a corner, so a search can cover the whole area instead of a 2 km circle in its middle. */
+export interface PlaceArea { bounds: [number, number, number, number]; radiusM: number }
+export interface Place extends LatLng { label: string; area?: PlaceArea }
 
-interface NominatimHit { display_name?: string; lat?: string; lon?: string }
+interface NominatimHit { display_name?: string; lat?: string; lon?: string; boundingbox?: string[] }
+
+/** Anything wider than the biggest distance chip (10 km) is searched as an area. */
+const AREA_MIN_RADIUS_M = 10_000;
+
+function areaOf(h: NominatimHit, centre: LatLng): PlaceArea | undefined {
+  const [south, north, west, east] = (h.boundingbox ?? []).map(Number);
+  if (![south, north, west, east].every(Number.isFinite)) return undefined;
+  const radiusM = Math.round(distanceM(centre, { lat: north, lng: east }));
+  return radiusM > AREA_MIN_RADIUS_M ? { bounds: [west, south, east, north], radiusM } : undefined;
+}
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org';
 
@@ -16,7 +29,8 @@ export function toPlaces(hits: NominatimHit[]): Place[] {
   for (const h of hits) {
     const lat = Number(h.lat); const lng = Number(h.lon);
     if (!h.display_name || !Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    out.push({ label: shortLabel(h.display_name), lat, lng });
+    const area = areaOf(h, { lat, lng });
+    out.push({ label: shortLabel(h.display_name), lat, lng, ...(area ? { area } : null) });
   }
   return out;
 }

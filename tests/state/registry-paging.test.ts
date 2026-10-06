@@ -176,3 +176,19 @@ describe('registry filters sheet state', () => {
     assert.equal(store.state.nearCenter?.label, 'Central Station');
   });
 });
+
+describe('searching a region', () => {
+  beforeEach(() => fake.reset());
+
+  test('a country filters by its whole area, hides the radius chips and shows no radius in the chip', async () => {
+    const store = registryStore();
+    fake.queue({ data: [] });
+    store.setNearCenter({ lat: 22, lng: 78, label: 'India', area: { bounds: [68, 6, 97, 35], radiusM: 2_000_000 } });
+    const v = buildVals(store);
+    assert.equal(v.nearRadiusShown, false);
+    assert.deepEqual(v.filterChips.map((c) => c.label), ['India']);
+    assert.deepEqual(v.mapCenter, { lat: 22, lng: 78, bounds: [68, 6, 97, 35] });
+    await new Promise((r) => setTimeout(r, 20));
+    assert.equal((fake.args('args', 0) as any[])[0].p_radius_m, 2_000_000);
+  });
+});

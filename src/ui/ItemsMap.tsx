@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Camera, Map, Marker, type CameraRef } from '@maplibre/maplibre-react-native';
 import { MAP_STYLE_URL, WORLD_VIEW } from '../lib/geo';
 import { MAP_ITEM_ZOOM, type ItemsMapProps } from './ItemsMap.types';
-import { MapControls } from './MapControls';
+import { MapControls, MapLoadingOverlay } from './MapControls';
 
 /** Registry map (iOS/Android): MapLibre Native with one marker per item. Pinch and drag move it; the +/- buttons
  *  step the zoom. The web build has its own version (ItemsMap.web.tsx). */
@@ -11,9 +11,13 @@ export function ItemsMap({ pins, selectedKey, color, center, onSelect, onBoundsC
   const camera = useRef<CameraRef>(null);
   const zoom = useRef(center ? MAP_ITEM_ZOOM : WORLD_VIEW.zoom);
   const fitted = useRef(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (center) camera.current?.flyTo({ center: [center.lng, center.lat], zoom: Math.max(zoom.current, MAP_ITEM_ZOOM), duration: 800 });
+    if (!center) return;
+    // A region (a country, a city) is framed whole; a spot is flown to at street zoom.
+    if (center.bounds) camera.current?.fitBounds(center.bounds, { padding: { top: 30, right: 30, bottom: 30, left: 30 }, duration: 800 });
+    else camera.current?.flyTo({ center: [center.lng, center.lat], zoom: Math.max(zoom.current, MAP_ITEM_ZOOM), duration: 800 });
   }, [center?.lat, center?.lng]);
 
   // First time pins arrive with no place chosen: frame them, instead of leaving the camera on an empty world view.
@@ -37,6 +41,7 @@ export function ItemsMap({ pins, selectedKey, color, center, onSelect, onBoundsC
         compass={false}
         touchPitch={false}
         touchRotate={false}
+        onDidFinishLoadingMap={() => setReady(true)}
         onPress={() => onSelect(null)}
         onRegionDidChange={(e) => {
           const { bounds, zoom: z } = e.nativeEvent;
@@ -60,6 +65,7 @@ export function ItemsMap({ pins, selectedKey, color, center, onSelect, onBoundsC
           );
         })}
       </Map>
+      {!ready && <MapLoadingOverlay />}
       <MapControls onZoomIn={() => step(1)} onZoomOut={() => step(-1)} onLocate={onLocate} locating={locating} />
     </View>
   );
