@@ -152,3 +152,27 @@ describe('registry map view', () => {
     assert.equal(store.state.mapSelected, null);
   });
 });
+
+describe('registry filters sheet state', () => {
+  beforeEach(() => fake.reset());
+
+  test('the badge counts active filters and each chip clears its own filter', async () => {
+    const store = registryStore();
+    assert.equal(buildVals(store).filterCount, 0);
+    assert.deepEqual(buildVals(store).filterChips, []);
+    store.setState({ filter: 'Active', nearCenter: { lat: 1, lng: 2, label: 'your location' } } as any);
+    const v = buildVals(store);
+    assert.equal(v.filterCount, 2);
+    assert.deepEqual(v.filterChips.map((c) => c.label), ['Active', 'your location · 2 km']);
+    v.filterChips[0].clear();
+    assert.equal(store.state.filter, 'All');
+  });
+
+  test('picking a searched place closes the sheet and centres the registry on it', async () => {
+    const store = registryStore({ sheet: 'filters' });
+    fake.queue({ data: [] });
+    store.setNearCenter({ lat: 1, lng: 2, label: 'Central Station' });
+    assert.equal(store.state.sheet, null);
+    assert.equal(store.state.nearCenter?.label, 'Central Station');
+  });
+});

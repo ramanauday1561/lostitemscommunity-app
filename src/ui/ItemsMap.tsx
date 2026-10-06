@@ -10,10 +10,21 @@ import { MapControls } from './MapControls';
 export function ItemsMap({ pins, selectedKey, color, center, onSelect, onBoundsChange, onLocate, locating }: ItemsMapProps) {
   const camera = useRef<CameraRef>(null);
   const zoom = useRef(center ? MAP_ITEM_ZOOM : WORLD_VIEW.zoom);
+  const fitted = useRef(false);
 
   useEffect(() => {
     if (center) camera.current?.flyTo({ center: [center.lng, center.lat], zoom: Math.max(zoom.current, MAP_ITEM_ZOOM), duration: 800 });
   }, [center?.lat, center?.lng]);
+
+  // First time pins arrive with no place chosen: frame them, instead of leaving the camera on an empty world view.
+  useEffect(() => {
+    if (fitted.current || center || pins.length === 0) return;
+    fitted.current = true;
+    const span = (a: number[]) => Math.max(...a) - Math.min(...a);
+    if (pins.length === 1 || (span(pins.map((p) => p.lat)) < 0.004 && span(pins.map((p) => p.lng)) < 0.004)) { camera.current?.flyTo({ center: [pins[0].lng, pins[0].lat], zoom: MAP_ITEM_ZOOM, duration: 600 }); return; }
+    const lats = pins.map((p) => p.lat); const lngs = pins.map((p) => p.lng);
+    camera.current?.fitBounds([Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)], { padding: { top: 70, right: 70, bottom: 70, left: 70 }, duration: 600 });
+  }, [pins]);
 
   const step = (d: number) => camera.current?.zoomTo(Math.min(20, Math.max(1, zoom.current + d)), { duration: 250 });
 

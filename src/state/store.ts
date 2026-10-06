@@ -21,7 +21,7 @@ import type { AppNotification } from '../api/notifications';
 
 export type Role = 'admin' | 'user' | 'new' | null;
 export type Sheet =
-  | 'detail' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
+  | 'detail' | 'filters' | 'report' | 'sent' | 'profile' | 'chat' | 'thread'
   | 'newthread' | 'support' | 'guidelines' | 'ad' | 'notifications' | 'supportReply' | null;
 
 export interface Pin { x: number; y: number; lat: string; lng: string }
@@ -79,7 +79,7 @@ export interface AppState {
   nearCenter: (LatLng & { label: string }) | null; nearRadius: number;
   /** Registry view: the paged list, or a map of the items in view with a bottom drawer for the tapped pin. */
   registryView: 'list' | 'map'; mapItems: Item[]; mapBounds: MapBounds | null; mapSelected: string | null; mapLoading: boolean;
-  nearPanel: boolean; nearQuery: string; nearResults: Place[]; nearSearching: boolean; nearLocating: boolean;
+  nearQuery: string; nearResults: Place[]; nearSearching: boolean; nearLocating: boolean;
   /** A photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
   rPhotoBlob: Blob | ArrayBuffer | null; rPhotoName: string; rPhotoType: string; rPhotoPreview: string;
@@ -128,7 +128,7 @@ export const initialState: AppState = {
   q: '', uq: '', filter: 'All', sel: null, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
   registryView: 'list', mapItems: [], mapBounds: null, mapSelected: null, mapLoading: false,
-  nearCenter: null, nearRadius: DEFAULT_NEAR_RADIUS, nearPanel: false, nearQuery: '', nearResults: [], nearSearching: false, nearLocating: false,
+  nearCenter: null, nearRadius: DEFAULT_NEAR_RADIUS, nearQuery: '', nearResults: [], nearSearching: false, nearLocating: false,
   rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
   dbMembers: null, memberSearchQuery: '',
@@ -329,7 +329,7 @@ export class Store {
 
   /** Centres the registry on a place (or clears it with null) and reloads. */
   setNearCenter = (center: (LatLng & { label: string }) | null) => {
-    this.setState({ nearCenter: center, nearResults: [], nearQuery: '', nearPanel: false, dbItems: null, registryHasMore: false });
+    this.setState({ nearCenter: center, nearResults: [], nearQuery: '', dbItems: null, registryHasMore: false, sheet: this.state.sheet === 'filters' ? null : this.state.sheet });
     this.loadRegistry();
   };
 
