@@ -83,7 +83,7 @@ export function buildVals(store: Store) {
     const switching = (screen === 'lost' || screen === 'found') && screen !== sc;
     store.setState({
       screen, sheet: null, filter: 'All', q: '', toast: '', ...(extra || {}),
-      ...(switching ? { dbItems: null, registryHasMore: false, loads: { ...st.loads, registry: 'loading' as const } } : null),
+      ...(switching ? { dbItems: null, mapItems: [], mapSelected: null, registryHasMore: false, loads: { ...st.loads, registry: 'loading' as const } } : null),
     });
     // The review queue changes while the admin is elsewhere (items get flagged), so refetch on every visit.
     if (screen === 'moderation') store.loadModerationQueueSupabase();
@@ -418,9 +418,26 @@ export function buildVals(store: Store) {
     registryLoadingMore: st.registryLoadingMore,
     loadMoreRegistry: store.loadMoreRegistry,
     myPostsEmpty: settled('registry') && st.filter === 'My posts' && registry.length === 0,
+    // Registry map view: pins for the items in view, and the tapped one as a bottom drawer.
+    isMapView: st.registryView === 'map',
+    showList: () => store.setRegistryView('list'),
+    showMap: () => store.setRegistryView('map'),
+    mapPins: st.mapItems.flatMap((i) => { const c = parseCoords(i.coords); return c ? [{ key: i.id, lat: c.lat, lng: c.lng }] : []; }),
+    mapColor: sc === 'lost' ? '#B42318' : '#0F7B3D',
+    mapCenter: st.nearCenter ? { lat: st.nearCenter.lat, lng: st.nearCenter.lng } : null,
+    mapSelectedKey: st.mapSelected,
+    mapSelect: (key: string | null) => store.setState({ mapSelected: key }),
+    mapMoved: store.mapMoved,
+    mapLoading: st.mapLoading,
+    mapCount: st.mapItems.length,
+    mapCard: (() => {
+      const it = st.mapItems.find((i) => i.id === st.mapSelected);
+      return it ? { ...it, open: openItem(it) } : null;
+    })(),
     // Registry "near" search. 'My posts' is never location-filtered, so the controls hide while it is selected.
     nearAvailable: st.filter !== 'My posts',
     nearActive: !!st.nearCenter && st.filter !== 'My posts',
+    nearRadiusShown: !!st.nearCenter && st.filter !== 'My posts' && st.registryView === 'list',
     nearIsMe: st.nearCenter?.label === 'your location',
     nearSummary: st.nearCenter ? `Within ${formatRadius(st.nearRadius)} of ${st.nearCenter.label}` : '',
     nearRadii: NEAR_RADII.map((m) => ({ name: formatRadius(m), on: st.nearRadius === m, pick: () => store.setNearRadius(m) })),

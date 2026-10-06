@@ -186,6 +186,29 @@ describe('items api', () => {
     });
   });
 
+  describe('listItemsInBounds', () => {
+    const bounds = { south: 40, west: -74, north: 41, east: -73 };
+
+    test('filters by the visible box, kind and status, and maps the rows', async () => {
+      fake.queue({ data: [row({ location_lat: 40.5, location_lng: -73.5 })] });
+      const found = await items.listItemsInBounds({ kind: 'lost', filter: 'Active', bounds });
+      assert.equal(fake.has('eq', 'kind', 'lost'), true);
+      assert.equal(fake.has('eq', 'status', 'active'), true);
+      assert.equal(fake.has('gte', 'location_lat', 40), true);
+      assert.equal(fake.has('lte', 'location_lng', -73), true);
+      assert.equal(found[0].coords, '40.5, -73.5');
+    });
+
+    test('a view across the antimeridian drops the longitude bound instead of matching nothing', async () => {
+      await items.listItemsInBounds({ kind: 'found', filter: 'All', bounds: { ...bounds, west: 170, east: -170 } });
+      assert.equal(fake.calls[0].ops.some(([m, a]) => m === 'gte' && a[0] === 'location_lng'), false);
+    });
+
+    test('My posts without a user returns nothing and never queries rows', async () => {
+      assert.deepEqual(await items.listItemsInBounds({ kind: 'lost', filter: 'My posts', bounds }), []);
+    });
+  });
+
   describe('createItem', () => {
     const input = {
       kind: 'lost' as const, category: 'Bags', title: 'Backpack', locationText: 'Station',

@@ -9,6 +9,7 @@ import { coord, DEFAULT_NEAR_RADIUS, type LatLng } from '../lib/geo';
 // dynamic import(), so requiring store.ts outside Expo/Metro -- as the Node
 // unit tests do -- doesn't try to transform React Native internals.
 import type * as AuthApi from '../api/auth';
+import type { MapBounds } from '../ui/ItemsMap.types';
 import type { MyDashboardStats, AdminDashboardStats } from '../api/dashboard';
 import type { ModerationFlag } from '../api/moderation';
 import type { MemberProfile } from '../api/members';
@@ -76,6 +77,8 @@ export interface AppState {
   placeQuery: string; placeResults: Place[]; placeSearching: boolean;
   /** Registry "near" search: the centre (null = everywhere), its label, radius in metres, and the place-search panel. */
   nearCenter: (LatLng & { label: string }) | null; nearRadius: number;
+  /** Registry view: the paged list, or a map of the items in view with a bottom drawer for the tapped pin. */
+  registryView: 'list' | 'map'; mapItems: Item[]; mapBounds: MapBounds | null; mapSelected: string | null; mapLoading: boolean;
   nearPanel: boolean; nearQuery: string; nearResults: Place[]; nearSearching: boolean; nearLocating: boolean;
   /** A photo picked in the Report sheet, held in memory and
    *  uploaded once the item itself is created -- see Store#pickPhotoSupabase. */
@@ -124,6 +127,7 @@ export const initialState: AppState = {
   adEditId: 'AD-01', adDraft: null,
   q: '', uq: '', filter: 'All', sel: null, toast: '', newId: '',
   step: 1, rType: 'Lost', rTitle: '', rCat: '', rPlace: '', rDate: '', rDesc: '', pin: null, placeQuery: '', placeResults: [], placeSearching: false,
+  registryView: 'list', mapItems: [], mapBounds: null, mapSelected: null, mapLoading: false,
   nearCenter: null, nearRadius: DEFAULT_NEAR_RADIUS, nearPanel: false, nearQuery: '', nearResults: [], nearSearching: false, nearLocating: false,
   rPhotoBlob: null, rPhotoName: '', rPhotoType: '', rPhotoPreview: '', photoUrls: {},
   dbModerationQueue: null, dbModerationStats: null,
@@ -265,6 +269,7 @@ export class Store {
    *  Registry.tsx rather than from every place filter/q/screen can change. */
   loadRegistry = async () => {
     const st = this.state;
+    if (st.registryView === 'map') { await this.loadMapItems(); return; }
         const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
     if (!kind) return;
     // Only the newest query may write: typing fast or switching filters can return responses out of order.
@@ -280,6 +285,42 @@ export class Store {
   };
 
   private registryReq = 0;
+  private mapReq = 0;
+
+  setRegistryView = (registryView: 'list' | 'map') => {
+    if (registryView === this.state.registryView) return;
+    this.setState({ registryView, mapSelected: null });
+    // The map reports its bounds as soon as it mounts, which loads the pins; the list just refetches.
+    if (registryView === 'list') this.loadRegistry();
+  };
+
+  /** Called by the map after every pan/zoom (and once on mount). */
+  mapMoved = (mapBounds: MapBounds) => {
+    this.setState({ mapBounds });
+    return this.loadMapItems();
+  };
+
+  /** Loads the pins inside the visible map for the current tab/filter/search. */
+  loadMapItems = async () => {
+    const st = this.state;
+    const kind = st.screen === 'lost' ? 'lost' : st.screen === 'found' ? 'found' : null;
+    if (!kind || !st.mapBounds) return;
+    const req = ++this.mapReq;
+    this.setState({ mapLoading: true });
+    try {
+      const items = await import('../api/items');
+      const found = await items.listItemsInBounds({ kind, filter: st.filter, query: st.q, userId: st.profile?.id, bounds: st.mapBounds });
+      if (req !== this.mapReq) return;
+      this.setState((s) => ({
+        mapItems: found, mapLoading: false,
+        mapSelected: found.some((i) => i.id === s.mapSelected) ? s.mapSelected : null,
+      }));
+    } catch (e) {
+      console.error('loadMapItems failed:', e);
+      if (req === this.mapReq) this.setState({ mapLoading: false });
+      this.flash("Couldn't load items on the map. Try again.");
+    }
+  };
 
   private nearParam() {
     const { nearCenter, nearRadius } = this.state;
