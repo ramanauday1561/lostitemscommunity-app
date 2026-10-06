@@ -108,6 +108,17 @@ describe('auth api', () => {
       assert.deepEqual(arg.options.data, { username: 'ann', handle: 'ann', display_name: 'ann' });
     });
 
+    test('asks Supabase to send the confirmation link back to the app, not the project Site URL', async () => {
+      const prev = process.env.EXPO_PUBLIC_APP_URL;
+      process.env.EXPO_PUBLIC_APP_URL = 'https://app.example.com';
+      try {
+        fake.queue({ data: true }, { data: { session: null } });
+        await auth.signUp('ann', 'a@b.co', 'password1');
+        const [arg] = fake.args('args', 1) as [any];
+        assert.equal(arg.options.emailRedirectTo, 'https://app.example.com');
+      } finally { if (prev === undefined) delete process.env.EXPO_PUBLIC_APP_URL; else process.env.EXPO_PUBLIC_APP_URL = prev; }
+    });
+
     test('no session (email confirmation pending) is reported as not signed in', async () => {
       fake.queue({ data: true }, { data: { session: null } });
       assert.equal((await auth.signUp('ann', 'a@b.co', 'password1')).signedIn, false);
