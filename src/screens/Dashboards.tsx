@@ -296,9 +296,9 @@ export function AdminDash() {
           {v.flagged.map((f, n) => (
             <Animated.View key={f.id} entering={rise(n)} style={[{ ...GLASS, borderRadius: 24, padding: 16 }, SHADOW.card]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <Text style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.subtle }}>{f.id}</Text>
-                <View style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(180,35,24,.1)' }}>
-                  <Text style={{ fontFamily: FONTS[600], fontSize: 10.5, color: C.danger }}>{f.reason}</Text>
+                <Text numberOfLines={1} style={{ fontFamily: MONO[500], fontSize: 10.5, color: C.subtle, flexShrink: 0 }}>{f.id}</Text>
+                <View style={{ flexShrink: 1, minWidth: 0, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: 'rgba(180,35,24,.1)' }}>
+                  <Text numberOfLines={1} style={{ fontFamily: FONTS[600], fontSize: 10.5, color: C.danger }}>{f.reason}</Text>
                 </View>
               </View>
               <Text style={{ fontFamily: FONTS[700], fontSize: 15, lineHeight: 20, letterSpacing: -0.22, color: C.ink, marginTop: 10 }}>{f.title}</Text>
