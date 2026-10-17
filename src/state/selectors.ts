@@ -145,6 +145,7 @@ export function buildVals(store: Store) {
     crumb: sc === 'welcome' ? `Welcome ${st.slide + 1} of 3`
       : sc === 'signup' ? 'Sign up' : sc === 'login' ? 'Login'
       : sc === 'forgot' ? `Forgot password · ${fpCopy[0]}`
+      : sc === 'confirmed' ? 'Email confirmed'
       : `${admin ? 'Super Admin' : fresh ? 'New User' : 'Member'} · ${t[1]}`,
     isWelcome: sc === 'welcome', slide, slideIndex: st.slide,
     nextLabel: st.slide === SLIDES.length - 1 ? 'Get started free' : 'Next',
@@ -208,6 +209,14 @@ export function buildVals(store: Store) {
       store.setState({ screen: 'login', fpStage: 'email', fpError: '' });
     },
 
+    isConfirmed: sc === 'confirmed',
+    cfChecking: st.cfStage === 'checking', cfDone: st.cfStage === 'done', cfFailed: st.cfStage === 'error',
+    cfName: st.cfName, cfError: st.cfError,
+    cfContinue: store.continueFromConfirmed,
+    // Already signed in on this device (e.g. a second tap on a used link)? restoreSession goes straight to the dashboard.
+    cfSignIn: () => { store.setState({ screen: 'login', cfStage: 'checking', cfError: '', error: '' }); store.restoreSession().catch(() => { /* stays on the sign-in form */ }); },
+    cfSignUpAgain: () => store.setState({ screen: 'signup', cfStage: 'checking', cfError: '', suError: '', suInfo: '' }),
+
     isLogin: sc === 'login',
     isUserDash: sc === 'dash' && !admin && !fresh, isFreshDash: sc === 'dash' && fresh,
     isAdminDash: sc === 'dash' && admin,
@@ -217,8 +226,8 @@ export function buildVals(store: Store) {
     isAdmin: admin, isSimple: !admin && sc !== 'login',
     // The registry gives the space to the list/map: one-line title, no kicker.
     compactHeader: sc === 'lost' || sc === 'found',
-    showHeader: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
-    showNav: !['login', 'welcome', 'signup', 'forgot'].includes(sc),
+    showHeader: !['login', 'welcome', 'signup', 'forgot', 'confirmed'].includes(sc),
+    showNav: !['login', 'welcome', 'signup', 'forgot', 'confirmed'].includes(sc),
     showBack: ['moderation', 'supportInbox', 'analysis', 'members', 'messages'].includes(sc),
     showInbox: !admin,
     back: go('dash'),

@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { appUrl } from '../lib/appUrl';
-import { LINK_EXPIRED } from '../lib/authUrl';
+import { appUrl, signupRedirectUrl } from '../lib/appUrl';
+import { LINK_EXPIRED, SIGNUP_LINK_EXPIRED } from '../lib/authUrl';
 import type { Database } from '../lib/database.types';
 
 export class AuthApiError extends Error {}
@@ -87,7 +87,8 @@ export async function signUp(username: string, email: string, password: string):
     options: {
       data: { username: trimmedUsername, handle: trimmedUsername, display_name: trimmedUsername },
       // Without this the confirmation link lands on the Supabase project's Site URL (localhost in dev setups).
-      emailRedirectTo: appUrl(),
+      // The ?auth=signup marker lets the app show the "email confirmed" screen, or the right error.
+      emailRedirectTo: signupRedirectUrl(),
     },
   });
   if (error) throw new AuthApiError(mapAuthError(error.message));
@@ -105,6 +106,12 @@ export async function requestPasswordReset(email: string) {
 export async function startRecovery(accessToken: string, refreshToken: string) {
   const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
   if (error) throw new AuthApiError(LINK_EXPIRED);
+}
+
+/** Adopts the session from a signup confirmation link: the account is confirmed and signed in. */
+export async function startConfirmedSession(accessToken: string, refreshToken: string) {
+  const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+  if (error) throw new AuthApiError(SIGNUP_LINK_EXPIRED);
 }
 
 export async function updatePassword(newPassword: string) {
