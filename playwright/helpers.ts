@@ -154,7 +154,7 @@ const NAV: Record<string, string[]> = {
   support: ['Help and support'],
 };
 
-export async function navigateTo(page: Page, screenName: string) {
+export async function navigateTo(page: Page, screenName: string, timeout = 5000) {
   const key = screenName.toLowerCase();
   const labels = NAV[key] || [screenName];
 
@@ -163,15 +163,21 @@ export async function navigateTo(page: Page, screenName: string) {
     await page.locator('[role="button"], [tabindex="0"]').filter({ hasText: /^[A-Z]{1,2}$/ }).last().click().catch(() => {});
   }
 
-  for (const label of labels) {
-    const btn = page.getByText(label, { exact: true }).first();
-    if (await btn.isVisible().catch(() => false)) {
-      await btn.click();
-      await page.waitForLoadState('networkidle').catch(() => {});
-      await page.waitForTimeout(500);
-      return true;
+  // Dashboard cards rise in one after another, so a label can still be appearing when this is called:
+  // keep looking until one shows up rather than giving up on the first instant check.
+  const deadline = Date.now() + timeout;
+  do {
+    for (const label of labels) {
+      const btn = page.getByText(label, { exact: true }).first();
+      if (await btn.isVisible().catch(() => false)) {
+        await btn.click();
+        await page.waitForLoadState('networkidle').catch(() => {});
+        await page.waitForTimeout(500);
+        return true;
+      }
     }
-  }
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
   return false;
 }
 
@@ -187,6 +193,15 @@ export async function waitForText(page: Page, text: string, timeout = 5000) {
  */
 export async function isVisible(page: Page, text: string): Promise<boolean> {
   return await page.getByText(text, { exact: true }).first().isVisible().catch(() => false);
+}
+
+/**
+ * True when the screen shows the app's load-failure state ("Couldn't load …", see LoadGate in src/ui/bits.tsx).
+ * Don't look for the bare word "error" instead: icons are Material Symbols ligatures, so an `error` icon
+ * (e.g. on every flagged card in moderation) is the literal text "error" in the page.
+ */
+export async function hasErrorState(page: Page): Promise<boolean> {
+  return page.getByText(/Couldn't load/).first().isVisible().catch(() => false);
 }
 
 /**

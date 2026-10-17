@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS } from './helpers';
+import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS, hasErrorState } from './helpers';
 
 test.describe('Phase 7: Admin Moderation - Superadmin', () => {
   test.beforeEach(async ({ page }) => {
@@ -129,7 +129,7 @@ test.describe('Phase 7: Admin Moderation - Superadmin', () => {
     const isBodyVisible = await pageBody.isVisible();
     expect(isBodyVisible).toBe(true);
 
-    const errorVisible = await isVisible(page, 'error');
+    const errorVisible = await hasErrorState(page);
     expect(errorVisible).toBe(false);
 
     await takeScreenshot(page, 'phase7-moderation-no-errors');

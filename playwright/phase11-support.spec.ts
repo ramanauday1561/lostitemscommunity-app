@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS } from './helpers';
+import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS, hasErrorState } from './helpers';
 
 test.describe('Phase 11: Support & FAQ - Regular User', () => {
   test.beforeEach(async ({ page }) => {
@@ -116,7 +116,7 @@ test.describe('Phase 11: Support & FAQ - Regular User', () => {
     const isBodyVisible = await pageBody.isVisible();
     expect(isBodyVisible).toBe(true);
 
-    const errorVisible = await isVisible(page, 'error');
+    const errorVisible = await hasErrorState(page);
     expect(errorVisible).toBe(false);
 
     await takeScreenshot(page, 'phase11-support-no-errors');
