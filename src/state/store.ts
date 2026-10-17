@@ -51,6 +51,10 @@ export interface AppState {
   authEmail: string | null;
   /** True while the user arrived via a password-reset link and is choosing a new password. */
   fpRecovery: boolean;
+  /** "Email confirmed" screen, reached from a signup confirmation link: checking the link, ready, or failed. */
+  cfStage: 'checking' | 'done' | 'error';
+  /** Display name for the confirmed screen's greeting, and the reason when the link failed. */
+  cfName: string; cfError: string;
   /** Actions with a request in flight (keyed by name), so their buttons can show the loader and ignore repeat taps. */
   pending: Record<string, boolean>;
   /** Per-list loading state: drives the spinner / error+retry / empty states (see LoadGate). */
@@ -121,7 +125,7 @@ export const initialState: AppState = {
   supportMsgs: [], supportDraft: '', botTyping: false,
   activeThread: null, replyDraft: '', ntTitle: '', ntBody: '', ntTag: 'Question',
   username: '', password: '', remember: true, error: '', busy: false,
-  profile: null, authEmail: null, fpRecovery: false, pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
+  profile: null, authEmail: null, fpRecovery: false, cfStage: 'checking', cfName: '', cfError: '', pending: {}, loads: IDLE_LOADS, notifications: [], myDashStats: null, adminDashStats: null, dbItems: null, registryHasMore: false, registryLoadingMore: false,
   dbThreads: null, dbReplies: null, forumTag: '',
   dbWeeklyReports: null, dbKeywords: null, dbAdPlacements: null, dbAdCampaigns: null,
   dbFaqEntries: null, dbSupportMessages: null, dbSupportInbox: null, activeSupportUser: null, supportReplyDraft: '',
@@ -1142,7 +1146,7 @@ export class Store {
         if (profile) this.bootstrapSession(profile);
         this.flash('Welcome to Lost Items Community. Your account is live.');
       } else {
-        this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Confirm it, then sign in.` });
+        this.setState({ busy: false, suInfo: `We sent a confirmation link to ${s.suEmail}. Tap it to finish setting up your account.` });
       }
     } catch (e) {
       this.setState({ busy: false, suError: e instanceof Error ? e.message : 'Something went wrong.' });
@@ -1202,6 +1206,11 @@ export class Store {
     const { scrubAuthUrl } = await import('../lib/appUrl');
     scrubAuthUrl();
 
+    if (parsed.kind === 'signup' || (parsed.kind === 'error' && parsed.flow === 'signup')) {
+      await this.handleSignupLink(parsed);
+      return true;
+    }
+
     const showError = (message: string) => {
       this.recovering = false;
       this.setState({ screen: 'forgot', fpStage: 'email', fpRecovery: false, fpError: message, fpInfo: '' });
@@ -1220,6 +1229,36 @@ export class Store {
       showError(e instanceof Error ? e.message : 'That reset link has expired. Request a new one.');
     }
     return true;
+  };
+
+  /**
+   * A signup confirmation link. Success: the link carries a signed-in session for the new account, so it
+   * is adopted and the "email confirmed" screen greets the member by name. Failure (expired or already
+   * used): the same screen explains what to do next. Either way the member is never dropped on Welcome.
+   */
+  private handleSignupLink = async (parsed: { kind: 'signup'; accessToken: string; refreshToken: string } | { kind: 'error'; message: string }) => {
+    if (parsed.kind === 'error') {
+      this.setState({ screen: 'confirmed', cfStage: 'error', cfError: parsed.message, cfName: '' });
+      return;
+    }
+    this.setState({ screen: 'confirmed', cfStage: 'checking', cfError: '', cfName: '' });
+    try {
+      const authApi = await import('../api/auth');
+      await authApi.startConfirmedSession(parsed.accessToken, parsed.refreshToken);
+      const profile = await authApi.getMyProfile();
+      if (!profile) throw new authApi.AuthApiError('Your email is confirmed, but we could not load your account. Sign in to continue.');
+      this.setState({ cfStage: 'done', cfName: profile.display_name || profile.username, convos: [], dbThreads: [], ...this.roleFromProfile(profile) });
+    } catch (e) {
+      this.setState({ cfStage: 'error', cfError: e instanceof Error ? e.message : 'Something went wrong. Try signing in.' });
+    }
+  };
+
+  /** "Email confirmed" -> the dashboard, loading everything a fresh sign-in loads. */
+  continueFromConfirmed = () => {
+    const profile = this.state.profile;
+    if (!profile) { this.setState({ screen: 'login', cfStage: 'checking', cfError: '' }); return; }
+    this.setState({ screen: 'dash' });
+    this.bootstrapSession(profile);
   };
 
   /** Saves the new password, then signs the recovery session out so the user signs in with it. */

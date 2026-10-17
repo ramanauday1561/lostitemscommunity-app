@@ -115,7 +115,7 @@ describe('auth api', () => {
         fake.queue({ data: true }, { data: { session: null } });
         await auth.signUp('ann', 'a@b.co', 'password1');
         const [arg] = fake.args('args', 1) as [any];
-        assert.equal(arg.options.emailRedirectTo, 'https://app.example.com');
+        assert.equal(arg.options.emailRedirectTo, 'https://app.example.com/?auth=signup', 'with the marker that tells the app it is a signup link');
       } finally { if (prev === undefined) delete process.env.EXPO_PUBLIC_APP_URL; else process.env.EXPO_PUBLIC_APP_URL = prev; }
     });
 

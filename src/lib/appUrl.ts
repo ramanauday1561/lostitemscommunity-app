@@ -21,6 +21,18 @@ export function appUrl(): string {
   return w?.location?.origin || NATIVE_SCHEME_URL;
 }
 
+/**
+ * The `emailRedirectTo` for a signup confirmation link: the app URL plus `?auth=signup`, so an
+ * expired link (whose error fragment carries no `type`) can still be recognised as a signup link.
+ * Supabase accepts any path or query on the Site URL's host. The native scheme is left exactly as
+ * it is, because it must match the Redirect URLs allow-list entry.
+ */
+export function signupRedirectUrl(): string {
+  const base = appUrl();
+  if (!/^https?:\/\//.test(base)) return base;
+  return `${base.replace(/\/+$/, '')}/?auth=signup`;
+}
+
 /** Removes the one-time tokens from the address bar (web) once they've been used. */
 export function scrubAuthUrl() {
   const w = (globalThis as { window?: { history?: { replaceState?: (d: unknown, t: string, u: string) => void }; location?: { pathname?: string } } }).window;

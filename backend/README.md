@@ -11,6 +11,7 @@ backend/
     migrations/     -- 28 numbered migrations, applied in order (already live: never edit one, add a new one)
     seed.sql        -- local dev data, mirrors src/data/constants.ts
     tests/          -- re-runnable SQL regression scripts (they roll back; the error text is the report)
+    templates/      -- Auth email templates (confirm-signup.html), see "Signup email"
 ```
 
 ## Applying it
@@ -150,3 +151,41 @@ real clients.
 The function needs no secrets of its own: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
 `SUPABASE_SERVICE_ROLE_KEY` are provided by the Edge runtime. Migrations it depends on: `0023`
 (throttle table) and `0024` (closes the public email lookup).
+
+## Signup email
+
+New accounts get a confirmation email. Its link opens the app at
+`https://app.lostitemscommunity.com/?auth=signup#…`, and the app shows the "Email confirmed" screen
+(`src/screens/Confirmed.tsx`). The `?auth=signup` marker is added by `signupRedirectUrl()` so the app
+can also explain an expired link instead of treating it as a password reset.
+
+Three settings live in the Supabase project, not in this repo:
+
+1. **Your own email provider (custom SMTP).** Without it, Supabase's built-in mailer sends as
+   "Supabase Auth" from `noreply@mail.app.supabase.io`, **only to members of the Supabase team**
+   (everyone else gets "Email address not authorized"), and only a few emails an hour. Pick a provider
+   (Resend, Brevo, Postmark, AWS SES, ...), verify `lostitemscommunity.com` with it (it gives you DNS
+   records: SPF, DKIM and usually DMARC), and note its SMTP host, port, username and password.
+2. **The branded template.** Subject `Confirm your email for Lost Items Community`, body
+   `supabase/templates/confirm-signup.html` (logo from the public site, no user-provided text).
+3. **URL configuration.** Site URL `https://app.lostitemscommunity.com`. Supabase accepts any path or
+   query on the Site URL's host, so the marker needs nothing else. If the Site URL is something
+   else, add `https://app.lostitemscommunity.com/**` to Redirect URLs. Keep `lostitems://` there for
+   the native apps.
+
+Apply 1 and 2 in one go (and check 3) with a personal access token from
+https://supabase.com/dashboard/account/tokens:
+
+```bash
+SUPABASE_ACCESS_TOKEN=sbp_... \
+SMTP_HOST=smtp.resend.com SMTP_PORT=465 SMTP_USER=resend SMTP_PASS=re_... \
+node scripts/apply-auth-email.mjs              # add --dry-run first to see what it will send
+```
+
+The script reads the config back to confirm it saved, never prints the SMTP password, and warns
+about anything in 3. Leave out the `SMTP_*` variables to update only the template. Or do it by hand:
+Authentication -> Emails -> SMTP Settings (sender name `Lost Items Community`, sender
+`noreply@lostitemscommunity.com`), then Templates -> Confirm signup (paste the HTML), then URL
+Configuration. With custom SMTP on, Supabase starts at 30 emails an hour; raise it under
+Authentication -> Rate Limits if signups need more.
+

@@ -9,6 +9,7 @@ import { Welcome } from './screens/Welcome';
 import { Login } from './screens/Login';
 import { Signup } from './screens/Signup';
 import { Forgot } from './screens/Forgot';
+import { Confirmed } from './screens/Confirmed';
 import { AdminDash, FreshDash, UserDash } from './screens/Dashboards';
 import { Registry } from './screens/Registry';
 import { Forum } from './screens/Forum';
@@ -25,6 +26,7 @@ function pick(v: ReturnType<typeof useVals>): [string, React.ReactNode] {
   if (v.isLogin) return ['login', <Login />];
   if (v.isSignup) return ['signup', <Signup />];
   if (v.isForgot) return ['forgot', <Forgot />];
+  if (v.isConfirmed) return ['confirmed', <Confirmed />];
   if (v.isUserDash) return ['userDash', <UserDash />];
   if (v.isFreshDash) return ['freshDash', <FreshDash />];
   if (v.isAdminDash) return ['adminDash', <AdminDash />];
