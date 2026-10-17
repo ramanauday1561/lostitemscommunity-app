@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS } from './helpers';
+import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS, hasErrorState } from './helpers';
 
 test.describe('Phase 9: Admin Analysis Dashboard', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,9 +23,8 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     await navigateTo(page, 'analysis');
     await page.waitForLoadState('networkidle');
 
-    // Verify Reports section exists
-    const reportsTitle = await isVisible(page, 'Reports this week');
-    expect(reportsTitle).toBe(true);
+    // Verify Reports section exists (waits: the screen fades in after navigating)
+    await expect(page.getByText('Reports this week', { exact: true })).toBeVisible({ timeout: 15000 });
 
     // Check for day labels (M, T, W, etc)
     const dayVisible = await isVisible(page, 'M') || await isVisible(page, 'Mon');
@@ -106,13 +105,10 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     await navigateTo(page, 'analysis');
     await page.waitForLoadState('networkidle');
 
-    // Verify multiple sections render
-    const reportsVisible = await isVisible(page, 'Reports');
-    const keywordsVisible = await isVisible(page, 'Flagged keywords') || await isVisible(page, 'keywords');
-    const signalsVisible = await isVisible(page, 'Signals');
-
-    // At least some analytics should be visible
-    expect([reportsVisible, keywordsVisible, signalsVisible].some(v => v)).toBe(true);
+    // Both real sections render. (There is no section titled just "Reports", and the decorative "Signals"
+    // card is demo-only: the test below asserts it stays hidden.) Waits, since the screen fades in.
+    await expect(page.getByText('Reports this week', { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Flagged keywords', { exact: true })).toBeVisible();
 
     await takeScreenshot(page, 'phase9-analysis-metrics');
   });
@@ -127,7 +123,7 @@ test.describe('Phase 9: Admin Analysis Dashboard', () => {
     expect(isBodyVisible).toBe(true);
 
     // Should not show error messages
-    const errorVisible = await isVisible(page, 'error');
+    const errorVisible = await hasErrorState(page);
     expect(errorVisible).toBe(false);
 
     await takeScreenshot(page, 'phase9-analysis-render');

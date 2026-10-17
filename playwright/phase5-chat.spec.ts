@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS } from './helpers';
+import { loginAs, navigateTo, takeScreenshot, isVisible, TEST_USERS, hasErrorState } from './helpers';
 
 test.describe('Phase 5: Chat - Regular User', () => {
   test.beforeEach(async ({ page }) => {
@@ -131,7 +131,7 @@ test.describe('Phase 5: Chat - Regular User', () => {
     expect(isBodyVisible).toBe(true);
 
     // Should not show error messages
-    const errorVisible = await isVisible(page, 'error');
+    const errorVisible = await hasErrorState(page);
     expect(errorVisible).toBe(false);
 
     await takeScreenshot(page, 'phase5-no-errors');
